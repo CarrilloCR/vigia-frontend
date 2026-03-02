@@ -25,6 +25,49 @@ const kpiLabel: Record<string, string> = {
   ocupacion_agenda: 'Ocupación de Agenda',
 }
 
+interface Medico {
+  id: number
+  nombre: string
+  apellido: string
+  especialidad: string
+}
+
+function MedicosList() {
+  const [medicos, setMedicos] = useState<Medico[]>([])
+  const router = useRouter()
+
+  useEffect(() => {
+    api.get('/medicos/?clinica=1').then(res => {
+      setMedicos(res.data.results || res.data)
+    })
+  }, [])
+
+  return (
+    <div className="space-y-2">
+      {medicos.map(medico => (
+        <div
+          key={medico.id}
+          onClick={() => router.push(`/dashboard/medico/${medico.id}`)}
+          className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-opacity hover:opacity-70"
+          style={{ backgroundColor: 'var(--color-background)' }}
+        >
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold"
+            style={{ backgroundColor: 'var(--color-primary)' }}>
+            {medico.nombre[0]}{medico.apellido[0]}
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
+              Dr. {medico.nombre} {medico.apellido}
+            </p>
+            <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{medico.especialidad}</p>
+          </div>
+          <span className="ml-auto text-lg" style={{ color: 'var(--color-text-muted)' }}>→</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const [alertas, setAlertas] = useState<Alerta[]>([])
   const [loading, setLoading] = useState(true)
@@ -173,6 +216,15 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Lista de médicos */}
+      <div className="rounded-2xl shadow-sm p-6 mt-6" style={{ backgroundColor: 'var(--color-card)' }}>
+        <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text-main)' }}>
+          Médicos
+        </h2>
+        <MedicosList />
+      </div>
+
     </main>
   )
 }
