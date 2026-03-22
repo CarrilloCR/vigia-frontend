@@ -9,6 +9,11 @@ const kpiLabel: Record<string, string> = {
   tasa_noshow: 'Tasa de No-Show',
   ingresos_dia: 'Ingresos del Día',
   ocupacion_agenda: 'Ocupación de Agenda',
+  ticket_promedio: 'Ticket Promedio',
+  pacientes_nuevos: 'Pacientes Nuevos',
+  retencion_90: 'Retención 90 días',
+  nps: 'NPS',
+  citas_reagendadas: 'Citas Reagendadas',
 }
 
 const severidadColor: Record<string, string> = {
