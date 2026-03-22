@@ -115,6 +115,19 @@ export default function DashboardPage() {
     }
   }
 
+  const marcarFeedback = async (alertaId: number, fueUtil: boolean) => {
+    try {
+      await api.post('/feedbacks/', {
+        alerta: alertaId,
+        usuario: 1,
+        fue_util: fueUtil,
+        comentario: ''
+      })
+    } catch (err) {
+      console.error('Error guardando feedback:', err)
+    }
+  }
+
   return (
     <main className="min-h-screen p-6" style={{ backgroundColor: 'var(--color-background)' }}>
 
@@ -137,6 +150,13 @@ export default function DashboardPage() {
             style={{ backgroundColor: 'var(--color-success)' }}
           >
             {motorLoading ? 'Analizando...' : '⚡ Ejecutar análisis'}
+          </button>
+          <button
+            onClick={() => router.push('/dashboard/notificaciones')}
+            className="px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-90"
+            style={{ backgroundColor: 'var(--color-secondary)', color: 'var(--color-text-main)' }}
+          >
+            🔔 Notificaciones
           </button>
           <button
             onClick={() => router.push('/')}
@@ -174,7 +194,6 @@ export default function DashboardPage() {
         <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text-main)' }}>
           Alertas Activas
         </h2>
-
         {loading ? (
           <p style={{ color: 'var(--color-text-muted)' }}>Cargando alertas...</p>
         ) : alertas.length === 0 ? (
@@ -208,13 +227,31 @@ export default function DashboardPage() {
                       {new Date(alerta.creada_en).toLocaleString('es-CR')}
                     </p>
                   </div>
-                  <button
-                    onClick={() => marcarRevisada(alerta.id)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-white shrink-0"
-                    style={{ backgroundColor: 'var(--color-primary)' }}
-                  >
-                    Marcar revisada
-                  </button>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <button
+                      onClick={() => marcarRevisada(alerta.id)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-white"
+                      style={{ backgroundColor: 'var(--color-primary)' }}
+                    >
+                      Marcar revisada
+                    </button>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => marcarFeedback(alerta.id, true)}
+                        className="flex-1 px-3 py-1.5 rounded-lg text-xs font-medium text-white"
+                        style={{ backgroundColor: 'var(--color-success)' }}
+                      >
+                        👍 Útil
+                      </button>
+                      <button
+                        onClick={() => marcarFeedback(alerta.id, false)}
+                        className="flex-1 px-3 py-1.5 rounded-lg text-xs font-medium"
+                        style={{ backgroundColor: 'var(--color-background)', color: 'var(--color-text-muted)' }}
+                      >
+                        👎
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
