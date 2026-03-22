@@ -77,10 +77,12 @@ export default function DashboardPage() {
   const [alertas, setAlertas] = useState<Alerta[]>([])
   const [loading, setLoading] = useState(true)
   const [motorLoading, setMotorLoading] = useState(false)
+  const [notifPendientes, setNotifPendientes] = useState(0)
   const router = useRouter()
 
   useEffect(() => {
     fetchAlertas()
+    fetchNotifPendientes()
   }, [])
 
   const fetchAlertas = async () => {
@@ -94,11 +96,22 @@ export default function DashboardPage() {
     }
   }
 
+  const fetchNotifPendientes = async () => {
+    try {
+      const res = await api.get('/notificaciones/?estado=pendiente')
+      const data = res.data.results || res.data
+      setNotifPendientes(data.length)
+    } catch (err) {
+      console.error('Error cargando notificaciones:', err)
+    }
+  }
+
   const ejecutarMotor = async () => {
     setMotorLoading(true)
     try {
       await api.post('/motor/ejecutar/', { clinica_id: 1 })
       await fetchAlertas()
+      await fetchNotifPendientes()
     } catch (err) {
       console.error('Error ejecutando motor:', err)
     } finally {
@@ -153,10 +166,16 @@ export default function DashboardPage() {
           </button>
           <button
             onClick={() => router.push('/dashboard/notificaciones')}
-            className="px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-90"
+            className="px-4 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-90 relative"
             style={{ backgroundColor: 'var(--color-secondary)', color: 'var(--color-text-main)' }}
           >
             🔔 Notificaciones
+            {notifPendientes > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold text-white flex items-center justify-center"
+                style={{ backgroundColor: 'var(--color-danger)' }}>
+                {notifPendientes}
+              </span>
+            )}
           </button>
           <button
             onClick={() => router.push('/')}
