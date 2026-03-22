@@ -13,7 +13,6 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     try {
-      // Por ahora simulamos login, luego conectamos con el backend
       if (email && password) {
         router.push('/dashboard')
       } else {
@@ -29,7 +28,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-background)' }}>
       <div className="w-full max-w-md p-8 rounded-2xl shadow-lg" style={{ backgroundColor: 'var(--color-card)' }}>
-        
+
         {/* Logo y título */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary)' }}>
