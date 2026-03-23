@@ -1,17 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
-@import 'tailwindcss/utilities';
 
-:root {
-  --color-primary: #9B8EC4;
-  --color-secondary: #C4B5E8;
-  --color-danger: #E8A0C4;
-  --color-success: #A0C4B5;
-  --color-background: #F5F3FA;
-  --color-card: #FFFFFF;
-  --color-text-main: #2D2B3D;
-  --color-text-muted: #8B89A0;
-  --font-family-sans: 'Inter', sans-serif;
+:root,
+[data-theme="dark"] {
+  --void: #0D0B14;
+  --surface: #13111E;
+  --card: #1C1830;
+  --primary: #9B8EC4;
+  --accent: #7C6FBF;
+  --glow: #C4B5E8;
+  --success: #A0C4B5;
+  --danger: #E8A0C4;
+  --text: #F0EEF8;
+  --muted: #6B6880;
+  --border: rgba(155, 142, 196, 0.18);
+  --glass: rgba(28, 24, 48, 0.7);
+  --glass-hover: rgba(34, 30, 56, 0.9);
+}
+
+[data-theme="light"] {
+  --void: #F0EDF8;
+  --surface: #E8E4F4;
+  --card: #FFFFFF;
+  --primary: #7C6FBF;
+  --accent: #5A4FA8;
+  --glow: #5A4F9F;
+  --success: #2E7D64;
+  --danger: #B8467A;
+  --text: #1A1830;
+  --muted: #7B789A;
+  --border: rgba(124, 111, 191, 0.25);
+  --glass: rgba(255, 255, 255, 0.8);
+  --glass-hover: rgba(255, 255, 255, 0.95);
 }
 
 * {
@@ -20,8 +40,38 @@
   padding: 0;
 }
 
-body {
-  background-color: var(--color-background);
-  color: var(--color-text-main);
-  font-family: var(--font-family-sans);
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  scroll-behavior: smooth;
 }
+
+body {
+  background-color: var(--void);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.font-display { font-family: 'Syne', sans-serif; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
+}
+
+.glass-hover:hover { background: var(--glass-hover); }
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(155,142,196,0.3); }
+  50% { box-shadow: 0 0 35px rgba(155,142,196,0.65); }
+}
+
+.animate-pulse-glow { animation: pulseGlow 2.5s ease infinite; }
