@@ -1,26 +1,67 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { Notificacion } from '../../../types'
+import Aurora from '../../../components/reactbits/Aurora'
+import GlowingCard from '../../../components/reactbits/GlowingCard'
+import ThemeToggle from '../../../components/ui/ThemeToggle'
 
-const canalIcon: Record<string, string> = {
-  email: '📧',
-  whatsapp: '💬',
-  sms: '📱',
+const estadoConfig: Record<string, { color: string; bg: string; label: string }> = {
+  pendiente:  { color: '#C4B5E8', bg: 'rgba(196,181,232,0.12)', label: 'Pendiente' },
+  enviada:    { color: '#9B8EC4', bg: 'rgba(155,142,196,0.12)', label: 'Enviada' },
+  entregada:  { color: '#A0C4B5', bg: 'rgba(160,196,181,0.12)', label: 'Entregada' },
+  leida:      { color: '#A0C4B5', bg: 'rgba(160,196,181,0.12)', label: 'Leída' },
+  fallida:    { color: '#E8A0C4', bg: 'rgba(232,160,196,0.12)', label: 'Fallida' },
 }
 
-const estadoColor: Record<string, string> = {
-  pendiente: '#C4B5E8',
-  enviada: '#9B8EC4',
-  entregada: '#A0C4B5',
-  leida: '#A0C4B5',
-  fallida: '#E8A0C4',
+const ArrowLeftIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <line x1="19" y1="12" x2="5" y2="12"/>
+    <polyline points="12 19 5 12 12 5"/>
+  </svg>
+)
+
+const MailIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+  </svg>
+)
+
+const WhatsappIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+  </svg>
+)
+
+const SmsIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+)
+
+const BellOffIcon = () => (
+  <svg width="56" height="56" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    <path d="M18.63 13A17.89 17.89 0 0 1 18 8"/>
+    <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/>
+    <path d="M18 8a6 6 0 0 0-9.33-5"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+)
+
+const canalIcon: Record<string, React.ReactNode> = {
+  email:    <MailIcon />,
+  whatsapp: <WhatsappIcon />,
+  sms:      <SmsIcon />,
 }
 
 export default function NotificacionesPage() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
   const [loading, setLoading] = useState(true)
+  const [filtro, setFiltro] = useState<string>('todos')
   const router = useRouter()
 
   useEffect(() => {
@@ -38,85 +79,259 @@ export default function NotificacionesPage() {
     }
   }
 
+  const filtradas = filtro === 'todos'
+    ? notificaciones
+    : notificaciones.filter(n => n.estado === filtro)
+
+  const stats = [
+    { label: 'Total',      value: notificaciones.length,                                          color: '#9B8EC4' },
+    { label: 'Pendientes', value: notificaciones.filter(n => n.estado === 'pendiente').length,    color: '#C4B5E8' },
+    { label: 'Enviadas',   value: notificaciones.filter(n => n.estado === 'enviada').length,      color: '#A0C4B5' },
+    { label: 'Fallidas',   value: notificaciones.filter(n => n.estado === 'fallida').length,      color: '#E8A0C4' },
+  ]
+
+  const filtros = ['todos', 'pendiente', 'enviada', 'entregada', 'fallida']
+
   return (
-    <main className="min-h-screen p-6" style={{ backgroundColor: 'var(--color-background)' }}>
+    <div style={{
+      width: '100vw', minHeight: '100vh',
+      backgroundColor: 'var(--void)',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Fondo */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={0.5} speed={0.15} />
+      </div>
+      <div style={{
+        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03,
+        backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)',
+        backgroundSize: '48px 48px',
+      }} />
 
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ backgroundColor: 'var(--color-card)' }}
+      <div style={{ position: 'relative', zIndex: 10, padding: '32px 48px', maxWidth: 1400, margin: '0 auto' }}>
+
+        {/* HEADER */}
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48 }}
         >
-          ←
-        </button>
-        <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-main)' }}>Notificaciones</h1>
-          <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Historial de notificaciones enviadas</p>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: 'Total', value: notificaciones.length, color: 'var(--color-primary)' },
-          { label: 'Pendientes', value: notificaciones.filter(n => n.estado === 'pendiente').length, color: 'var(--color-secondary)' },
-          { label: 'Enviadas', value: notificaciones.filter(n => n.estado === 'enviada').length, color: 'var(--color-success)' },
-          { label: 'Fallidas', value: notificaciones.filter(n => n.estado === 'fallida').length, color: 'var(--color-danger)' },
-        ].map((stat, i) => (
-          <div key={i} className="p-4 rounded-2xl shadow-sm" style={{ backgroundColor: 'var(--color-card)' }}>
-            <p className="text-3xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>{stat.label}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            <motion.button
+              onClick={() => router.push('/dashboard')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+                background: 'var(--glass)', backdropFilter: 'blur(20px)',
+                border: '1px solid var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: 'var(--text)',
+              }}
+            >
+              <ArrowLeftIcon />
+            </motion.button>
+            <div>
+              <h1 className="font-display" style={{ fontSize: 32, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
+                Notificaciones
+              </h1>
+              <p style={{ fontSize: 15, color: 'var(--muted)', marginTop: 4 }}>
+                Historial completo de notificaciones enviadas
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
+          <ThemeToggle />
+        </motion.div>
 
-      {/* Lista */}
-      <div className="rounded-2xl shadow-sm p-6" style={{ backgroundColor: 'var(--color-card)' }}>
-        <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text-main)' }}>
-          Historial
-        </h2>
-
-        {loading ? (
-          <p style={{ color: 'var(--color-text-muted)' }}>Cargando...</p>
-        ) : notificaciones.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-4xl mb-2">🔔</p>
-            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Sin notificaciones aún</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {notificaciones.map(notif => (
-              <div key={notif.id} className="p-4 rounded-xl border" style={{ borderColor: 'var(--color-secondary)' }}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{canalIcon[notif.canal] || '🔔'}</span>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--color-text-main)' }}>
-                        {notif.destinatario}
-                      </p>
-                      <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                        Alerta #{notif.alerta} · {notif.canal}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium text-white"
-                      style={{ backgroundColor: estadoColor[notif.estado] || 'var(--color-secondary)' }}>
-                      {notif.estado}
-                    </span>
-                    {notif.enviada_en && (
-                      <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                        {new Date(notif.enviada_en).toLocaleString('es-CR')}
-                      </p>
-                    )}
-                  </div>
-                </div>
+        {/* STATS */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
+          {stats.map((s, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+              onClick={() => setFiltro(i === 0 ? 'todos' : ['todos', 'pendiente', 'enviada', 'fallida'][i])}
+              style={{
+                padding: '28px 28px', borderRadius: 24,
+                background: 'var(--glass)', backdropFilter: 'blur(20px)',
+                border: '1px solid var(--border)',
+                cursor: 'pointer', transition: 'all 0.2s',
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <p className="font-display" style={{ fontSize: 48, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 10 }}>
+                {s.value}
+              </p>
+              <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
+              <div style={{ marginTop: 16, height: 3, borderRadius: 4, background: `${s.color}20` }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: s.value > 0 ? '100%' : '0%' }}
+                  transition={{ duration: 1, delay: i * 0.1 }}
+                  style={{ height: '100%', borderRadius: 4, background: s.color }}
+                />
               </div>
-            ))}
-          </div>
-        )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* FILTROS */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          style={{ display: 'flex', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}
+        >
+          {filtros.map(f => (
+            <motion.button
+              key={f}
+              onClick={() => setFiltro(f)}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+                padding: '10px 20px', borderRadius: 12,
+                fontSize: 14, fontWeight: 500, cursor: 'pointer', border: 'none',
+                background: filtro === f
+                  ? 'linear-gradient(135deg, var(--primary), var(--accent))'
+                  : 'var(--glass)',
+                backdropFilter: 'blur(20px)',
+                borderWidth: 1, borderStyle: 'solid',
+                borderColor: filtro === f ? 'transparent' : 'var(--border)',
+                color: filtro === f ? 'white' : 'var(--muted)',
+                transition: 'all 0.2s',
+              }}
+            >
+              {f === 'todos' ? 'Todos' : f.charAt(0).toUpperCase() + f.slice(1)}
+            </motion.button>
+          ))}
+        </motion.div>
+
+        {/* LISTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <GlowingCard className="p-8">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+              <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
+                Historial
+              </h2>
+              <span style={{
+                fontSize: 14, fontWeight: 500, padding: '6px 16px', borderRadius: 20,
+                background: 'rgba(155,142,196,0.12)', color: 'var(--primary)',
+                border: '1px solid rgba(155,142,196,0.2)',
+              }}>
+                {filtradas.length} registros
+              </span>
+            </div>
+
+            {loading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {[1, 2, 3, 4].map(i => (
+                  <motion.div
+                    key={i}
+                    animate={{ opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                    style={{ height: 80, borderRadius: 20, background: 'rgba(255,255,255,0.04)' }}
+                  />
+                ))}
+              </div>
+            ) : filtradas.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{ textAlign: 'center', padding: '64px 0' }}
+              >
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  style={{ color: 'var(--muted)', display: 'flex', justifyContent: 'center', marginBottom: 20 }}
+                >
+                  <BellOffIcon />
+                </motion.div>
+                <p className="font-display" style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
+                  Sin notificaciones
+                </p>
+                <p style={{ fontSize: 15, color: 'var(--muted)' }}>
+                  No hay notificaciones que coincidan con el filtro seleccionado
+                </p>
+              </motion.div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <AnimatePresence>
+                  {filtradas.map((notif, i) => {
+                    const cfg = estadoConfig[notif.estado] || estadoConfig.pendiente
+                    return (
+                      <motion.div
+                        key={notif.id}
+                        initial={{ opacity: 0, x: -16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 16 }}
+                        transition={{ delay: i * 0.03 }}
+                        style={{
+                          padding: '20px 24px', borderRadius: 20,
+                          background: 'rgba(255,255,255,0.03)',
+                          border: `1px solid ${cfg.color}28`,
+                          display: 'flex', alignItems: 'center', gap: 20,
+                        }}
+                      >
+                        {/* Canal icon */}
+                        <div style={{
+                          width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+                          background: `${cfg.color}15`,
+                          border: `1px solid ${cfg.color}30`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: cfg.color,
+                        }}>
+                          {canalIcon[notif.canal] || <MailIcon />}
+                        </div>
+
+                        {/* Info */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+                            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
+                              {notif.destinatario}
+                            </p>
+                            <span style={{
+                              fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 20,
+                              background: cfg.bg, color: cfg.color,
+                              border: `1px solid ${cfg.color}30`,
+                            }}>
+                              {cfg.label}
+                            </span>
+                          </div>
+                          <p style={{ fontSize: 14, color: 'var(--muted)' }}>
+                            Alerta #{notif.alerta} · Canal: {notif.canal.toUpperCase()}
+                          </p>
+                        </div>
+
+                        {/* Fecha */}
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          {notif.enviada_en ? (
+                            <>
+                              <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>
+                                {new Date(notif.enviada_en).toLocaleDateString('es-CR')}
+                              </p>
+                              <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+                                {new Date(notif.enviada_en).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </>
+                          ) : (
+                            <p style={{ fontSize: 14, color: 'var(--muted)' }}>Pendiente</p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
+              </div>
+            )}
+          </GlowingCard>
+        </motion.div>
       </div>
-    </main>
+    </div>
   )
 }
