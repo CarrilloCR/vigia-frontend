@@ -7,14 +7,10 @@ export const metadata: Metadata = {
   description: 'Monitoreo inteligente de KPIs para clínicas médicas',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <body>
+    <html lang="es" data-theme="dark">
+      <body style={{ margin: 0, padding: 0, minHeight: '100vh' }}>
         <ThemeProvider>
           {children}
         </ThemeProvider>

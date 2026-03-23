@@ -4,16 +4,83 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../store/auth'
 import api from '../lib/axios'
-import Input from '../components/ui/Input'
-import Button from '../components/ui/Button'
+import Aurora from '../components/reactbits/Aurora'
+import GlowingCard from '../components/reactbits/GlowingCard'
+import AnimatedInput from '../components/reactbits/AnimatedInput'
 import ThemeToggle from '../components/ui/ThemeToggle'
-import Particles from '../components/ui/Particles'
+
+const ShieldIcon = () => (
+  <svg width="26" height="26" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+)
+const BoltIcon = () => (
+  <svg width="18" height="18" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+  </svg>
+)
+const AiIcon = () => (
+  <svg width="18" height="18" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+  </svg>
+)
+const ChartIcon = () => (
+  <svg width="18" height="18" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <line x1="18" y1="20" x2="18" y2="10"/>
+    <line x1="12" y1="20" x2="12" y2="4"/>
+    <line x1="6" y1="20" x2="6" y2="14"/>
+  </svg>
+)
+const BellIcon = () => (
+  <svg width="18" height="18" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+  </svg>
+)
+const MailIcon = () => (
+  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+  </svg>
+)
+const LockIcon = () => (
+  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <rect x="3" y="11" width="18" height="11" rx="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+)
+const UserIcon = () => (
+  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+)
+const HospitalIcon = () => (
+  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <polyline points="9,22 9,12 15,12 15,22"/>
+  </svg>
+)
+const AlertIcon = () => (
+  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+)
+
+const features = [
+  { icon: <BoltIcon />, title: 'Detección en tiempo real', desc: 'Anomalías detectadas automáticamente en tus KPIs' },
+  { icon: <AiIcon />, title: 'IA integrada con Claude', desc: 'Recomendaciones contextuales e inteligentes' },
+  { icon: <ChartIcon />, title: '8 KPIs médicos especializados', desc: 'Métricas clínicas monitoreadas 24/7' },
+  { icon: <BellIcon />, title: 'Notificaciones instantáneas', desc: 'Alertas por email cuando algo cambia' },
+]
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const router = useRouter()
   const { setAuth, isAuthenticated } = useAuthStore()
 
@@ -27,223 +94,334 @@ export default function AuthPage() {
   }, [isAuthenticated, router])
 
   const handleLogin = async () => {
-    if (!loginData.email || !loginData.password) {
-      setError('Completa todos los campos.')
-      return
-    }
-    setLoading(true)
-    setError('')
+    if (!loginData.email || !loginData.password) return setError('Completa todos los campos.')
+    setLoading(true); setError('')
     try {
       const res = await api.post('/auth/login/', loginData)
       setAuth(res.data.user, res.data.tokens.access, res.data.tokens.refresh)
       router.push('/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.error || 'Error al iniciar sesión.')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   const handleRegister = async () => {
-    if (!registerData.nombre || !registerData.email || !registerData.password || !registerData.nombre_clinica) {
-      setError('Completa todos los campos.')
-      return
-    }
-    if (registerData.password !== registerData.confirmar) {
-      setError('Las contraseñas no coinciden.')
-      return
-    }
-    setLoading(true)
-    setError('')
+    if (!registerData.nombre || !registerData.email || !registerData.password || !registerData.nombre_clinica)
+      return setError('Completa todos los campos.')
+    if (registerData.password !== registerData.confirmar)
+      return setError('Las contraseñas no coinciden.')
+    setLoading(true); setError('')
     try {
       const res = await api.post('/auth/register/', {
-        nombre: registerData.nombre,
-        email: registerData.email,
-        password: registerData.password,
-        nombre_clinica: registerData.nombre_clinica,
+        nombre: registerData.nombre, email: registerData.email,
+        password: registerData.password, nombre_clinica: registerData.nombre_clinica,
       })
       setAuth(res.data.user, res.data.tokens.access, res.data.tokens.refresh)
       router.push('/dashboard')
     } catch (err: any) {
       setError(err.response?.data?.error || 'Error al crear la cuenta.')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center relative overflow-hidden"
-      style={{ backgroundColor: 'var(--void)' }}>
+    <div style={{
+      width: '100vw', minHeight: '100vh',
+      backgroundColor: 'var(--void)',
+      display: 'flex', position: 'relative', overflow: 'hidden',
+    }}>
+      <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={1.2} speed={0.35} />
 
-      <Particles />
+      {/* Grid */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.04,
+        backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)',
+        backgroundSize: '48px 48px',
+      }} />
 
       {/* Theme toggle */}
-      <div className="absolute top-6 right-6">
+      <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 20 }}>
         <ThemeToggle />
       </div>
 
-      {/* Card */}
+      {/* LEFT PANEL */}
       <motion.div
-        initial={{ opacity: 0, y: 24, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="w-full max-w-md mx-4 glass rounded-3xl p-8 relative z-10"
-        style={{ boxShadow: '0 25px 50px rgba(0,0,0,0.4)' }}
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        style={{
+          width: '50%', minHeight: '100vh',
+          flexDirection: 'column', justifyContent: 'center',
+          padding: '80px 40px 80px 80px',
+          position: 'relative', zIndex: 10,
+        }}
+        className="hidden lg:flex"
       >
         {/* Logo */}
-        <div className="text-center mb-8">
-          <motion.div
-            animate={{ boxShadow: ['0 0 20px rgba(155,142,196,0.3)', '0 0 40px rgba(155,142,196,0.6)', '0 0 20px rgba(155,142,196,0.3)'] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}
-          >
-            <span className="text-white text-2xl font-bold font-display">V</span>
-          </motion.div>
-          <h1 className="text-3xl font-bold font-display" style={{ color: 'var(--text)' }}>Vigía</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>Sistema de Alertas Inteligentes</p>
-        </div>
+        <motion.div
+          style={{
+            width: 72, height: 72, borderRadius: 20,
+            background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 36,
+          }}
+          animate={{ boxShadow: ['0 0 25px rgba(155,142,196,0.4)', '0 0 55px rgba(155,142,196,0.7)', '0 0 25px rgba(155,142,196,0.4)'] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        >
+          <ShieldIcon />
+        </motion.div>
 
-        {/* Mode tabs */}
-        <div className="flex rounded-xl p-1 mb-6" style={{ backgroundColor: 'var(--surface)' }}>
-          {(['login', 'register'] as const).map((m) => (
-            <motion.button
-              key={m}
-              onClick={() => { setMode(m); setError(''); setSuccess('') }}
-              className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
-              style={{
-                backgroundColor: mode === m ? 'var(--primary)' : 'transparent',
-                color: mode === m ? 'white' : 'var(--muted)',
-              }}
-              whileTap={{ scale: 0.98 }}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="font-display"
+          style={{ fontSize: 72, fontWeight: 800, color: 'var(--text)', lineHeight: 1, letterSpacing: -3, marginBottom: 20 }}
+        >
+          Vigía
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          style={{ fontSize: 18, color: 'var(--muted)', lineHeight: 1.7, marginBottom: 56 }}
+        >
+          Sistema de Alertas Inteligentes<br />para Clínicas Médicas
+        </motion.p>
+
+        {/* Features */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {features.map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.55 + i * 0.1 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 16 }}
             >
-              {m === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
-            </motion.button>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                background: 'rgba(155,142,196,0.1)', border: '1px solid rgba(155,142,196,0.22)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {f.icon}
+              </div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{f.title}</p>
+                <p style={{ fontSize: 13, color: 'var(--muted)' }}>{f.desc}</p>
+              </div>
+            </motion.div>
           ))}
         </div>
+      </motion.div>
 
-        {/* Forms */}
-        <AnimatePresence mode="wait">
-          {mode === 'login' ? (
-            <motion.div
-              key="login"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-4"
-            >
-              <Input
-                label="Correo electrónico"
-                type="email"
-                value={loginData.email}
-                onChange={(v) => setLoginData({ ...loginData, email: v })}
-                placeholder="admin@clinica.com"
-                icon="📧"
-              />
-              <Input
-                label="Contraseña"
-                type="password"
-                value={loginData.password}
-                onChange={(v) => setLoginData({ ...loginData, password: v })}
-                placeholder="••••••••"
-                icon="🔒"
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="register"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-4"
-            >
-              <Input
-                label="Nombre completo"
-                value={registerData.nombre}
-                onChange={(v) => setRegisterData({ ...registerData, nombre: v })}
-                placeholder="Dr. Juan Pérez"
-                icon="👤"
-              />
-              <Input
-                label="Correo electrónico"
-                type="email"
-                value={registerData.email}
-                onChange={(v) => setRegisterData({ ...registerData, email: v })}
-                placeholder="admin@clinica.com"
-                icon="📧"
-              />
-              <Input
-                label="Nombre de la clínica"
-                value={registerData.nombre_clinica}
-                onChange={(v) => setRegisterData({ ...registerData, nombre_clinica: v })}
-                placeholder="Clínica San José"
-                icon="🏥"
-              />
-              <Input
-                label="Contraseña"
-                type="password"
-                value={registerData.password}
-                onChange={(v) => setRegisterData({ ...registerData, password: v })}
-                placeholder="Mínimo 8 caracteres"
-                icon="🔒"
-              />
-              <Input
-                label="Confirmar contraseña"
-                type="password"
-                value={registerData.confirmar}
-                onChange={(v) => setRegisterData({ ...registerData, confirmar: v })}
-                placeholder="Repite tu contraseña"
-                icon="🔒"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* RIGHT PANEL */}
+      <div style={{
+        width: '50%', minHeight: '100vh',
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'flex-start',
+        padding: '60px 60px 60px 40px',
+        position: 'relative', zIndex: 10,
+      }}
+        className="w-full lg:w-1/2"
+      >
+        <div style={{ width: '100%', maxWidth: 500 }}>
+          <GlowingCard className="p-10">
 
-        {/* Error/Success */}
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-4 px-4 py-3 rounded-xl text-sm"
+            {/* Mobile logo */}
+            <div className="flex lg:hidden" style={{ alignItems: 'center', gap: 12, marginBottom: 32 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 14,
+                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <ShieldIcon />
+              </div>
+              <div>
+                <p className="font-display" style={{ fontWeight: 700, fontSize: 18, color: 'var(--text)' }}>Vigía</p>
+                <p style={{ fontSize: 12, color: 'var(--muted)' }}>Alertas Inteligentes</p>
+              </div>
+            </div>
+
+            {/* Title */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={mode + 'title'}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                style={{ marginBottom: 32 }}
+              >
+                <h2 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+                  {mode === 'login' ? 'Bienvenido de vuelta' : 'Crear cuenta'}
+                </h2>
+                <p style={{ fontSize: 14, color: 'var(--muted)' }}>
+                  {mode === 'login' ? 'Ingresa tus credenciales para continuar' : 'Completa el formulario para comenzar'}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Tabs */}
+            <div style={{
+              display: 'flex', background: 'rgba(255,255,255,0.03)',
+              border: '1px solid var(--border)', borderRadius: 14,
+              padding: 4, marginBottom: 32,
+            }}>
+              {(['login', 'register'] as const).map((m) => (
+                <motion.button
+                  key={m}
+                  onClick={() => { setMode(m); setError('') }}
+                  style={{
+                    flex: 1, padding: '12px 0', borderRadius: 11,
+                    fontSize: 14, fontWeight: 500, cursor: 'pointer',
+                    border: 'none', background: 'transparent', position: 'relative',
+                    overflow: 'hidden', color: mode === m ? 'white' : 'var(--muted)',
+                  }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  {mode === m && (
+                    <motion.div
+                      layoutId="tab"
+                      style={{
+                        position: 'absolute', inset: 0, borderRadius: 11,
+                        background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                      }}
+                      transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                    />
+                  )}
+                  <span style={{ position: 'relative', zIndex: 1 }}>
+                    {m === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Forms */}
+            <AnimatePresence mode="wait">
+              {mode === 'login' ? (
+                <motion.div
+                  key="login"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+                >
+                  <AnimatedInput
+                    label="Correo electrónico" type="email"
+                    value={loginData.email}
+                    onChange={v => setLoginData({ ...loginData, email: v })}
+                    placeholder="admin@clinica.com" icon={<MailIcon />}
+                  />
+                  <AnimatedInput
+                    label="Contraseña" type="password"
+                    value={loginData.password}
+                    onChange={v => setLoginData({ ...loginData, password: v })}
+                    placeholder="••••••••" icon={<LockIcon />}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="register"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+                >
+                  <AnimatedInput
+                    label="Nombre completo" value={registerData.nombre}
+                    onChange={v => setRegisterData({ ...registerData, nombre: v })}
+                    placeholder="Dr. Juan Pérez" icon={<UserIcon />}
+                  />
+                  <AnimatedInput
+                    label="Correo electrónico" type="email" value={registerData.email}
+                    onChange={v => setRegisterData({ ...registerData, email: v })}
+                    placeholder="admin@clinica.com" icon={<MailIcon />}
+                  />
+                  <AnimatedInput
+                    label="Nombre de la clínica" value={registerData.nombre_clinica}
+                    onChange={v => setRegisterData({ ...registerData, nombre_clinica: v })}
+                    placeholder="Clínica San José" icon={<HospitalIcon />}
+                  />
+                  <AnimatedInput
+                    label="Contraseña" type="password" value={registerData.password}
+                    onChange={v => setRegisterData({ ...registerData, password: v })}
+                    placeholder="Mínimo 8 caracteres" icon={<LockIcon />}
+                  />
+                  <AnimatedInput
+                    label="Confirmar contraseña" type="password" value={registerData.confirmar}
+                    onChange={v => setRegisterData({ ...registerData, confirmar: v })}
+                    placeholder="Repite tu contraseña" icon={<LockIcon />}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Error */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  style={{
+                    marginTop: 20, padding: '12px 16px', borderRadius: 12,
+                    background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.3)',
+                    color: 'var(--danger)', fontSize: 13,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  <AlertIcon /> {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Button */}
+            <motion.button
+              onClick={mode === 'login' ? handleLogin : handleRegister}
+              disabled={loading}
+              whileHover={{ scale: loading ? 1 : 1.02 }}
+              whileTap={{ scale: loading ? 1 : 0.98 }}
               style={{
-                backgroundColor: 'rgba(232, 160, 196, 0.15)',
-                border: '1px solid rgba(232, 160, 196, 0.3)',
-                color: 'var(--danger)',
+                width: '100%', marginTop: 28, padding: '17px 0', borderRadius: 16,
+                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                color: 'white', fontSize: 15, fontWeight: 600,
+                border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: '0 8px 28px rgba(155,142,196,0.4)',
+                opacity: loading ? 0.7 : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}
             >
-              ⚠️ {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              {loading ? (
+                <>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}
+                  />
+                  Procesando...
+                </>
+              ) : mode === 'login' ? 'Ingresar al sistema' : 'Crear cuenta'}
+            </motion.button>
 
-        {/* Submit */}
-        <div className="mt-6">
-          <Button
-            fullWidth
-            size="lg"
-            loading={loading}
-            onClick={mode === 'login' ? handleLogin : handleRegister}
-          >
-            {mode === 'login' ? 'Ingresar al sistema' : 'Crear cuenta'}
-          </Button>
+            {/* Footer */}
+            <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)', marginTop: 24 }}>
+              {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
+              <motion.button
+                onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
+                whileHover={{ scale: 1.05 }}
+                style={{
+                  color: 'var(--primary)', fontWeight: 600,
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: 13,
+                }}
+              >
+                {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
+              </motion.button>
+            </p>
+          </GlowingCard>
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-xs mt-6" style={{ color: 'var(--muted)' }}>
-          {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
-          <button
-            onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
-            className="font-medium hover:opacity-80 transition-opacity"
-            style={{ color: 'var(--primary)' }}
-          >
-            {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
-          </button>
-        </p>
-      </motion.div>
-    </main>
+      </div>
+    </div>
   )
 }
