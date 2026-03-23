@@ -10,60 +10,60 @@ import AnimatedInput from '../components/reactbits/AnimatedInput'
 import ThemeToggle from '../components/ui/ThemeToggle'
 
 const ShieldIcon = () => (
-  <svg width="26" height="26" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="36" height="36" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
   </svg>
 )
 const BoltIcon = () => (
-  <svg width="18" height="18" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="22" height="22" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
   </svg>
 )
 const AiIcon = () => (
-  <svg width="18" height="18" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="22" height="22" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="3"/>
     <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
   </svg>
 )
 const ChartIcon = () => (
-  <svg width="18" height="18" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="22" height="22" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <line x1="18" y1="20" x2="18" y2="10"/>
     <line x1="12" y1="20" x2="12" y2="4"/>
     <line x1="6" y1="20" x2="6" y2="14"/>
   </svg>
 )
 const BellIcon = () => (
-  <svg width="18" height="18" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="22" height="22" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
   </svg>
 )
 const MailIcon = () => (
-  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
     <polyline points="22,6 12,13 2,6"/>
   </svg>
 )
 const LockIcon = () => (
-  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <rect x="3" y="11" width="18" height="11" rx="2"/>
     <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
   </svg>
 )
 const UserIcon = () => (
-  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
     <circle cx="12" cy="7" r="4"/>
   </svg>
 )
 const HospitalIcon = () => (
-  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
     <polyline points="9,22 9,12 15,12 15,22"/>
   </svg>
 )
 const AlertIcon = () => (
-  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="10"/>
     <line x1="12" y1="8" x2="12" y2="12"/>
     <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -125,9 +125,12 @@ export default function AuthPage() {
 
   return (
     <div style={{
-      width: '100vw', minHeight: '100vh',
+      width: '100vw',
+      minHeight: '100vh',
       backgroundColor: 'var(--void)',
-      display: 'flex', position: 'relative', overflow: 'hidden',
+      display: 'flex',
+      position: 'relative',
+      overflow: 'hidden',
     }}>
       <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={1.2} speed={0.35} />
 
@@ -139,7 +142,7 @@ export default function AuthPage() {
       }} />
 
       {/* Theme toggle */}
-      <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 20 }}>
+      <div style={{ position: 'absolute', top: 28, right: 28, zIndex: 20 }}>
         <ThemeToggle />
       </div>
 
@@ -149,22 +152,25 @@ export default function AuthPage() {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
         style={{
-          width: '50%', minHeight: '100vh',
-          flexDirection: 'column', justifyContent: 'center',
-          padding: '80px 40px 80px 80px',
-          position: 'relative', zIndex: 10,
+          width: '48%',
+          minHeight: '100vh',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: '80px 48px 80px 80px',
+          position: 'relative',
+          zIndex: 10,
         }}
         className="hidden lg:flex"
       >
         {/* Logo */}
         <motion.div
           style={{
-            width: 72, height: 72, borderRadius: 20,
+            width: 88, height: 88, borderRadius: 24,
             background: 'linear-gradient(135deg, var(--primary), var(--accent))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: 36,
+            marginBottom: 40,
           }}
-          animate={{ boxShadow: ['0 0 25px rgba(155,142,196,0.4)', '0 0 55px rgba(155,142,196,0.7)', '0 0 25px rgba(155,142,196,0.4)'] }}
+          animate={{ boxShadow: ['0 0 30px rgba(155,142,196,0.4)', '0 0 65px rgba(155,142,196,0.75)', '0 0 30px rgba(155,142,196,0.4)'] }}
           transition={{ duration: 3, repeat: Infinity }}
         >
           <ShieldIcon />
@@ -175,7 +181,7 @@ export default function AuthPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="font-display"
-          style={{ fontSize: 72, fontWeight: 800, color: 'var(--text)', lineHeight: 1, letterSpacing: -3, marginBottom: 20 }}
+          style={{ fontSize: 86, fontWeight: 800, color: 'var(--text)', lineHeight: 1, letterSpacing: -4, marginBottom: 24 }}
         >
           Vigía
         </motion.h1>
@@ -184,31 +190,32 @@ export default function AuthPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
-          style={{ fontSize: 18, color: 'var(--muted)', lineHeight: 1.7, marginBottom: 56 }}
+          style={{ fontSize: 20, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 64 }}
         >
           Sistema de Alertas Inteligentes<br />para Clínicas Médicas
         </motion.p>
 
         {/* Features */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
           {features.map((f, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, x: -24 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.55 + i * 0.1 }}
-              style={{ display: 'flex', alignItems: 'center', gap: 16 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 20 }}
             >
               <div style={{
-                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                background: 'rgba(155,142,196,0.1)', border: '1px solid rgba(155,142,196,0.22)',
+                width: 54, height: 54, borderRadius: 16, flexShrink: 0,
+                background: 'rgba(155,142,196,0.1)',
+                border: '1px solid rgba(155,142,196,0.22)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {f.icon}
               </div>
               <div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{f.title}</p>
-                <p style={{ fontSize: 13, color: 'var(--muted)' }}>{f.desc}</p>
+                <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{f.title}</p>
+                <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.5 }}>{f.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -217,29 +224,32 @@ export default function AuthPage() {
 
       {/* RIGHT PANEL */}
       <div style={{
-        width: '50%', minHeight: '100vh',
-        display: 'flex', alignItems: 'center',
+        width: '52%',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'flex-start',
-        padding: '60px 60px 60px 40px',
-        position: 'relative', zIndex: 10,
+        padding: '60px 80px 60px 48px',
+        position: 'relative',
+        zIndex: 10,
       }}
-        className="w-full lg:w-1/2"
+        className="w-full lg:w-[52%]"
       >
-        <div style={{ width: '100%', maxWidth: 500 }}>
-          <GlowingCard className="p-10">
+        <div style={{ width: '100%', maxWidth: 540 }}>
+          <GlowingCard className="p-12">
 
             {/* Mobile logo */}
-            <div className="flex lg:hidden" style={{ alignItems: 'center', gap: 12, marginBottom: 32 }}>
+            <div className="flex lg:hidden" style={{ alignItems: 'center', gap: 14, marginBottom: 36 }}>
               <div style={{
-                width: 44, height: 44, borderRadius: 14,
+                width: 52, height: 52, borderRadius: 16,
                 background: 'linear-gradient(135deg, var(--primary), var(--accent))',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <ShieldIcon />
               </div>
               <div>
-                <p className="font-display" style={{ fontWeight: 700, fontSize: 18, color: 'var(--text)' }}>Vigía</p>
-                <p style={{ fontSize: 12, color: 'var(--muted)' }}>Alertas Inteligentes</p>
+                <p className="font-display" style={{ fontWeight: 700, fontSize: 22, color: 'var(--text)' }}>Vigía</p>
+                <p style={{ fontSize: 13, color: 'var(--muted)' }}>Alertas Inteligentes</p>
               </div>
             </div>
 
@@ -250,12 +260,12 @@ export default function AuthPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                style={{ marginBottom: 32 }}
+                style={{ marginBottom: 36 }}
               >
-                <h2 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+                <h2 className="font-display" style={{ fontSize: 32, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
                   {mode === 'login' ? 'Bienvenido de vuelta' : 'Crear cuenta'}
                 </h2>
-                <p style={{ fontSize: 14, color: 'var(--muted)' }}>
+                <p style={{ fontSize: 16, color: 'var(--muted)' }}>
                   {mode === 'login' ? 'Ingresa tus credenciales para continuar' : 'Completa el formulario para comenzar'}
                 </p>
               </motion.div>
@@ -263,19 +273,21 @@ export default function AuthPage() {
 
             {/* Tabs */}
             <div style={{
-              display: 'flex', background: 'rgba(255,255,255,0.03)',
-              border: '1px solid var(--border)', borderRadius: 14,
-              padding: 4, marginBottom: 32,
+              display: 'flex',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid var(--border)',
+              borderRadius: 16, padding: 5, marginBottom: 36,
             }}>
               {(['login', 'register'] as const).map((m) => (
                 <motion.button
                   key={m}
                   onClick={() => { setMode(m); setError('') }}
                   style={{
-                    flex: 1, padding: '12px 0', borderRadius: 11,
-                    fontSize: 14, fontWeight: 500, cursor: 'pointer',
-                    border: 'none', background: 'transparent', position: 'relative',
-                    overflow: 'hidden', color: mode === m ? 'white' : 'var(--muted)',
+                    flex: 1, padding: '14px 0', borderRadius: 13,
+                    fontSize: 15, fontWeight: 500, cursor: 'pointer',
+                    border: 'none', background: 'transparent',
+                    position: 'relative', overflow: 'hidden',
+                    color: mode === m ? 'white' : 'var(--muted)',
                   }}
                   whileTap={{ scale: 0.97 }}
                 >
@@ -283,7 +295,7 @@ export default function AuthPage() {
                     <motion.div
                       layoutId="tab"
                       style={{
-                        position: 'absolute', inset: 0, borderRadius: 11,
+                        position: 'absolute', inset: 0, borderRadius: 13,
                         background: 'linear-gradient(135deg, var(--primary), var(--accent))',
                       }}
                       transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
@@ -305,7 +317,7 @@ export default function AuthPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.2 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 22 }}
                 >
                   <AnimatedInput
                     label="Correo electrónico" type="email"
@@ -327,7 +339,7 @@ export default function AuthPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
                 >
                   <AnimatedInput
                     label="Nombre completo" value={registerData.nombre}
@@ -366,10 +378,11 @@ export default function AuthPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   style={{
-                    marginTop: 20, padding: '12px 16px', borderRadius: 12,
-                    background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.3)',
-                    color: 'var(--danger)', fontSize: 13,
-                    display: 'flex', alignItems: 'center', gap: 8,
+                    marginTop: 22, padding: '14px 18px', borderRadius: 14,
+                    background: 'rgba(232,160,196,0.1)',
+                    border: '1px solid rgba(232,160,196,0.3)',
+                    color: 'var(--danger)', fontSize: 14,
+                    display: 'flex', alignItems: 'center', gap: 10,
                   }}
                 >
                   <AlertIcon /> {error}
@@ -384,13 +397,13 @@ export default function AuthPage() {
               whileHover={{ scale: loading ? 1 : 1.02 }}
               whileTap={{ scale: loading ? 1 : 0.98 }}
               style={{
-                width: '100%', marginTop: 28, padding: '17px 0', borderRadius: 16,
+                width: '100%', marginTop: 32, padding: '19px 0', borderRadius: 18,
                 background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                color: 'white', fontSize: 15, fontWeight: 600,
+                color: 'white', fontSize: 16, fontWeight: 600,
                 border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 8px 28px rgba(155,142,196,0.4)',
+                boxShadow: '0 10px 32px rgba(155,142,196,0.45)',
                 opacity: loading ? 0.7 : 1,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               }}
             >
               {loading ? (
@@ -398,7 +411,7 @@ export default function AuthPage() {
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}
+                    style={{ width: 20, height: 20, border: '2.5px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }}
                   />
                   Procesando...
                 </>
@@ -406,14 +419,15 @@ export default function AuthPage() {
             </motion.button>
 
             {/* Footer */}
-            <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)', marginTop: 24 }}>
+            <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--muted)', marginTop: 28 }}>
               {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
               <motion.button
                 onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
                 whileHover={{ scale: 1.05 }}
                 style={{
                   color: 'var(--primary)', fontWeight: 600,
-                  background: 'none', border: 'none', cursor: 'pointer', fontSize: 13,
+                  background: 'none', border: 'none',
+                  cursor: 'pointer', fontSize: 14,
                 }}
               >
                 {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
