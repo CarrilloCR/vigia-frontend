@@ -9,11 +9,6 @@ import GlowingCard from '../components/reactbits/GlowingCard'
 import AnimatedInput from '../components/reactbits/AnimatedInput'
 import ThemeToggle from '../components/ui/ThemeToggle'
 
-const ShieldIcon = () => (
-  <svg width="36" height="36" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-  </svg>
-)
 const BoltIcon = () => (
   <svg width="22" height="22" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
@@ -125,12 +120,9 @@ export default function AuthPage() {
 
   return (
     <div style={{
-      width: '100vw',
-      minHeight: '100vh',
+      width: '100vw', minHeight: '100vh',
       backgroundColor: 'var(--void)',
-      display: 'flex',
-      position: 'relative',
-      overflow: 'hidden',
+      display: 'flex', position: 'relative', overflow: 'hidden',
     }}>
       <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={1.2} speed={0.35} />
 
@@ -152,28 +144,20 @@ export default function AuthPage() {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
         style={{
-          width: '48%',
-          minHeight: '100vh',
-          flexDirection: 'column',
-          justifyContent: 'center',
+          width: '48%', minHeight: '100vh',
+          flexDirection: 'column', justifyContent: 'center',
           padding: '80px 48px 80px 80px',
-          position: 'relative',
-          zIndex: 10,
+          position: 'relative', zIndex: 10,
         }}
         className="hidden lg:flex"
       >
         {/* Logo */}
         <motion.div
-          style={{
-            width: 88, height: 88, borderRadius: 24,
-            background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: 40,
-          }}
-          animate={{ boxShadow: ['0 0 30px rgba(155,142,196,0.4)', '0 0 65px rgba(155,142,196,0.75)', '0 0 30px rgba(155,142,196,0.4)'] }}
+          style={{ marginBottom: 40 }}
+          animate={{ filter: ['drop-shadow(0 0 20px rgba(155,142,196,0.4))', 'drop-shadow(0 0 50px rgba(155,142,196,0.75))', 'drop-shadow(0 0 20px rgba(155,142,196,0.4))'] }}
           transition={{ duration: 3, repeat: Infinity }}
         >
-          <ShieldIcon />
+          <img src="/logo.svg" alt="Vigía" style={{ width: 160, height: 160 }} />
         </motion.div>
 
         <motion.h1
@@ -224,14 +208,11 @@ export default function AuthPage() {
 
       {/* RIGHT PANEL */}
       <div style={{
-        width: '52%',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
+        width: '52%', minHeight: '100vh',
+        display: 'flex', alignItems: 'center',
         justifyContent: 'flex-start',
         padding: '60px 80px 60px 48px',
-        position: 'relative',
-        zIndex: 10,
+        position: 'relative', zIndex: 10,
       }}
         className="w-full lg:w-[52%]"
       >
@@ -240,13 +221,7 @@ export default function AuthPage() {
 
             {/* Mobile logo */}
             <div className="flex lg:hidden" style={{ alignItems: 'center', gap: 14, marginBottom: 36 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 16,
-                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <ShieldIcon />
-              </div>
+              <img src="/logo.svg" alt="Vigía" style={{ width: 52, height: 52 }} />
               <div>
                 <p className="font-display" style={{ fontWeight: 700, fontSize: 22, color: 'var(--text)' }}>Vigía</p>
                 <p style={{ fontSize: 13, color: 'var(--muted)' }}>Alertas Inteligentes</p>
@@ -273,10 +248,8 @@ export default function AuthPage() {
 
             {/* Tabs */}
             <div style={{
-              display: 'flex',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid var(--border)',
-              borderRadius: 16, padding: 5, marginBottom: 36,
+              display: 'flex', background: 'rgba(255,255,255,0.03)',
+              border: '1px solid var(--border)', borderRadius: 16, padding: 5, marginBottom: 36,
             }}>
               {(['login', 'register'] as const).map((m) => (
                 <motion.button
