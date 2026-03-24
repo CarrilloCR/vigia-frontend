@@ -321,6 +321,25 @@ export default function DashboardPage() {
                 )}
               </AnimatePresence>
             </motion.button>
+            <motion.button
+              onClick={() => router.push('/dashboard/kpis')}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '13px 22px', borderRadius: 14,
+              background: 'var(--glass)', backdropFilter: 'blur(20px)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)', fontSize: 15, fontWeight: 500, cursor: 'pointer',
+              }}
+            >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+              KPIs
+          </motion.button>
 
             <ThemeToggle />
 
