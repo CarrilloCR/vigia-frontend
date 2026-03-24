@@ -13,14 +13,14 @@ import GlowingCard from '../../../components/reactbits/GlowingCard'
 import ThemeToggle from '../../../components/ui/ThemeToggle'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
-  tasa_cancelacion: { label: 'Cancelación', color: '#E8A0C4', unit: '%' },
-  tasa_noshow:      { label: 'No-Show',     color: '#C4B5E8', unit: '%' },
-  ingresos_dia:     { label: 'Ingresos',    color: '#A0C4B5', unit: '$' },
-  ticket_promedio:  { label: 'Ticket Prom', color: '#9B8EC4', unit: '$' },
-  pacientes_nuevos: { label: 'Pac. Nuevos', color: '#7C6FBF', unit: '%' },
-  retencion_90:     { label: 'Retención',   color: '#C4B5E8', unit: '%' },
-  nps:              { label: 'NPS',         color: '#A0C4B5', unit: '' },
-  citas_reagendadas:{ label: 'Reagendadas', color: '#E8A0C4', unit: '%' },
+  tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
+  tasa_noshow:       { label: 'No-Show',       color: '#C4B5E8', unit: '%' },
+  ingresos_dia:      { label: 'Ingresos',      color: '#A0C4B5', unit: '$' },
+  ticket_promedio:   { label: 'Ticket Prom',   color: '#9B8EC4', unit: '$' },
+  pacientes_nuevos:  { label: 'Pac. Nuevos',   color: '#7C6FBF', unit: '%' },
+  retencion_90:      { label: 'Retención',     color: '#BBA8E8', unit: '%' },
+  nps:               { label: 'NPS',           color: '#A8C4A0', unit: ''  },
+  citas_reagendadas: { label: 'Reagendadas',   color: '#E8C4A0', unit: '%' },
 }
 
 interface KPIData {
@@ -73,7 +73,7 @@ export default function KPIsPage() {
 
   const fetchKPIs = async () => {
     try {
-      const res = await api.get(`/kpis/?clinica=${clinicaId}`)
+      const res = await api.get(`/kpis/?clinica=${clinicaId}&horas=2`)
       const data = res.data.results || res.data
 
       const agrupado: Record<string, KPIData[]> = {}
@@ -101,15 +101,25 @@ export default function KPIsPage() {
   const datosActuales = kpiData[kpiSeleccionado] || []
   const cfg = kpiConfig[kpiSeleccionado]
 
-  const datosComparar = Object.entries(kpiData)
-    .filter(([tipo]) => ['tasa_cancelacion', 'tasa_noshow', 'pacientes_nuevos'].includes(tipo))
-    .reduce((acc, [tipo, datos]) => {
-      datos.forEach((d, i) => {
-        if (!acc[i]) acc[i] = { fecha: d.fecha }
-        acc[i][kpiConfig[tipo]?.label || tipo] = d.valor
+  const datosComparar = (() => {
+    const tiposDisponibles = Object.keys(kpiData).filter(tipo => kpiData[tipo].length > 0)
+    if (tiposDisponibles.length === 0) return []
+    const maxLen = Math.max(...tiposDisponibles.map(t => kpiData[t].length))
+    const result: any[] = []
+    for (let i = 0; i < maxLen; i++) {
+      const punto: any = {}
+      tiposDisponibles.forEach(tipo => {
+        const datos = kpiData[tipo]
+        const d = datos[i] || datos[datos.length - 1]
+        if (d) {
+          punto.fecha = d.fecha
+          punto[kpiConfig[tipo]?.label || tipo] = d.valor
+        }
       })
-      return acc
-    }, [] as any[])
+      if (punto.fecha) result.push(punto)
+    }
+    return result
+  })()
 
   const ultimoValor = datosActuales.length > 0 ? datosActuales[datosActuales.length - 1].valor : 0
   const primerValor = datosActuales.length > 0 ? datosActuales[0].valor : 0
@@ -117,11 +127,7 @@ export default function KPIsPage() {
   const subiendo = ultimoValor >= primerValor
 
   return (
-    <div style={{
-      width: '100vw', minHeight: '100vh',
-      backgroundColor: 'var(--void)',
-      position: 'relative', overflow: 'hidden',
-    }}>
+    <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
         <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={0.4} speed={0.1} />
       </div>
@@ -162,7 +168,6 @@ export default function KPIsPage() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Vista toggle */}
             <div style={{
               display: 'flex', background: 'var(--glass)', backdropFilter: 'blur(20px)',
               border: '1px solid var(--border)', borderRadius: 14, padding: 4,
@@ -189,7 +194,7 @@ export default function KPIsPage() {
                     />
                   )}
                   <span style={{ position: 'relative', zIndex: 1 }}>
-                    {v === 'individual' ? 'Individual' : 'Comparar'}
+                    {v === 'individual' ? 'Individual' : 'Comparar todo'}
                   </span>
                 </motion.button>
               ))}
@@ -209,7 +214,6 @@ export default function KPIsPage() {
             const datos = kpiData[tipo] || []
             const ultimo = datos.length > 0 ? datos[datos.length - 1].valor : null
             const isSelected = kpiSeleccionado === tipo
-
             return (
               <motion.button
                 key={tipo}
@@ -241,9 +245,7 @@ export default function KPIsPage() {
                 <span style={{ position: 'relative', zIndex: 1 }}>
                   {cfg.label}
                   {ultimo !== null && (
-                    <span style={{ marginLeft: 8, opacity: 0.8 }}>
-                      {cfg.unit}{ultimo}
-                    </span>
+                    <span style={{ marginLeft: 8, opacity: 0.8 }}>{cfg.unit}{ultimo}</span>
                   )}
                 </span>
               </motion.button>
@@ -253,8 +255,6 @@ export default function KPIsPage() {
 
         {vista === 'individual' ? (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24 }}>
-
-            {/* GRÁFICA PRINCIPAL */}
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <GlowingCard className="p-8">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
@@ -262,18 +262,13 @@ export default function KPIsPage() {
                     <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                       {cfg?.label}
                     </h2>
-                    <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>
-                      Últimos 20 registros
-                    </p>
+                    <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>Últimos 20 registros</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p className="font-display" style={{ fontSize: 36, fontWeight: 800, color: cfg?.color, lineHeight: 1 }}>
                       {cfg?.unit}{ultimoValor}
                     </p>
-                    <p style={{
-                      fontSize: 14, fontWeight: 500, marginTop: 4,
-                      color: subiendo ? 'var(--success)' : 'var(--danger)',
-                    }}>
+                    <p style={{ fontSize: 14, fontWeight: 500, marginTop: 4, color: subiendo ? 'var(--success)' : 'var(--danger)' }}>
                       {subiendo ? '↑' : '↓'} {Math.abs(Number(cambio))}%
                     </p>
                   </div>
@@ -316,7 +311,6 @@ export default function KPIsPage() {
               </GlowingCard>
             </motion.div>
 
-            {/* STATS SIDEBAR */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {Object.entries(kpiConfig).map(([tipo, c], i) => {
                 const datos = kpiData[tipo] || []
@@ -324,7 +318,6 @@ export default function KPIsPage() {
                 const penultimo = datos.length > 1 ? datos[datos.length - 2].valor : 0
                 const diff = penultimo !== 0 ? ((ultimo - penultimo) / penultimo * 100).toFixed(1) : '0'
                 const up = ultimo >= penultimo
-
                 return (
                   <motion.div
                     key={tipo}
@@ -349,7 +342,6 @@ export default function KPIsPage() {
                     <p className="font-display" style={{ fontSize: 24, fontWeight: 700, color: c.color, marginTop: 6 }}>
                       {c.unit}{ultimo}
                     </p>
-                    {/* Mini sparkline */}
                     <div style={{ marginTop: 10, height: 2, borderRadius: 2, background: `${c.color}20` }}>
                       <motion.div
                         initial={{ width: 0 }}
@@ -364,11 +356,10 @@ export default function KPIsPage() {
             </div>
           </div>
         ) : (
-          /* VISTA COMPARAR */
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
             <GlowingCard className="p-8">
               <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 28 }}>
-                Comparativa de KPIs
+                Comparativa de todos los KPIs
               </h2>
               {datosComparar.length === 0 ? (
                 <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -382,17 +373,20 @@ export default function KPIsPage() {
                     <YAxis stroke="var(--muted)" tick={{ fontSize: 12 }} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ color: 'var(--muted)', fontSize: 13 }} />
-                    {['Cancelación', 'No-Show', 'Pac. Nuevos'].map((nombre, i) => (
-                      <Line
-                        key={nombre}
-                        type="monotone"
-                        dataKey={nombre}
-                        stroke={['#E8A0C4', '#C4B5E8', '#7C6FBF'][i]}
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 4 }}
-                      />
-                    ))}
+                    {Object.entries(kpiConfig)
+                      .filter(([tipo]) => kpiData[tipo]?.length > 0)
+                      .map(([tipo, cfg]) => (
+                        <Line
+                          key={tipo}
+                          type="monotone"
+                          dataKey={cfg.label}
+                          stroke={cfg.color}
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4 }}
+                        />
+                      ))
+                    }
                   </LineChart>
                 </ResponsiveContainer>
               )}
