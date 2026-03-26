@@ -7,6 +7,7 @@ import { Alerta } from '../../types'
 import { useAuthStore } from '../../store/auth'
 import Aurora from '../../components/reactbits/Aurora'
 import GlowingCard from '../../components/reactbits/GlowingCard'
+import CountUp from '../../components/reactbits/CountUp'
 import ThemeToggle from '../../components/ui/ThemeToggle'
 
 const kpiLabel: Record<string, string> = {
@@ -80,11 +81,23 @@ const CheckCircleIcon = () => (
     <polyline points="22 4 12 14.01 9 11.01"/>
   </svg>
 )
-const AlertTriangleIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-    <line x1="12" y1="9" x2="12" y2="13"/>
-    <line x1="12" y1="17" x2="12.01" y2="17"/>
+const HistoryIcon = () => (
+  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <polyline points="1 4 1 10 7 10"/>
+    <path d="M3.51 15a9 9 0 1 0 .49-4.84"/>
+  </svg>
+)
+const EyeOffIcon = () => (
+  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+)
+const ResolveAllIcon = () => (
+  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <polyline points="20 6 9 17 4 12"/>
+    <polyline points="20 12 9 23 4 18"/>
   </svg>
 )
 
@@ -151,17 +164,25 @@ function MedicosList({ clinicaId }: { clinicaId: number }) {
   )
 }
 
+type FiltroSeveridad = 'todas' | 'critica' | 'alta' | 'media' | 'baja'
+type VistaAlertas = 'activas' | 'historial'
+
 export default function DashboardPage() {
   const [alertas, setAlertas] = useState<Alerta[]>([])
+  const [historial, setHistorial] = useState<Alerta[]>([])
   const [loading, setLoading] = useState(true)
   const [motorLoading, setMotorLoading] = useState(false)
   const [notifPendientes, setNotifPendientes] = useState(0)
+  const [filtroSev, setFiltroSev] = useState<FiltroSeveridad>('todas')
+  const [vistaAlertas, setVistaAlertas] = useState<VistaAlertas>('activas')
+  const [ocultarTodas, setOcultarTodas] = useState(false)
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
   const clinicaId = user?.clinica_id || 1
 
   useEffect(() => {
     fetchAlertas()
+    fetchHistorial()
     fetchNotifs()
   }, [])
 
@@ -170,6 +191,13 @@ export default function DashboardPage() {
       const res = await api.get('/alertas/?estado=activa')
       setAlertas(res.data.results || res.data)
     } catch { } finally { setLoading(false) }
+  }
+
+  const fetchHistorial = async () => {
+    try {
+      const res = await api.get('/alertas/')
+      setHistorial(res.data.results || res.data)
+    } catch { }
   }
 
   const fetchNotifs = async () => {
@@ -184,6 +212,7 @@ export default function DashboardPage() {
     try {
       await api.post('/motor/ejecutar/', { clinica_id: clinicaId })
       await fetchAlertas()
+      await fetchHistorial()
       await fetchNotifs()
     } catch { } finally { setMotorLoading(false) }
   }
@@ -192,6 +221,15 @@ export default function DashboardPage() {
     try {
       await api.post(`/alertas/${id}/marcar_revisada/`)
       setAlertas(prev => prev.filter(a => a.id !== id))
+      await fetchHistorial()
+    } catch { }
+  }
+
+  const resolverTodas = async () => {
+    try {
+      await api.post('/alertas/resolver_todas/', { clinica_id: clinicaId })
+      await fetchAlertas()
+      await fetchHistorial()
     } catch { }
   }
 
@@ -211,47 +249,46 @@ export default function DashboardPage() {
     }
   }
 
+  const alertasFiltradas = alertas.filter(a =>
+    filtroSev === 'todas' || a.severidad === filtroSev
+  )
+
+  const historialFiltrado = historial.filter(a =>
+    filtroSev === 'todas' || a.severidad === filtroSev
+  )
+
+  const listaActual = vistaAlertas === 'activas' ? alertasFiltradas : historialFiltrado
+
   const stats = [
-    { label: 'Total activas',  value: alertas.length, color: '#9B8EC4', bg: 'rgba(155,142,196,0.12)' },
-    { label: 'Críticas',       value: alertas.filter(a => a.severidad === 'critica').length, color: '#E8A0C4', bg: 'rgba(232,160,196,0.12)' },
-    { label: 'Altas',          value: alertas.filter(a => a.severidad === 'alta').length, color: '#C4B5E8', bg: 'rgba(196,181,232,0.12)' },
-    { label: 'Medias / Bajas', value: alertas.filter(a => ['media', 'baja'].includes(a.severidad)).length, color: '#A0C4B5', bg: 'rgba(160,196,181,0.12)' },
+    { label: 'Total activas',  value: alertas.length, color: '#9B8EC4', filtro: 'todas' as FiltroSeveridad },
+    { label: 'Críticas',       value: alertas.filter(a => a.severidad === 'critica').length, color: '#E8A0C4', filtro: 'critica' as FiltroSeveridad },
+    { label: 'Altas',          value: alertas.filter(a => a.severidad === 'alta').length, color: '#C4B5E8', filtro: 'alta' as FiltroSeveridad },
+    { label: 'Medias / Bajas', value: alertas.filter(a => ['media', 'baja'].includes(a.severidad)).length, color: '#A0C4B5', filtro: 'media' as FiltroSeveridad },
+  ]
+
+  const filtros: { key: FiltroSeveridad; label: string; color: string }[] = [
+    { key: 'todas',   label: 'Todas',   color: '#9B8EC4' },
+    { key: 'critica', label: 'Críticas', color: '#E8A0C4' },
+    { key: 'alta',    label: 'Altas',   color: '#9B8EC4' },
+    { key: 'media',   label: 'Medias',  color: '#C4B5E8' },
+    { key: 'baja',    label: 'Bajas',   color: '#A0C4B5' },
   ]
 
   return (
-    <div style={{
-      width: '100vw', minHeight: '100vh',
-      backgroundColor: 'var(--void)',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      {/* Fondo */}
+    <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
         <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={0.5} speed={0.15} />
       </div>
-      <div style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        opacity: 0.03,
-        backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)',
-        backgroundSize: '48px 48px',
-      }} />
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03, backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
 
-      {/* Contenido */}
       <div style={{ position: 'relative', zIndex: 10, padding: '32px 48px', maxWidth: 1600, margin: '0 auto' }}>
 
         {/* HEADER */}
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48 }}
-        >
-          {/* Brand */}
+        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <motion.div
-              style={{
-                width: 52, height: 52, borderRadius: 16,
-                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
+              style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               animate={{ boxShadow: ['0 0 16px rgba(155,142,196,0.3)', '0 0 36px rgba(155,142,196,0.6)', '0 0 16px rgba(155,142,196,0.3)'] }}
               transition={{ duration: 3, repeat: Infinity }}
             >
@@ -263,103 +300,45 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Motor */}
-            <motion.button
-              onClick={ejecutarMotor}
-              disabled={motorLoading}
-              whileHover={{ scale: motorLoading ? 1 : 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '13px 22px', borderRadius: 14,
-                background: 'linear-gradient(135deg, #7AB5A3, var(--success))',
-                color: 'white', fontSize: 15, fontWeight: 600,
-                border: 'none', cursor: motorLoading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 20px rgba(160,196,181,0.3)',
-                opacity: motorLoading ? 0.7 : 1,
-              }}
-            >
-              {motorLoading ? (
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%' }} />
-              ) : <BoltIcon />}
+            <motion.button onClick={ejecutarMotor} disabled={motorLoading}
+              whileHover={{ scale: motorLoading ? 1 : 1.03 }} whileTap={{ scale: 0.97 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, #7AB5A3, var(--success))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: motorLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 20px rgba(160,196,181,0.3)', opacity: motorLoading ? 0.7 : 1 }}>
+              {motorLoading ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%' }} /> : <BoltIcon />}
               {motorLoading ? 'Analizando...' : 'Ejecutar análisis'}
             </motion.button>
 
-            {/* Notificaciones */}
-            <motion.button
-              onClick={() => router.push('/dashboard/notificaciones')}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                position: 'relative', display: 'flex', alignItems: 'center', gap: 10,
-                padding: '13px 22px', borderRadius: 14,
-                background: 'var(--glass)', backdropFilter: 'blur(20px)',
-                border: '1px solid var(--border)',
-                color: 'var(--text)', fontSize: 15, fontWeight: 500, cursor: 'pointer',
-              }}
-            >
+            <motion.button onClick={() => router.push('/dashboard/notificaciones')}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 15, fontWeight: 500, cursor: 'pointer' }}>
               <BellIcon />
               Notificaciones
               <AnimatePresence>
                 {notifPendientes > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                    style={{
-                      position: 'absolute', top: -6, right: -6,
-                      minWidth: 22, height: 22, borderRadius: 11,
-                      background: 'var(--danger)', boxShadow: '0 0 12px rgba(232,160,196,0.6)',
-                      color: 'white', fontSize: 12, fontWeight: 700,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      padding: '0 6px',
-                    }}
-                  >
+                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    style={{ position: 'absolute', top: -6, right: -6, minWidth: 22, height: 22, borderRadius: 11, background: 'var(--danger)', boxShadow: '0 0 12px rgba(232,160,196,0.6)', color: 'white', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>
                     {notifPendientes}
                   </motion.span>
                 )}
               </AnimatePresence>
             </motion.button>
-            <motion.button
-              onClick={() => router.push('/dashboard/kpis')}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '13px 22px', borderRadius: 14,
-              background: 'var(--glass)', backdropFilter: 'blur(20px)',
-              border: '1px solid var(--border)',
-              color: 'var(--text)', fontSize: 15, fontWeight: 500, cursor: 'pointer',
-              }}
-            >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-            </svg>
+
+            <motion.button onClick={() => router.push('/dashboard/kpis')}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 15, fontWeight: 500, cursor: 'pointer' }}>
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
               KPIs
-          </motion.button>
+            </motion.button>
 
             <ThemeToggle />
 
-            {/* Logout */}
-            <motion.button
-              onClick={handleLogout}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '13px 20px', borderRadius: 14,
-                background: 'var(--glass)', backdropFilter: 'blur(20px)',
-                border: '1px solid var(--border)',
-                color: 'var(--muted)', fontSize: 15, fontWeight: 500, cursor: 'pointer',
-              }}
-            >
+            <motion.button onClick={handleLogout} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 20px', borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 15, fontWeight: 500, cursor: 'pointer' }}>
               <LogoutIcon /> Salir
             </motion.button>
 
-            {/* Fecha */}
             <div style={{ textAlign: 'right', marginLeft: 8 }}>
               <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)', textTransform: 'capitalize' }}>
                 {new Date().toLocaleDateString('es-CR', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -369,31 +348,27 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* STATS */}
+        {/* STATS — clickeables para filtrar */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
           {stats.map((s, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
+            <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+              onClick={() => { setFiltroSev(s.filtro); setVistaAlertas('activas'); setOcultarTodas(false) }}
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               style={{
-                padding: '28px 28px', borderRadius: 24,
-                background: 'var(--glass)', backdropFilter: 'blur(20px)',
-                border: '1px solid var(--border)',
-              }}
-            >
+                padding: '28px 28px', borderRadius: 24, cursor: 'pointer',
+                background: filtroSev === s.filtro ? `${s.color}18` : 'var(--glass)',
+                backdropFilter: 'blur(20px)',
+                border: `1px solid ${filtroSev === s.filtro ? s.color + '50' : 'var(--border)'}`,
+                transition: 'all 0.2s',
+              }}>
               <p className="font-display" style={{ fontSize: 48, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 10 }}>
-                {s.value}
+                <CountUp to={s.value} duration={1} />
               </p>
               <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
               <div style={{ marginTop: 16, height: 3, borderRadius: 4, background: `${s.color}20` }}>
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: s.value > 0 ? '100%' : '0%' }}
+                <motion.div initial={{ width: 0 }} animate={{ width: s.value > 0 ? '100%' : '0%' }}
                   transition={{ duration: 1, delay: i * 0.1 }}
-                  style={{ height: '100%', borderRadius: 4, background: s.color }}
-                />
+                  style={{ height: '100%', borderRadius: 4, background: s.color }} />
               </div>
             </motion.div>
           ))}
@@ -405,147 +380,172 @@ export default function DashboardPage() {
           {/* ALERTAS */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
             <GlowingCard className="p-8">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+
+              {/* Header alertas */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
-                  Alertas Activas
+                  {vistaAlertas === 'activas' ? 'Alertas Activas' : 'Historial de Alertas'}
                 </h2>
-                <span style={{
-                  fontSize: 14, fontWeight: 500, padding: '6px 16px', borderRadius: 20,
-                  background: 'rgba(155,142,196,0.12)', color: 'var(--primary)',
-                  border: '1px solid rgba(155,142,196,0.2)',
-                }}>
-                  {alertas.length} activas
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                    {listaActual.length} {vistaAlertas === 'activas' ? 'activas' : 'registros'}
+                  </span>
+                </div>
               </div>
 
+              {/* Controles */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+                {/* Vista tabs */}
+                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 12, padding: 3 }}>
+                  {(['activas', 'historial'] as const).map(v => (
+                    <motion.button key={v} onClick={() => setVistaAlertas(v)} whileTap={{ scale: 0.97 }}
+                      style={{ padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: vistaAlertas === v ? 'white' : 'var(--muted)' }}>
+                      {vistaAlertas === v && (
+                        <motion.div layoutId="alertaTab"
+                          style={{ position: 'absolute', inset: 0, borderRadius: 10, background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}
+                          transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
+                      )}
+                      <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {v === 'historial' && <HistoryIcon />}
+                        {v === 'activas' ? 'Activas' : 'Historial'}
+                      </span>
+                    </motion.button>
+                  ))}
+                </div>
+
+                {/* Filtros severidad */}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {filtros.map(f => (
+                    <motion.button key={f.key} onClick={() => setFiltroSev(f.key)}
+                      whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                      style={{
+                        padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                        cursor: 'pointer', border: 'none',
+                        background: filtroSev === f.key ? `${f.color}25` : 'rgba(255,255,255,0.03)',
+                        color: filtroSev === f.key ? f.color : 'var(--muted)',
+                        borderWidth: 1, borderStyle: 'solid',
+                        borderColor: filtroSev === f.key ? `${f.color}50` : 'var(--border)',
+                        transition: 'all 0.2s',
+                      }}>
+                      {f.label}
+                    </motion.button>
+                  ))}
+                </div>
+
+                {/* Acciones rápidas */}
+                {vistaAlertas === 'activas' && alertas.length > 0 && (
+                  <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+                    <motion.button
+                      onClick={() => setOcultarTodas(!ocultarTodas)}
+                      whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)', background: ocultarTodas ? 'rgba(155,142,196,0.15)' : 'rgba(255,255,255,0.03)', color: ocultarTodas ? 'var(--primary)' : 'var(--muted)' }}>
+                      <EyeOffIcon />
+                      {ocultarTodas ? 'Mostrar' : 'Ocultar'}
+                    </motion.button>
+                    <motion.button
+                      onClick={resolverTodas}
+                      whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid rgba(160,196,181,0.3)', background: 'rgba(160,196,181,0.08)', color: 'var(--success)' }}>
+                      <ResolveAllIcon />
+                      Resolver todas
+                    </motion.button>
+                  </div>
+                )}
+              </div>
+
+              {/* Lista */}
               {loading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {[1, 2, 3].map(i => (
-                    <motion.div key={i}
-                      animate={{ opacity: [0.3, 0.6, 0.3] }}
-                      transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-                      style={{ height: 100, borderRadius: 20, background: 'rgba(255,255,255,0.04)' }}
-                    />
+                    <motion.div key={i} animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+                      style={{ height: 100, borderRadius: 20, background: 'rgba(255,255,255,0.04)' }} />
                   ))}
                 </div>
-              ) : alertas.length === 0 ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  style={{ textAlign: 'center', padding: '64px 0' }}>
-                  <motion.div
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                    style={{ color: 'var(--success)', display: 'flex', justifyContent: 'center', marginBottom: 20 }}
-                  >
+              ) : ocultarTodas ? (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '48px 0' }}>
+                  <p style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 12 }}>Alertas ocultas</p>
+                  <motion.button onClick={() => setOcultarTodas(false)} whileHover={{ scale: 1.03 }}
+                    style={{ padding: '10px 24px', borderRadius: 12, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)', cursor: 'pointer', fontSize: 14 }}>
+                    Mostrar alertas
+                  </motion.button>
+                </motion.div>
+              ) : listaActual.length === 0 ? (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '64px 0' }}>
+                  <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 3, repeat: Infinity }}
+                    style={{ color: 'var(--success)', display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
                     <CheckCircleIcon />
                   </motion.div>
                   <p className="font-display" style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
-                    Todo en orden
+                    {vistaAlertas === 'historial' ? 'Sin historial' : 'Todo en orden'}
                   </p>
-                  <p style={{ fontSize: 15, color: 'var(--muted)' }}>No hay alertas activas en este momento</p>
+                  <p style={{ fontSize: 15, color: 'var(--muted)' }}>
+                    {vistaAlertas === 'historial' ? 'No hay alertas en el historial' : 'No hay alertas activas en este momento'}
+                  </p>
                 </motion.div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 620, overflowY: 'auto', paddingRight: 4 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 600, overflowY: 'auto', paddingRight: 4 }}>
                   <AnimatePresence>
-                    {alertas.map((a, i) => {
+                    {listaActual.map((a, i) => {
                       const cfg = sevConfig[a.severidad] || sevConfig.baja
                       return (
-                        <motion.div
-                          key={a.id}
+                        <motion.div key={a.id}
                           initial={{ opacity: 0, x: -16 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 16, height: 0 }}
-                          transition={{ delay: i * 0.04 }}
-                          style={{
-                            padding: '20px 22px', borderRadius: 20,
-                            background: 'rgba(255,255,255,0.03)',
-                            border: `1px solid ${cfg.color}30`,
-                          }}
-                        >
+                          transition={{ delay: i * 0.03 }}
+                          style={{ padding: '20px 22px', borderRadius: 20, background: 'rgba(255,255,255,0.03)', border: `1px solid ${cfg.color}30` }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-                            {/* Dot */}
                             <div style={{ marginTop: 6, flexShrink: 0 }}>
-                              <div style={{
-                                width: 10, height: 10, borderRadius: '50%',
-                                background: cfg.color,
-                                boxShadow: `0 0 8px ${cfg.color}`,
-                              }} />
+                              <div style={{ width: 10, height: 10, borderRadius: '50%', background: cfg.color, boxShadow: `0 0 8px ${cfg.color}` }} />
                             </div>
-
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-                                <span style={{
-                                  fontSize: 13, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
-                                  background: `${cfg.color}18`, color: cfg.color,
-                                  border: `1px solid ${cfg.color}30`,
-                                }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, padding: '4px 12px', borderRadius: 20, background: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}30` }}>
                                   {cfg.label}
                                 </span>
                                 <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
                                   {kpiLabel[a.tipo_kpi] || a.tipo_kpi}
                                 </span>
+                                {vistaAlertas === 'historial' && (
+                                  <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'var(--muted)', border: '1px solid var(--border)', marginLeft: 'auto' }}>
+                                    {a.estado}
+                                  </span>
+                                )}
                               </div>
-
                               <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text)', opacity: 0.85, marginBottom: 12 }}>
                                 {a.mensaje}
                               </p>
-
                               {a.recomendacion && (
-                                <div style={{
-                                  padding: '12px 16px', borderRadius: 14, marginBottom: 12,
-                                  background: 'rgba(155,142,196,0.07)',
-                                  border: '1px solid rgba(155,142,196,0.15)',
-                                  fontSize: 13, lineHeight: 1.7, color: 'var(--glow)',
-                                }}>
+                                <div style={{ padding: '12px 16px', borderRadius: 14, marginBottom: 12, background: 'rgba(155,142,196,0.07)', border: '1px solid rgba(155,142,196,0.15)', fontSize: 13, lineHeight: 1.7, color: 'var(--glow)' }}>
                                   {a.recomendacion}
                                 </div>
                               )}
-
                               <p style={{ fontSize: 13, color: 'var(--muted)' }}>
                                 {new Date(a.creada_en).toLocaleString('es-CR')}
                               </p>
                             </div>
 
-                            {/* Acciones */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
-                              <motion.button
-                                onClick={() => marcarRevisada(a.id)}
-                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                style={{
-                                  display: 'flex', alignItems: 'center', gap: 8,
-                                  padding: '10px 16px', borderRadius: 12,
-                                  background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                                  color: 'white', fontSize: 13, fontWeight: 600,
-                                  border: 'none', cursor: 'pointer',
-                                }}
-                              >
-                                <CheckIcon /> Revisada
-                              </motion.button>
-                              <div style={{ display: 'flex', gap: 8 }}>
-                                <motion.button
-                                  onClick={() => marcarFeedback(a.id, true)}
+                            {vistaAlertas === 'activas' && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+                                <motion.button onClick={() => marcarRevisada(a.id)}
                                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                  style={{
-                                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                    padding: '9px 12px', borderRadius: 12,
-                                    background: 'rgba(160,196,181,0.12)', color: 'var(--success)',
-                                    fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer',
-                                  }}
-                                >
-                                  <ThumbUpIcon /> Útil
+                                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+                                  <CheckIcon /> Revisada
                                 </motion.button>
-                                <motion.button
-                                  onClick={() => marcarFeedback(a.id, false)}
-                                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                  style={{
-                                    padding: '9px 12px', borderRadius: 12,
-                                    background: 'rgba(255,255,255,0.04)', color: 'var(--muted)',
-                                    border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                                  }}
-                                >
-                                  <ThumbDownIcon />
-                                </motion.button>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                  <motion.button onClick={() => marcarFeedback(a.id, true)}
+                                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', borderRadius: 12, background: 'rgba(160,196,181,0.12)', color: 'var(--success)', fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}>
+                                    <ThumbUpIcon /> Útil
+                                  </motion.button>
+                                  <motion.button onClick={() => marcarFeedback(a.id, false)}
+                                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                    style={{ padding: '9px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', color: 'var(--muted)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                    <ThumbDownIcon />
+                                  </motion.button>
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                         </motion.div>
                       )
@@ -558,41 +558,20 @@ export default function DashboardPage() {
 
           {/* SIDEBAR */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
             {/* User card */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.32 }}
-              style={{
-                padding: '24px 24px', borderRadius: 24,
-                background: 'linear-gradient(135deg, rgba(155,142,196,0.15), rgba(124,111,191,0.08))',
-                border: '1px solid rgba(155,142,196,0.25)',
-              }}
-            >
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
+              style={{ padding: '24px', borderRadius: 24, background: 'linear-gradient(135deg, rgba(155,142,196,0.15), rgba(124,111,191,0.08))', border: '1px solid rgba(155,142,196,0.25)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-                <div style={{
-                  width: 52, height: 52, borderRadius: 16, flexShrink: 0,
-                  background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontSize: 18, fontWeight: 700,
-                }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, flexShrink: 0, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 18, fontWeight: 700 }}>
                   {user?.nombre?.[0] || 'U'}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {user?.nombre || 'Usuario'}
-                  </p>
-                  <p style={{ fontSize: 13, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {user?.email}
-                  </p>
+                  <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.nombre || 'Usuario'}</p>
+                  <p style={{ fontSize: 13, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</p>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{
-                  fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20,
-                  background: 'rgba(155,142,196,0.2)', color: 'var(--primary)',
-                }}>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.2)', color: 'var(--primary)' }}>
                   {user?.rol || 'admin'}
                 </span>
                 <span style={{ fontSize: 13, color: 'var(--muted)' }}>{user?.clinica_nombre}</span>
@@ -600,43 +579,18 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Médicos */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              style={{ flex: 1 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} style={{ flex: 1 }}>
               <GlowingCard className="p-8">
-                <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
-                  Médicos
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Médicos</h2>
+                  <motion.button onClick={() => router.push('/dashboard/medicos')}
+                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    style={{ fontSize: 12, padding: '5px 12px', borderRadius: 20, background: 'rgba(155,142,196,0.1)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)', cursor: 'pointer' }}>
+                    Ver todos
+                  </motion.button>
+                </div>
                 <MedicosList clinicaId={clinicaId} />
               </GlowingCard>
-            </motion.div>
-
-            {/* Alert summary */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.48 }}
-              style={{
-                padding: '20px 24px', borderRadius: 24,
-                background: 'rgba(232,160,196,0.06)',
-                border: '1px solid rgba(232,160,196,0.2)',
-                display: 'flex', alignItems: 'center', gap: 16,
-              }}
-            >
-              <div style={{ color: 'var(--danger)', flexShrink: 0 }}>
-                <AlertTriangleIcon />
-              </div>
-              <div>
-                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
-                  {alertas.filter(a => a.severidad === 'critica').length} alertas críticas
-                </p>
-                <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-                  Requieren atención inmediata
-                </p>
-              </div>
             </motion.div>
           </div>
         </div>
