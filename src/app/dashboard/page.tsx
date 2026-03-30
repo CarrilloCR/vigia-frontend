@@ -341,6 +341,18 @@ export default function DashboardPage() {
               KPIs
             </motion.button>
 
+            <motion.button onClick={() => router.push('/dashboard/configuracion')}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              style={{display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 15, fontWeight: 500, cursor: 'pointer' }}>
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"> 
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+            </svg>
+            Configuración
+          </motion.button>
+
+          
+
             <ThemeToggle />
 
             <motion.button onClick={handleLogout} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
