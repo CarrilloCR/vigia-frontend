@@ -81,24 +81,26 @@ export default function MedicoPage() {
 
   useEffect(() => { fetchData() }, [id])
 
-  const fetchData = async () => {
-    try {
-      const [medicoRes, alertasRes, kpisRes, citasRes] = await Promise.all([
-        api.get(`/medicos/${id}/`),
-        api.get(`/alertas/?medico=${id}`),
-        api.get(`/kpis/?medico=${id}&horas=48`),
-        api.get(`/citas/?medico=${id}`),
-      ])
-      setMedico(medicoRes.data)
-      setAlertas(alertasRes.data.results || alertasRes.data)
-      setKpis(kpisRes.data.results || kpisRes.data)
-      setCitas((citasRes.data.results || citasRes.data).slice(0, 50))
-    } catch (err) {
-      console.error('Error:', err)
-    } finally {
-      setLoading(false)
-    }
+const fetchData = async () => {
+  try {
+    const medicoRes = await api.get(`/medicos/${id}/`)
+    const med = medicoRes.data
+    setMedico(med)
+
+    const [alertasRes, kpisRes, citasRes] = await Promise.all([
+      api.get(`/alertas/?clinica=${med.clinica}`),
+      api.get(`/kpis/?clinica=${med.clinica}&horas=48`),  // KPIs de la clínica
+      api.get(`/citas/?medico=${id}`),
+    ])
+    setAlertas(alertasRes.data.results || alertasRes.data)
+    setKpis(kpisRes.data.results || kpisRes.data)
+    setCitas((citasRes.data.results || citasRes.data).slice(0, 50))
+  } catch (err) {
+    console.error('Error:', err)
+  } finally {
+    setLoading(false)
   }
+}
 
   // Estadísticas reales desde citas
   const totalCitas = citas.length
