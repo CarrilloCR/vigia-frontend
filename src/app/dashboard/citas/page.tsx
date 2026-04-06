@@ -4,10 +4,12 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
+import { useToastStore } from '../../../store/toast'
 import Aurora from '../../../components/reactbits/Aurora'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import CountUp from '../../../components/reactbits/CountUp'
+import ConfirmModal from '../../../components/ui/ConfirmModal'
 import ThemeToggle from '../../../components/ui/ThemeToggle'
 
 interface Cita {
@@ -70,11 +72,13 @@ export default function CitasPage() {
   const [busqueda, setBusqueda] = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroMedico, setFiltroMedico] = useState('todos')
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number }>({ open: false, id: 0 })
   const [form, setForm] = useState({
     paciente: '', medico: '', fecha_hora_agendada: '', estado: 'agendada',
   })
   const router = useRouter()
   const { user } = useAuthStore()
+  const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
 
   useEffect(() => { fetchData() }, [clinicaId])
@@ -89,7 +93,9 @@ export default function CitasPage() {
       setCitas(citasRes.data.results || citasRes.data)
       setMedicos(medicosRes.data.results || medicosRes.data)
       setPacientes(pacientesRes.data.results || pacientesRes.data)
-    } catch { } finally { setLoading(false) }
+    } catch {
+      toast.error('Error al cargar citas', 'No se pudo obtener la información de citas.')
+    } finally { setLoading(false) }
   }
 
   const handleGuardar = async () => {
@@ -108,15 +114,22 @@ export default function CitasPage() {
       await fetchData()
       setShowModal(false)
       setForm({ paciente: '', medico: '', fecha_hora_agendada: '', estado: 'agendada' })
-    } catch { setError('Error al agendar la cita.') } finally { setSaving(false) }
+      toast.success('Cita agendada', 'La cita fue creada exitosamente.')
+    } catch {
+      setError('Error al agendar la cita.')
+      toast.error('Error al agendar', 'No se pudo crear la cita. Verifica los datos.')
+    } finally { setSaving(false) }
   }
 
-  const handleEliminar = async (id: number) => {
-    if (!confirm('¿Eliminar esta cita?')) return
+  const handleEliminar = async () => {
     try {
-      await api.delete(`/citas/${id}/`)
+      await api.delete(`/citas/${confirmDelete.id}/`)
       await fetchData()
-    } catch { }
+      toast.success('Cita eliminada', 'La cita fue eliminada correctamente.')
+    } catch {
+      toast.error('Error al eliminar', 'No se pudo eliminar la cita.')
+    }
+    setConfirmDelete({ open: false, id: 0 })
   }
 
   const citasFiltradas = citas.filter(c => {
@@ -134,14 +147,15 @@ export default function CitasPage() {
     { label: 'Canceladas', value: citas.filter(c => c.estado === 'cancelada').length, color: '#E8A0C4' },
   ]
 
-  // Relación médico-paciente — top médicos por citas
+  // Relación médico-paciente — basado en citas filtradas
+  const citasParaSidebar = filtroMedico !== 'todos' || filtroEstado !== 'todos' || busqueda ? citasFiltradas : citas
   const citasPorMedico = medicos.map(m => ({
     medico: m,
-    total: citas.filter(c => c.medico === m.id).length,
-    completadas: citas.filter(c => c.medico === m.id && c.estado === 'completada').length,
-    ingresos: citas.filter(c => c.medico === m.id && c.estado === 'completada')
+    total: citasParaSidebar.filter(c => c.medico === m.id).length,
+    completadas: citasParaSidebar.filter(c => c.medico === m.id && c.estado === 'completada').length,
+    ingresos: citasParaSidebar.filter(c => c.medico === m.id && c.estado === 'completada')
       .reduce((acc, c) => acc + parseFloat(c.ingreso_generado || '0'), 0),
-  })).sort((a, b) => b.total - a.total)
+  })).filter(m => m.total > 0).sort((a, b) => b.total - a.total)
 
   return (
     <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
@@ -193,7 +207,7 @@ export default function CitasPage() {
         </FadeContent>
 
         {/* GRID PRINCIPAL */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: citasPorMedico.length > 0 ? '1fr 340px' : '1fr', gap: 24 }}>
 
           {/* LISTA CITAS */}
           <div>
@@ -310,7 +324,7 @@ export default function CitasPage() {
                             </span>
 
                             {/* Eliminar */}
-                            <motion.button onClick={() => handleEliminar(c.id)}
+                            <motion.button onClick={() => setConfirmDelete({ open: true, id: c.id })}
                               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                               style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(232,160,196,0.08)', border: '1px solid rgba(232,160,196,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
                               <TrashIcon />
@@ -332,7 +346,7 @@ export default function CitasPage() {
                 Médicos por citas
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {citasPorMedico.filter(m => m.total > 0).map((m, i) => {
+                {citasPorMedico.map((m, i) => {
                   const maxCitas = citasPorMedico[0]?.total || 1
                   const pct = (m.total / maxCitas) * 100
                   return (
@@ -378,7 +392,7 @@ export default function CitasPage() {
                     </motion.div>
                   )
                 })}
-                {citasPorMedico.filter(m => m.total > 0).length === 0 && (
+                {citasPorMedico.length === 0 && (
                   <p style={{ fontSize: 14, color: 'var(--muted)', textAlign: 'center', padding: '24px 0' }}>Sin datos de médicos</p>
                 )}
               </div>
@@ -469,6 +483,16 @@ export default function CitasPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={confirmDelete.open}
+        title="Eliminar cita"
+        message="¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={handleEliminar}
+        onCancel={() => setConfirmDelete({ open: false, id: 0 })}
+      />
     </div>
   )
 }

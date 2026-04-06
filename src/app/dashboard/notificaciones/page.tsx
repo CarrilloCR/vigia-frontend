@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { Notificacion } from '../../../types'
+import { useToastStore } from '../../../store/toast'
 import Aurora from '../../../components/reactbits/Aurora'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import ThemeToggle from '../../../components/ui/ThemeToggle'
@@ -72,8 +73,8 @@ export default function NotificacionesPage() {
     try {
       const res = await api.get('/notificaciones/')
       setNotificaciones(res.data.results || res.data)
-    } catch (err) {
-      console.error('Error cargando notificaciones:', err)
+    } catch {
+      useToastStore.getState().error('Error al cargar notificaciones', 'No se pudieron obtener las notificaciones.')
     } finally {
       setLoading(false)
     }

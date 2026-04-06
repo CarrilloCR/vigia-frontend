@@ -1,6 +1,7 @@
 'use client'
 import { useEffect } from 'react'
 import { useThemeStore } from '../store/theme'
+import ToastContainer from './ui/ToastContainer'
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { isDark } = useThemeStore()
@@ -17,5 +18,10 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     }
   }, [])
 
-  return <>{children}</>
+  return (
+    <>
+      {children}
+      <ToastContainer />
+    </>
+  )
 }

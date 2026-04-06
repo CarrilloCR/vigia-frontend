@@ -8,6 +8,7 @@ import {
 } from 'recharts'
 import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
+import { useToastStore } from '../../../store/toast'
 import Aurora from '../../../components/reactbits/Aurora'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import ThemeToggle from '../../../components/ui/ThemeToggle'
@@ -78,6 +79,7 @@ export default function KPIsPage() {
   const [horas, setHoras] = useState(2)
   const router = useRouter()
   const { user } = useAuthStore()
+  const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
 
   useEffect(() => {
@@ -107,8 +109,8 @@ export default function KPIsPage() {
       })
 
       setKpiData(agrupado)
-    } catch (err) {
-      console.error('Error cargando KPIs:', err)
+    } catch {
+      toast.error('Error al cargar KPIs', 'No se pudieron obtener los datos de indicadores.')
     } finally {
       setLoading(false)
       setRefreshing(false)

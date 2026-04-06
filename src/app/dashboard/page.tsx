@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/axios'
 import { Alerta } from '../../types'
 import { useAuthStore } from '../../store/auth'
+import { useToastStore } from '../../store/toast'
 import Aurora from '../../components/reactbits/Aurora'
 import GlowingCard from '../../components/reactbits/GlowingCard'
 import CountUp from '../../components/reactbits/CountUp'
@@ -115,7 +116,9 @@ function MedicosList({ clinicaId }: { clinicaId: number }) {
   useEffect(() => {
     api.get(`/medicos/?clinica=${clinicaId}`).then(res => {
       setMedicos(res.data.results || res.data)
-    }).catch(() => {})
+    }).catch(() => {
+      useToastStore.getState().error('Error al cargar médicos', 'No se pudo obtener la lista de médicos.')
+    })
   }, [clinicaId])
 
   if (medicos.length === 0) return (
@@ -179,6 +182,7 @@ export default function DashboardPage() {
   const [feedbackDado, setFeedbackDado] = useState<Record<number, 'util' | 'no_util'>>({})
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
+  const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
 
   useEffect(() => {
@@ -191,21 +195,27 @@ export default function DashboardPage() {
     try {
       const res = await api.get('/alertas/?estado=activa')
       setAlertas(res.data.results || res.data)
-    } catch { } finally { setLoading(false) }
+    } catch {
+      toast.error('Error al cargar alertas', 'No se pudieron obtener las alertas activas.')
+    } finally { setLoading(false) }
   }
 
   const fetchHistorial = async () => {
     try {
       const res = await api.get('/alertas/')
       setHistorial(res.data.results || res.data)
-    } catch { }
+    } catch {
+      toast.error('Error al cargar historial', 'No se pudo obtener el historial de alertas.')
+    }
   }
 
   const fetchNotifs = async () => {
     try {
       const res = await api.get('/notificaciones/?estado=pendiente')
       setNotifPendientes((res.data.results || res.data).length)
-    } catch { }
+    } catch {
+      toast.warning('Notificaciones no disponibles', 'No se pudo verificar notificaciones pendientes.')
+    }
   }
 
   const ejecutarMotor = async () => {
@@ -215,7 +225,10 @@ export default function DashboardPage() {
       await fetchAlertas()
       await fetchHistorial()
       await fetchNotifs()
-    } catch { } finally { setMotorLoading(false) }
+      toast.success('Análisis completado', 'El motor de alertas se ejecutó correctamente.')
+    } catch {
+      toast.error('Error en el análisis', 'No se pudo ejecutar el motor de alertas. Intenta de nuevo.')
+    } finally { setMotorLoading(false) }
   }
 
   const marcarRevisada = async (id: number) => {
@@ -223,7 +236,10 @@ export default function DashboardPage() {
       await api.post(`/alertas/${id}/marcar_revisada/`)
       setAlertas(prev => prev.filter(a => a.id !== id))
       await fetchHistorial()
-    } catch { }
+      toast.success('Alerta revisada', 'La alerta fue marcada como revisada.')
+    } catch {
+      toast.error('Error', 'No se pudo marcar la alerta como revisada.')
+    }
   }
 
   const resolverTodas = async () => {
@@ -231,7 +247,10 @@ export default function DashboardPage() {
       await api.post('/alertas/resolver_todas/', { clinica_id: clinicaId })
       await fetchAlertas()
       await fetchHistorial()
-    } catch { }
+      toast.success('Alertas resueltas', 'Todas las alertas fueron marcadas como resueltas.')
+    } catch {
+      toast.error('Error', 'No se pudieron resolver todas las alertas.')
+    }
   }
 
   const marcarFeedback = async (alertaId: number, fueUtil: boolean) => {
@@ -243,7 +262,10 @@ export default function DashboardPage() {
         comentario: ''
       })
       setFeedbackDado(prev => ({ ...prev, [alertaId]: fueUtil ? 'util' : 'no_util' }))
-    } catch { }
+      toast.info('Feedback registrado', 'Gracias por tu valoración.')
+    } catch {
+      toast.error('Error', 'No se pudo registrar el feedback.')
+    }
   }
 
   const handleLogout = async () => {
@@ -252,6 +274,7 @@ export default function DashboardPage() {
       await api.post('/auth/logout/', { refresh: refreshToken })
     } catch { } finally {
       clearAuth()
+      toast.info('Sesión cerrada', 'Has cerrado sesión correctamente.')
       router.push('/')
     }
   }
@@ -292,7 +315,7 @@ export default function DashboardPage() {
 
         {/* HEADER */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48 }}>
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48, flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <motion.div
               style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -307,7 +330,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <motion.button onClick={ejecutarMotor} disabled={motorLoading}
               whileHover={{ scale: motorLoading ? 1 : 1.03 }} whileTap={{ scale: 0.97 }}
               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, #7AB5A3, var(--success))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: motorLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 20px rgba(160,196,181,0.3)', opacity: motorLoading ? 0.7 : 1 }}>

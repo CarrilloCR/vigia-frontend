@@ -4,11 +4,13 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
+import { useToastStore } from '../../../store/toast'
 import Aurora from '../../../components/reactbits/Aurora'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import CountUp from '../../../components/reactbits/CountUp'
+import ConfirmModal from '../../../components/ui/ConfirmModal'
 import ThemeToggle from '../../../components/ui/ThemeToggle'
 
 interface Medico {
@@ -89,12 +91,14 @@ export default function MedicosPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [fotoPreview, setFotoPreview] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number; name: string }>({ open: false, id: 0, name: '' })
   const [form, setForm] = useState({
     nombre: '', apellido: '', especialidad: 'Medicina General',
     email: '', telefono: '', descripcion: '', foto_url: '', fecha_ingreso: '',
   })
   const router = useRouter()
   const { user } = useAuthStore()
+  const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
 
   useEffect(() => { fetchMedicos() }, [clinicaId])
@@ -103,7 +107,9 @@ export default function MedicosPage() {
     try {
       const res = await api.get(`/medicos/?clinica=${clinicaId}`)
       setMedicos(res.data.results || res.data)
-    } catch { } finally { setLoading(false) }
+    } catch {
+      toast.error('Error al cargar médicos', 'No se pudo obtener la lista de médicos.')
+    } finally { setLoading(false) }
   }
 
   const resetForm = () => {
@@ -149,15 +155,22 @@ export default function MedicosPage() {
       }
       await fetchMedicos()
       setShowModal(false); resetForm(); setEditando(null)
-    } catch { setError('Error al guardar. Verifica los datos.') } finally { setSaving(false) }
+      toast.success(editando ? 'Médico actualizado' : 'Médico creado', editando ? 'Los datos del médico fueron actualizados.' : 'El médico fue registrado exitosamente.')
+    } catch {
+      setError('Error al guardar. Verifica los datos.')
+      toast.error('Error al guardar', 'No se pudo guardar el médico. Verifica los datos ingresados.')
+    } finally { setSaving(false) }
   }
 
-  const handleEliminar = async (id: number) => {
-    if (!confirm('¿Desactivar este médico?')) return
+  const handleEliminar = async () => {
     try {
-      await api.patch(`/medicos/${id}/`, { activo: false })
+      await api.patch(`/medicos/${confirmDelete.id}/`, { activo: false })
       await fetchMedicos()
-    } catch { }
+      toast.success('Médico desactivado', 'El médico fue desactivado correctamente.')
+    } catch {
+      toast.error('Error al desactivar', 'No se pudo desactivar el médico.')
+    }
+    setConfirmDelete({ open: false, id: 0, name: '' })
   }
 
   const medicosFiltrados = medicos.filter(m => {
@@ -302,7 +315,7 @@ export default function MedicosPage() {
                               style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(155,142,196,0.12)', border: '1px solid rgba(155,142,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
                               <EditIcon />
                             </motion.button>
-                            <motion.button onClick={() => handleEliminar(m.id)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                            <motion.button onClick={() => setConfirmDelete({ open: true, id: m.id, name: `Dr. ${m.nombre} ${m.apellido}` })} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                               style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)' }}>
                               <TrashIcon />
                             </motion.button>
@@ -453,6 +466,16 @@ export default function MedicosPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={confirmDelete.open}
+        title="Desactivar médico"
+        message={`¿Estás seguro de que deseas desactivar a ${confirmDelete.name}? El médico dejará de aparecer en el sistema.`}
+        confirmLabel="Desactivar"
+        variant="warning"
+        onConfirm={handleEliminar}
+        onCancel={() => setConfirmDelete({ open: false, id: 0, name: '' })}
+      />
     </div>
   )
 }

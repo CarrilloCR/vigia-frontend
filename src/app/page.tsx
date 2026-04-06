@@ -4,9 +4,11 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../store/auth'
 import api from '../lib/axios'
+import { useToastStore } from '../store/toast'
 import Aurora from '../components/reactbits/Aurora'
 import GlowingCard from '../components/reactbits/GlowingCard'
 import AnimatedInput from '../components/reactbits/AnimatedInput'
+import PasswordRequirements, { validatePassword } from '../components/ui/PasswordRequirements'
 import ThemeToggle from '../components/ui/ThemeToggle'
 
 const BoltIcon = () => (
@@ -78,6 +80,7 @@ export default function AuthPage() {
   const [error, setError] = useState('')
   const router = useRouter()
   const { setAuth, isAuthenticated } = useAuthStore()
+  const toast = useToastStore()
 
   const [loginData, setLoginData] = useState({ email: '', password: '' })
   const [registerData, setRegisterData] = useState({
@@ -94,15 +97,19 @@ export default function AuthPage() {
     try {
       const res = await api.post('/auth/login/', loginData)
       setAuth(res.data.user, res.data.tokens.access, res.data.tokens.refresh)
+      toast.success('Bienvenido', `Hola ${res.data.user.nombre}, ingresaste correctamente.`)
       router.push('/dashboard')
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al iniciar sesión.')
+      const msg = err.response?.data?.error || err.response?.data?.detail || 'Credenciales inválidas o error del servidor.'
+      setError(msg)
     } finally { setLoading(false) }
   }
 
   const handleRegister = async () => {
     if (!registerData.nombre || !registerData.email || !registerData.password || !registerData.nombre_clinica)
       return setError('Completa todos los campos.')
+    if (!validatePassword(registerData.password))
+      return setError('La contraseña no cumple todos los requisitos.')
     if (registerData.password !== registerData.confirmar)
       return setError('Las contraseñas no coinciden.')
     setLoading(true); setError('')
@@ -112,9 +119,12 @@ export default function AuthPage() {
         password: registerData.password, nombre_clinica: registerData.nombre_clinica,
       })
       setAuth(res.data.user, res.data.tokens.access, res.data.tokens.refresh)
+      toast.success('Cuenta creada', 'Tu cuenta y clínica fueron registradas exitosamente.')
       router.push('/dashboard')
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al crear la cuenta.')
+      const data = err.response?.data
+      const msg = data?.error || data?.email?.[0] || data?.detail || 'Error al crear la cuenta. Verifica los datos.'
+      setError(msg)
     } finally { setLoading(false) }
   }
 
@@ -329,11 +339,16 @@ export default function AuthPage() {
                     onChange={v => setRegisterData({ ...registerData, nombre_clinica: v })}
                     placeholder="Clínica San José" icon={<HospitalIcon />}
                   />
-                  <AnimatedInput
-                    label="Contraseña" type="password" value={registerData.password}
-                    onChange={v => setRegisterData({ ...registerData, password: v })}
-                    placeholder="Mínimo 8 caracteres" icon={<LockIcon />}
-                  />
+                  <div>
+                    <AnimatedInput
+                      label="Contraseña" type="password" value={registerData.password}
+                      onChange={v => setRegisterData({ ...registerData, password: v })}
+                      placeholder="Crea una contraseña segura" icon={<LockIcon />}
+                    />
+                    <AnimatePresence>
+                      {registerData.password && <PasswordRequirements password={registerData.password} />}
+                    </AnimatePresence>
+                  </div>
                   <AnimatedInput
                     label="Confirmar contraseña" type="password" value={registerData.confirmar}
                     onChange={v => setRegisterData({ ...registerData, confirmar: v })}
@@ -366,16 +381,17 @@ export default function AuthPage() {
             {/* Button */}
             <motion.button
               onClick={mode === 'login' ? handleLogin : handleRegister}
-              disabled={loading}
+              disabled={loading || (mode === 'register' && registerData.password.length > 0 && !validatePassword(registerData.password))}
               whileHover={{ scale: loading ? 1 : 1.02 }}
               whileTap={{ scale: loading ? 1 : 0.98 }}
               style={{
                 width: '100%', marginTop: 32, padding: '19px 0', borderRadius: 18,
                 background: 'linear-gradient(135deg, var(--primary), var(--accent))',
                 color: 'white', fontSize: 16, fontWeight: 600,
-                border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                border: 'none',
+                cursor: (loading || (mode === 'register' && registerData.password.length > 0 && !validatePassword(registerData.password))) ? 'not-allowed' : 'pointer',
                 boxShadow: '0 10px 32px rgba(155,142,196,0.45)',
-                opacity: loading ? 0.7 : 1,
+                opacity: (loading || (mode === 'register' && registerData.password.length > 0 && !validatePassword(registerData.password))) ? 0.5 : 1,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               }}
             >

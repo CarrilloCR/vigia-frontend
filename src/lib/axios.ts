@@ -1,8 +1,10 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/auth'
+import { useToastStore } from '../store/toast'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -20,7 +22,28 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
-    if (error.response?.status === 401 && !original._retry) {
+    const toast = useToastStore.getState()
+
+    // Network / timeout errors
+    if (!error.response) {
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        toast.warning(
+          'Tiempo de espera agotado',
+          'El servidor tardó demasiado en responder. Intenta de nuevo.'
+        )
+      } else {
+        toast.error(
+          'Error de conexión',
+          'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
+        )
+      }
+      return Promise.reject(error)
+    }
+
+    const status = error.response.status
+
+    // 401 - Token refresh
+    if (status === 401 && !original._retry) {
       original._retry = true
       try {
         const refreshToken = useAuthStore.getState().refreshToken
@@ -38,9 +61,31 @@ api.interceptors.response.use(
         return api(original)
       } catch {
         useAuthStore.getState().clearAuth()
-        window.location.href = '/'
+        toast.error(
+          'Sesión expirada',
+          'Tu sesión ha expirado. Inicia sesión nuevamente.'
+        )
+        setTimeout(() => { window.location.href = '/' }, 1500)
+        return Promise.reject(error)
       }
     }
+
+    // 403 - Forbidden
+    if (status === 403) {
+      toast.error(
+        'Acceso denegado',
+        'No tienes permisos para realizar esta acción.'
+      )
+    }
+
+    // 500+ - Server errors
+    if (status >= 500) {
+      toast.error(
+        'Error del servidor',
+        'Ocurrió un error interno. Nuestro equipo ha sido notificado.'
+      )
+    }
+
     return Promise.reject(error)
   }
 )

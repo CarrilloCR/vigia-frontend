@@ -1,15 +1,18 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
 import { useThemeStore } from '../../../store/theme'
+import { useToastStore } from '../../../store/toast'
 import Aurora from '../../../components/reactbits/Aurora'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import BlurText from '../../../components/reactbits/BlurText'
 import ToggleSwitch from '../../../components/reactbits/ToggleSwitch'
+import PasswordRequirements, { validatePassword } from '../../../components/ui/PasswordRequirements'
+import ConfirmModal from '../../../components/ui/ConfirmModal'
 import type { Clinica, Sede, IntegracionExterna, PlanFacturacion } from '../../../types'
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -168,7 +171,7 @@ export default function ConfiguracionPage() {
   const clinicaId = user?.clinica_id || 1
 
   const [activeSection, setActiveSection] = useState<Section>('perfil')
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null)
+  const toast = useToastStore()
 
   // ─── Perfil state
   const [perfil, setPerfil] = useState({ nombre: user?.nombre || '', email: user?.email || '' })
@@ -192,6 +195,7 @@ export default function ConfiguracionPage() {
   const [showEmailForm, setShowEmailForm] = useState(false)
   const [emailForm, setEmailForm] = useState({ email: '', nombre: '' })
   const [savingEmail, setSavingEmail] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number; label: string }>({ open: false, id: 0, label: '' })
   const [alertPrefs, setAlertPrefs] = useState({
     emailCriticas: true,
     emailAltas: true,
@@ -218,10 +222,10 @@ export default function ConfiguracionPage() {
   const [loadingPlan, setLoadingPlan] = useState(true)
 
   // ─── Toast helper
-  const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3000)
-  }, [])
+  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+    if (type === 'success') toast.success(msg)
+    else toast.error(msg)
+  }
 
   // ─── Data fetching
   useEffect(() => {
@@ -276,7 +280,7 @@ export default function ConfiguracionPage() {
 
   const handleChangePassword = async () => {
     if (!passwords.current || !passwords.nueva) return showToast('Completa todos los campos', 'error')
-    if (passwords.nueva.length < 8) return showToast('La contraseña debe tener al menos 8 caracteres', 'error')
+    if (!validatePassword(passwords.nueva)) return showToast('La contraseña no cumple todos los requisitos', 'error')
     if (passwords.nueva !== passwords.confirmar) return showToast('Las contraseñas no coinciden', 'error')
     setSavingPassword(true)
     try {
@@ -319,12 +323,13 @@ export default function ConfiguracionPage() {
     } finally { setSavingEmail(false) }
   }
 
-  const handleDeleteEmail = async (id: number) => {
+  const confirmDeleteEmail = async () => {
     try {
-      await api.patch(`/emails-notificacion/${id}/`, { activo: false })
-      setEmails(prev => prev.filter(e => e.id !== id))
+      await api.patch(`/emails-notificacion/${confirmDelete.id}/`, { activo: false })
+      setEmails(prev => prev.filter(e => e.id !== confirmDelete.id))
       showToast('Email eliminado')
     } catch { showToast('Error al eliminar', 'error') }
+    setConfirmDelete({ open: false, id: 0, label: '' })
   }
 
   const handleSyncIntegracion = async (id: number) => {
@@ -486,8 +491,11 @@ export default function ConfiguracionPage() {
                     onChange={v => setPasswords({ ...passwords, confirmar: v })}
                     show={showPasswords.confirmar} onToggle={() => setShowPasswords({ ...showPasswords, confirmar: !showPasswords.confirmar })} />
                 </div>
+                <AnimatePresence>
+                  {passwords.nueva && <PasswordRequirements password={passwords.nueva} />}
+                </AnimatePresence>
               </div>
-              <SaveButton onClick={handleChangePassword} loading={savingPassword} label="Cambiar contraseña" />
+              <SaveButton onClick={handleChangePassword} loading={savingPassword || (passwords.nueva.length > 0 && !validatePassword(passwords.nueva))} label="Cambiar contraseña" />
             </GlowingCard>
 
             {/* Session info */}
@@ -732,7 +740,7 @@ export default function ConfiguracionPage() {
                         <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'rgba(160,196,181,0.12)', color: 'var(--success)', border: '1px solid rgba(160,196,181,0.2)' }}>
                           Activo
                         </span>
-                        <motion.button onClick={() => handleDeleteEmail(e.id)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                        <motion.button onClick={() => setConfirmDelete({ open: true, id: e.id, label: e.email })} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
                           <TrashIcon />
                         </motion.button>
@@ -1088,28 +1096,15 @@ export default function ConfiguracionPage() {
         </div>
       </div>
 
-      {/* TOAST */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, x: '-50%' }}
-            animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: 20, x: '-50%' }}
-            style={{
-              position: 'fixed', bottom: 32, left: '50%',
-              padding: '14px 28px', borderRadius: 16,
-              background: toast.type === 'success' ? 'rgba(160,196,181,0.15)' : 'rgba(232,160,196,0.15)',
-              border: toast.type === 'success' ? '1px solid rgba(160,196,181,0.3)' : '1px solid rgba(232,160,196,0.3)',
-              backdropFilter: 'blur(20px)',
-              color: toast.type === 'success' ? 'var(--success)' : 'var(--danger)',
-              fontSize: 14, fontWeight: 500, zIndex: 100,
-              display: 'flex', alignItems: 'center', gap: 10,
-            }}>
-            {toast.type === 'success' ? <CheckIcon /> : null}
-            {toast.msg}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ConfirmModal
+        open={confirmDelete.open}
+        title="Eliminar correo"
+        message={`¿Estás seguro de que deseas eliminar el correo ${confirmDelete.label}? Ya no recibirá notificaciones de alertas.`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={confirmDeleteEmail}
+        onCancel={() => setConfirmDelete({ open: false, id: 0, label: '' })}
+      />
     </div>
   )
 }

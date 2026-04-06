@@ -4,10 +4,12 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
+import { useToastStore } from '../../../store/toast'
 import Aurora from '../../../components/reactbits/Aurora'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import CountUp from '../../../components/reactbits/CountUp'
+import ConfirmModal from '../../../components/ui/ConfirmModal'
 import ThemeToggle from '../../../components/ui/ThemeToggle'
 
 interface Paciente {
@@ -81,11 +83,13 @@ export default function PacientesPage() {
   const [busqueda, setBusqueda] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number; name: string }>({ open: false, id: 0, name: '' })
   const [form, setForm] = useState({
     nombre: '', apellido: '', telefono: '', email: '', fecha_nacimiento: '',
   })
   const router = useRouter()
   const { user } = useAuthStore()
+  const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
 
   useEffect(() => { fetchData() }, [clinicaId])
@@ -106,7 +110,9 @@ export default function PacientesPage() {
         conteo[c.paciente] = (conteo[c.paciente] || 0) + 1
       })
       setCitas(conteo)
-    } catch { } finally { setLoading(false) }
+    } catch {
+      toast.error('Error al cargar pacientes', 'No se pudo obtener la lista de pacientes y citas.')
+    } finally { setLoading(false) }
   }
 
   const resetForm = () => setForm({ nombre: '', apellido: '', telefono: '', email: '', fecha_nacimiento: '' })
@@ -135,15 +141,22 @@ export default function PacientesPage() {
       }
       await fetchData()
       setShowModal(false); resetForm(); setEditando(null)
-    } catch { setError('Error al guardar el paciente.') } finally { setSaving(false) }
+      toast.success(editando ? 'Paciente actualizado' : 'Paciente creado', editando ? 'Los datos del paciente fueron actualizados.' : 'El paciente fue registrado exitosamente.')
+    } catch {
+      setError('Error al guardar el paciente.')
+      toast.error('Error al guardar', 'No se pudo guardar el paciente. Verifica los datos.')
+    } finally { setSaving(false) }
   }
 
-  const handleEliminar = async (id: number) => {
-    if (!confirm('¿Eliminar este paciente?')) return
+  const handleEliminar = async () => {
     try {
-      await api.delete(`/pacientes/${id}/`)
+      await api.delete(`/pacientes/${confirmDelete.id}/`)
       await fetchData()
-    } catch { }
+      toast.success('Paciente eliminado', 'El paciente fue eliminado correctamente.')
+    } catch {
+      toast.error('Error al eliminar', 'No se pudo eliminar el paciente.')
+    }
+    setConfirmDelete({ open: false, id: 0, name: '' })
   }
 
   const pacientesFiltrados = pacientes.filter(p =>
@@ -308,7 +321,7 @@ export default function PacientesPage() {
                             style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(155,142,196,0.12)', border: '1px solid rgba(155,142,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
                             <EditIcon />
                           </motion.button>
-                          <motion.button onClick={() => handleEliminar(p.id)}
+                          <motion.button onClick={() => setConfirmDelete({ open: true, id: p.id, name: `${p.nombre} ${p.apellido}` })}
                             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                             style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)' }}>
                             <TrashIcon />
@@ -391,6 +404,16 @@ export default function PacientesPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={confirmDelete.open}
+        title="Eliminar paciente"
+        message={`¿Estás seguro de que deseas eliminar a ${confirmDelete.name}? Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={handleEliminar}
+        onCancel={() => setConfirmDelete({ open: false, id: 0, name: '' })}
+      />
     </div>
   )
 }

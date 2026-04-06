@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts'
 import api from '../../../../lib/axios'
+import { useToastStore } from '../../../../store/toast'
 import Aurora from '../../../../components/reactbits/Aurora'
 import GlowingCard from '../../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../../components/reactbits/FadeContent'
@@ -95,8 +96,8 @@ const fetchData = async () => {
     setAlertas(alertasRes.data.results || alertasRes.data)
     setKpis(kpisRes.data.results || kpisRes.data)
     setCitas((citasRes.data.results || citasRes.data).slice(0, 50))
-  } catch (err) {
-    console.error('Error:', err)
+  } catch {
+    useToastStore.getState().error('Error al cargar médico', 'No se pudo obtener la información del médico.')
   } finally {
     setLoading(false)
   }
