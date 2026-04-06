@@ -155,20 +155,21 @@ export default function AuthPage() {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
         style={{
-          width: '48%', minHeight: '100vh',
+          width: '44%', minHeight: '100vh',
           flexDirection: 'column', justifyContent: 'center',
-          padding: '80px 48px 80px 80px',
+          alignItems: 'flex-end',
+          padding: '80px 80px 80px 64px',
           position: 'relative', zIndex: 10,
         }}
         className="hidden lg:flex"
       >
         {/* Logo */}
         <motion.div
-          style={{ marginBottom: 40 }}
+          style={{ marginBottom: 36 }}
           animate={{ filter: ['drop-shadow(0 0 20px rgba(155,142,196,0.4))', 'drop-shadow(0 0 50px rgba(155,142,196,0.75))', 'drop-shadow(0 0 20px rgba(155,142,196,0.4))'] }}
           transition={{ duration: 3, repeat: Infinity }}
         >
-          <VigiaLogo size={160} />
+          <VigiaLogo size={260} />
         </motion.div>
 
         <motion.h1
@@ -218,24 +219,25 @@ export default function AuthPage() {
       </motion.div>
 
       {/* RIGHT PANEL */}
-      <div style={{
-        width: '52%', minHeight: '100vh',
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'flex-start',
-        padding: '60px 80px 60px 48px',
-        position: 'relative', zIndex: 10,
-      }}
-        className="w-full lg:w-[52%]"
+      <div
+        className="w-full lg:w-[56%] px-6 sm:px-10 lg:pl-20 lg:pr-12"
+        style={{
+          minHeight: '100vh',
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'center',
+          paddingTop: 40, paddingBottom: 40,
+          position: 'relative', zIndex: 10,
+        }}
       >
-        <div style={{ width: '100%', maxWidth: 540 }}>
-          <GlowingCard className="p-12">
+        <div style={{ width: '100%', maxWidth: 520 }}>
+          <GlowingCard className="p-8 sm:p-10 lg:p-12">
 
             {/* Mobile logo */}
-            <div className="flex lg:hidden" style={{ alignItems: 'center', gap: 14, marginBottom: 36 }}>
-              <VigiaLogo size={52} />
+            <div className="lg:!hidden" style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 40 }}>
+              <VigiaLogo size={80} />
               <div>
-                <p className="font-display" style={{ fontWeight: 700, fontSize: 22, color: 'var(--text)' }}>Vigía</p>
-                <p style={{ fontSize: 13, color: 'var(--muted)' }}>Alertas Inteligentes</p>
+                <p className="font-display" style={{ fontWeight: 700, fontSize: 26, color: 'var(--text)' }}>Vigía</p>
+                <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>Alertas Inteligentes</p>
               </div>
             </div>
 

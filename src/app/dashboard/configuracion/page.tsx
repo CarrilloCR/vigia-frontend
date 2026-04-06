@@ -409,7 +409,7 @@ export default function ConfiguracionPage() {
             <h2 className="font-display" style={sectionTitle}>Perfil del administrador</h2>
             <p style={sectionDesc}>Administra tu información personal y cómo apareces en la plataforma.</p>
 
-            <GlowingCard className="p-8">
+            <GlowingCard className="p-6 sm:p-8 lg:p-10">
               {/* Avatar */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}>
                 <div style={{
@@ -475,7 +475,7 @@ export default function ConfiguracionPage() {
             <h2 className="font-display" style={sectionTitle}>Seguridad</h2>
             <p style={sectionDesc}>Cambia tu contraseña y gestiona la seguridad de tu cuenta.</p>
 
-            <GlowingCard className="p-8">
+            <GlowingCard className="p-6 sm:p-8 lg:p-10">
               <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
                 Cambiar contraseña
               </h3>
@@ -500,7 +500,7 @@ export default function ConfiguracionPage() {
 
             {/* Session info */}
             <div style={{ marginTop: 24 }}>
-              <GlowingCard className="p-8">
+              <GlowingCard className="p-6 sm:p-8 lg:p-10">
                 <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
                   Sesión actual
                 </h3>
@@ -543,7 +543,7 @@ export default function ConfiguracionPage() {
 
             {loadingClinica ? <Skeleton count={2} h={80} /> : (
               <>
-                <GlowingCard className="p-8">
+                <GlowingCard className="p-6 sm:p-8 lg:p-10">
                   <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
                     Datos generales
                   </h3>
@@ -578,7 +578,7 @@ export default function ConfiguracionPage() {
 
                 {/* Sedes */}
                 <div style={{ marginTop: 24 }}>
-                  <GlowingCard className="p-8">
+                  <GlowingCard className="p-6 sm:p-8 lg:p-10">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                       <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
                         Sedes
@@ -637,7 +637,7 @@ export default function ConfiguracionPage() {
             <p style={sectionDesc}>Configura qué alertas recibes y los correos que reciben notificaciones.</p>
 
             {/* Alert preferences */}
-            <GlowingCard className="p-8">
+            <GlowingCard className="p-6 sm:p-8 lg:p-10">
               <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
                 Preferencias de alertas
               </h3>
@@ -666,7 +666,7 @@ export default function ConfiguracionPage() {
 
             {/* Email list */}
             <div style={{ marginTop: 24 }}>
-              <GlowingCard className="p-8">
+              <GlowingCard className="p-6 sm:p-8 lg:p-10">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                   <div>
                     <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
@@ -762,7 +762,7 @@ export default function ConfiguracionPage() {
             <h2 className="font-display" style={sectionTitle}>Apariencia</h2>
             <p style={sectionDesc}>Personaliza el aspecto visual del dashboard según tus preferencias.</p>
 
-            <GlowingCard className="p-8">
+            <GlowingCard className="p-6 sm:p-8 lg:p-10">
               <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
                 Tema
               </h3>
@@ -824,7 +824,7 @@ export default function ConfiguracionPage() {
             <p style={sectionDesc}>Gestiona las conexiones con sistemas externos como ERP, HIS y otras fuentes de datos.</p>
 
             {loadingIntegraciones ? <Skeleton count={3} h={80} /> : (
-              <GlowingCard className="p-8">
+              <GlowingCard className="p-6 sm:p-8 lg:p-10">
                 {integraciones.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '48px 0' }}>
                     <div style={{ color: 'var(--muted)', display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
@@ -900,7 +900,7 @@ export default function ConfiguracionPage() {
             {loadingPlan ? <Skeleton count={2} h={80} /> : (
               <>
                 {/* Current plan */}
-                <GlowingCard className="p-8">
+                <GlowingCard className="p-6 sm:p-8 lg:p-10">
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                     <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
                       Plan actual
@@ -974,7 +974,7 @@ export default function ConfiguracionPage() {
 
                 {/* Usage info */}
                 <div style={{ marginTop: 24 }}>
-                  <GlowingCard className="p-8">
+                  <GlowingCard className="p-6 sm:p-8 lg:p-10">
                     <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
                       Uso del plan
                     </h3>
@@ -1021,7 +1021,7 @@ export default function ConfiguracionPage() {
       </div>
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03, backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
 
-      <div style={{ position: 'relative', zIndex: 10, padding: '32px 48px', maxWidth: 1200, margin: '0 auto' }}>
+      <div className="px-5 sm:px-8 lg:px-12 xl:px-14 py-8 sm:py-10" style={{ position: 'relative', zIndex: 10, maxWidth: 1200, margin: '0 auto' }}>
 
         {/* HEADER */}
         <FadeContent direction="down" duration={0.5}>

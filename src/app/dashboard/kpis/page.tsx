@@ -156,7 +156,7 @@ export default function KPIsPage() {
         backgroundSize: '48px 48px',
       }} />
 
-      <div style={{ position: 'relative', zIndex: 10, padding: '32px 48px', maxWidth: 1600, margin: '0 auto' }}>
+      <div className="px-5 sm:px-8 lg:px-12 xl:px-14 py-8 sm:py-10" style={{ position: 'relative', zIndex: 10, maxWidth: 1600, margin: '0 auto' }}>
 
         {/* HEADER */}
         <FadeContent direction="down" duration={0.5}>
@@ -320,7 +320,7 @@ export default function KPIsPage() {
 
             {/* GRÁFICA PRINCIPAL */}
             <FadeContent direction="up" delay={0.2} duration={0.4}>
-              <GlowingCard className="p-8">
+              <GlowingCard className="p-6 sm:p-8 lg:p-10">
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
                   <div>
                     <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
@@ -429,7 +429,7 @@ export default function KPIsPage() {
         ) : (
           /* VISTA COMPARAR */
           <FadeContent direction="up" delay={0.2} duration={0.4}>
-            <GlowingCard className="p-8">
+            <GlowingCard className="p-6 sm:p-8 lg:p-10">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                   Comparativa de todos los KPIs

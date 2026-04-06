@@ -312,7 +312,7 @@ export default function DashboardPage() {
       </div>
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03, backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
 
-      <div style={{ position: 'relative', zIndex: 10, padding: '32px 48px', maxWidth: 1600, margin: '0 auto' }}>
+      <div className="px-5 sm:px-8 lg:px-12 xl:px-14 pt-14 sm:pt-16 pb-10 sm:pb-12" style={{ position: 'relative', zIndex: 10, maxWidth: 1600, margin: '0 auto' }}>
 
         {/* HEADER */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
@@ -322,7 +322,7 @@ export default function DashboardPage() {
               animate={{ filter: ['drop-shadow(0 0 8px rgba(155,142,196,0.3))', 'drop-shadow(0 0 20px rgba(155,142,196,0.6))', 'drop-shadow(0 0 8px rgba(155,142,196,0.3))'] }}
               transition={{ duration: 3, repeat: Infinity }}
             >
-              <VigiaLogo size={52} />
+              <VigiaLogo size={68} />
             </motion.div>
             <div>
               <p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
@@ -364,14 +364,14 @@ export default function DashboardPage() {
               KPIs
             </motion.button>
 
-            <motion.button onClick={() => router.push('/dashboard/configuracion')}
+            <motion.button onClick={() => router.push('/dashboard/correos')}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               style={{display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 15, fontWeight: 500, cursor: 'pointer' }}>
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"> 
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
             </svg>
-            Configuración
+            Correos
           </motion.button>
 
           <motion.button
@@ -461,7 +461,7 @@ export default function DashboardPage() {
 
           {/* ALERTAS */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
-            <GlowingCard className="p-8">
+            <GlowingCard className="p-6 sm:p-8 lg:p-10">
 
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -673,8 +673,8 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Médicos */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} style={{ flex: 1 }}>
-              <GlowingCard className="p-8">
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+              <GlowingCard className="p-6 sm:p-8 lg:p-10">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                   <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Médicos</h2>
                   <motion.button onClick={() => router.push('/dashboard/medicos')}
@@ -685,6 +685,34 @@ export default function DashboardPage() {
                 </div>
                 <MedicosList clinicaId={clinicaId} />
               </GlowingCard>
+            </motion.div>
+
+            {/* Accesos Rápidos */}
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  { label: 'Pacientes', path: '/dashboard/pacientes', color: '#A0C4B5', icon: <svg width="16" height="16" fill="none" stroke="#A0C4B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> },
+                  { label: 'Citas', path: '/dashboard/citas', color: '#C4B5E8', icon: <svg width="16" height="16" fill="none" stroke="#C4B5E8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+                  { label: 'KPIs', path: '/dashboard/kpis', color: '#9B8EC4', icon: <svg width="16" height="16" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+                  { label: 'Ajustes', path: '/dashboard/configuracion', color: '#E8A0C4', icon: <svg width="16" height="16" fill="none" stroke="#E8A0C4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> },
+                ].map((item, i) => (
+                  <motion.div
+                    key={item.path}
+                    onClick={() => router.push(item.path)}
+                    whileHover={{ scale: 1.03, borderColor: `${item.color}50` }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '14px 14px', borderRadius: 16, cursor: 'pointer',
+                      background: `${item.color}08`, border: `1px solid ${item.color}20`,
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {item.icon}
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{item.label}</span>
+                  </motion.div>
+                ))}
+              </div>
             </motion.div>
           </div>
         </div>

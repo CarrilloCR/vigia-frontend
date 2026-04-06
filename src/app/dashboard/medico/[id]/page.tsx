@@ -161,7 +161,7 @@ const fetchData = async () => {
       </div>
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03, backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
 
-      <div style={{ position: 'relative', zIndex: 10, padding: '32px 48px', maxWidth: 1400, margin: '0 auto' }}>
+      <div className="px-5 sm:px-8 lg:px-12 xl:px-14 py-8 sm:py-10" style={{ position: 'relative', zIndex: 10, maxWidth: 1400, margin: '0 auto' }}>
 
         {/* HEADER */}
         <FadeContent direction="down" duration={0.5}>
@@ -278,7 +278,7 @@ const fetchData = async () => {
         {tab === 'estadisticas' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
             <FadeContent direction="up" delay={0.25} duration={0.4}>
-              <GlowingCard className="p-8">
+              <GlowingCard className="p-6 sm:p-8 lg:p-10">
                 {/* Selector KPI */}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
                   {Object.entries(kpiConfig).map(([tipo, cfg]) => (
@@ -337,7 +337,7 @@ const fetchData = async () => {
 
             {/* Distribución de estados */}
             <FadeContent direction="right" delay={0.3} duration={0.4}>
-              <GlowingCard className="p-8">
+              <GlowingCard className="p-6 sm:p-8 lg:p-10">
                 <h2 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
                   Distribución de citas
                 </h2>
@@ -383,7 +383,7 @@ const fetchData = async () => {
 
         {tab === 'citas' && (
           <FadeContent direction="up" delay={0.25} duration={0.4}>
-            <GlowingCard className="p-8">
+            <GlowingCard className="p-6 sm:p-8 lg:p-10">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                   Historial de citas
@@ -432,7 +432,7 @@ const fetchData = async () => {
 
         {tab === 'alertas' && (
           <FadeContent direction="up" delay={0.25} duration={0.4}>
-            <GlowingCard className="p-8">
+            <GlowingCard className="p-6 sm:p-8 lg:p-10">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                   Historial de alertas

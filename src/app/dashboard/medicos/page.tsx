@@ -196,7 +196,7 @@ export default function MedicosPage() {
       </div>
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03, backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
 
-      <div style={{ position: 'relative', zIndex: 10, padding: '32px 48px', maxWidth: 1400, margin: '0 auto' }}>
+      <div className="px-5 sm:px-8 lg:px-12 xl:px-14 py-8 sm:py-10" style={{ position: 'relative', zIndex: 10, maxWidth: 1400, margin: '0 auto' }}>
 
         {/* HEADER */}
         <FadeContent direction="down" duration={0.5}>

@@ -19,7 +19,7 @@ export default function PageLoader() {
           }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         >
-          <VigiaLogo size={64} />
+          <VigiaLogo size={96} />
         </motion.div>
         <div className="flex gap-1">
           {[0, 1, 2].map((i) => (
