@@ -628,7 +628,10 @@ export default function DashboardPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* User card */}
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
-              style={{ padding: '24px', borderRadius: 24, background: 'linear-gradient(135deg, rgba(155,142,196,0.15), rgba(124,111,191,0.08))', border: '1px solid rgba(155,142,196,0.25)' }}>
+              onClick={() => router.push('/dashboard/configuracion')}
+              whileHover={{ scale: 1.02, borderColor: 'rgba(155,142,196,0.45)' }}
+              whileTap={{ scale: 0.98 }}
+              style={{ padding: '24px', borderRadius: 24, background: 'linear-gradient(135deg, rgba(155,142,196,0.15), rgba(124,111,191,0.08))', border: '1px solid rgba(155,142,196,0.25)', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
                 <div style={{ width: 52, height: 52, borderRadius: 16, flexShrink: 0, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 18, fontWeight: 700 }}>
                   {user?.nombre?.[0] || 'U'}
