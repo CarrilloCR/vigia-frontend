@@ -10,6 +10,7 @@ import Aurora from '../../components/reactbits/Aurora'
 import GlowingCard from '../../components/reactbits/GlowingCard'
 import CountUp from '../../components/reactbits/CountUp'
 import ThemeToggle from '../../components/ui/ThemeToggle'
+import VigiaLogo from '../../components/ui/VigiaLogo'
 
 const kpiLabel: Record<string, string> = {
   tasa_cancelacion: 'Cancelación',
@@ -318,11 +319,10 @@ export default function DashboardPage() {
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48, flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <motion.div
-              style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              animate={{ boxShadow: ['0 0 16px rgba(155,142,196,0.3)', '0 0 36px rgba(155,142,196,0.6)', '0 0 16px rgba(155,142,196,0.3)'] }}
+              animate={{ filter: ['drop-shadow(0 0 8px rgba(155,142,196,0.3))', 'drop-shadow(0 0 20px rgba(155,142,196,0.6))', 'drop-shadow(0 0 8px rgba(155,142,196,0.3))'] }}
               transition={{ duration: 3, repeat: Infinity }}
             >
-              <ShieldIcon />
+              <VigiaLogo size={52} />
             </motion.div>
             <div>
               <p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>

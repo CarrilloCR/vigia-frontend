@@ -5,6 +5,7 @@ import ThemeProvider from '../components/ThemeProvider'
 export const metadata: Metadata = {
   title: 'Vigía — Sistema de Alertas Inteligentes',
   description: 'Monitoreo inteligente de KPIs para clínicas médicas',
+  icons: { icon: '/logo.svg' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,5 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
+import VigiaLogo from './VigiaLogo'
 
 export default function PageLoader() {
   return (
@@ -12,15 +13,13 @@ export default function PageLoader() {
     >
       <div className="flex flex-col items-center gap-6">
         <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          className="w-16 h-16 rounded-2xl flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-            boxShadow: '0 0 30px rgba(155, 142, 196, 0.5)',
+          animate={{
+            filter: ['drop-shadow(0 0 12px rgba(155,142,196,0.3))', 'drop-shadow(0 0 30px rgba(155,142,196,0.7))', 'drop-shadow(0 0 12px rgba(155,142,196,0.3))'],
+            scale: [1, 1.05, 1]
           }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         >
-          <span className="text-white font-bold text-2xl font-display">V</span>
+          <VigiaLogo size={64} />
         </motion.div>
         <div className="flex gap-1">
           {[0, 1, 2].map((i) => (

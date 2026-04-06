@@ -10,6 +10,7 @@ import GlowingCard from '../components/reactbits/GlowingCard'
 import AnimatedInput from '../components/reactbits/AnimatedInput'
 import PasswordRequirements, { validatePassword } from '../components/ui/PasswordRequirements'
 import ThemeToggle from '../components/ui/ThemeToggle'
+import VigiaLogo from '../components/ui/VigiaLogo'
 
 const BoltIcon = () => (
   <svg width="22" height="22" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -167,7 +168,7 @@ export default function AuthPage() {
           animate={{ filter: ['drop-shadow(0 0 20px rgba(155,142,196,0.4))', 'drop-shadow(0 0 50px rgba(155,142,196,0.75))', 'drop-shadow(0 0 20px rgba(155,142,196,0.4))'] }}
           transition={{ duration: 3, repeat: Infinity }}
         >
-          <img src="/logo.svg" alt="Vigía" style={{ width: 160, height: 160 }} />
+          <VigiaLogo size={160} />
         </motion.div>
 
         <motion.h1
@@ -231,7 +232,7 @@ export default function AuthPage() {
 
             {/* Mobile logo */}
             <div className="flex lg:hidden" style={{ alignItems: 'center', gap: 14, marginBottom: 36 }}>
-              <img src="/logo.svg" alt="Vigía" style={{ width: 52, height: 52 }} />
+              <VigiaLogo size={52} />
               <div>
                 <p className="font-display" style={{ fontWeight: 700, fontSize: 22, color: 'var(--text)' }}>Vigía</p>
                 <p style={{ fontSize: 13, color: 'var(--muted)' }}>Alertas Inteligentes</p>
