@@ -5,12 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
 import { useToastStore } from '../../../store/toast'
-import Aurora from '../../../components/reactbits/Aurora'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import CountUp from '../../../components/reactbits/CountUp'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
-import ThemeToggle from '../../../components/ui/ThemeToggle'
 
 interface Cita {
   id: number
@@ -158,36 +156,19 @@ export default function CitasPage() {
   })).filter(m => m.total > 0).sort((a, b) => b.total - a.total)
 
   return (
-    <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={0.4} speed={0.1} />
-      </div>
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03, backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
-
-      <div className="px-5 sm:px-8 lg:px-12 xl:px-14 py-8 sm:py-10" style={{ position: 'relative', zIndex: 10, maxWidth: 1600, margin: '0 auto' }}>
-
+    <>
         {/* HEADER */}
         <FadeContent direction="down" duration={0.5}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-              <motion.button onClick={() => router.push('/dashboard')}
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}>
-                <ArrowLeftIcon />
-              </motion.button>
-              <div>
-                <h1 className="font-display" style={{ fontSize: 32, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Citas</h1>
-                <p style={{ fontSize: 15, color: 'var(--muted)', marginTop: 4 }}>{user?.clinica_nombre} · {citasFiltradas.length} registros</p>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
+            <div>
+              <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Citas</h1>
+              <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>{citasFiltradas.length} registros</p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <motion.button onClick={() => { setShowModal(true); setError('') }}
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
-                <PlusIcon /> Agendar cita
-              </motion.button>
-              <ThemeToggle />
-            </div>
+            <motion.button onClick={() => { setShowModal(true); setError('') }}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
+              <PlusIcon /> Agendar cita
+            </motion.button>
           </div>
         </FadeContent>
 
@@ -399,7 +380,6 @@ export default function CitasPage() {
             </GlowingCard>
           </FadeContent>
         </div>
-      </div>
 
       {/* MODAL AGENDAR */}
       <AnimatePresence>
@@ -493,6 +473,6 @@ export default function CitasPage() {
         onConfirm={handleEliminar}
         onCancel={() => setConfirmDelete({ open: false, id: 0 })}
       />
-    </div>
+    </>
   )
 }

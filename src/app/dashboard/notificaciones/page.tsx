@@ -1,13 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { Notificacion } from '../../../types'
 import { useToastStore } from '../../../store/toast'
-import Aurora from '../../../components/reactbits/Aurora'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
-import ThemeToggle from '../../../components/ui/ThemeToggle'
 
 const estadoConfig: Record<string, { color: string; bg: string; label: string }> = {
   pendiente:  { color: '#C4B5E8', bg: 'rgba(196,181,232,0.12)', label: 'Pendiente' },
@@ -16,13 +13,6 @@ const estadoConfig: Record<string, { color: string; bg: string; label: string }>
   leida:      { color: '#A0C4B5', bg: 'rgba(160,196,181,0.12)', label: 'Leída' },
   fallida:    { color: '#E8A0C4', bg: 'rgba(232,160,196,0.12)', label: 'Fallida' },
 }
-
-const ArrowLeftIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-    <line x1="19" y1="12" x2="5" y2="12"/>
-    <polyline points="12 19 5 12 12 5"/>
-  </svg>
-)
 
 const MailIcon = () => (
   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -63,8 +53,6 @@ export default function NotificacionesPage() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState<string>('todos')
-  const router = useRouter()
-
   useEffect(() => {
     fetchNotificaciones()
   }, [])
@@ -94,54 +82,21 @@ export default function NotificacionesPage() {
   const filtros = ['todos', 'pendiente', 'enviada', 'entregada', 'fallida']
 
   return (
-    <div style={{
-      width: '100vw', minHeight: '100vh',
-      backgroundColor: 'var(--void)',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      {/* Fondo */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={0.5} speed={0.15} />
-      </div>
-      <div style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03,
-        backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)',
-        backgroundSize: '48px 48px',
-      }} />
-
-      <div className="px-5 sm:px-8 lg:px-12 xl:px-14 py-8 sm:py-10" style={{ position: 'relative', zIndex: 10, maxWidth: 1400, margin: '0 auto' }}>
-
+    <>
         {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <motion.button
-              onClick={() => router.push('/dashboard')}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{
-                width: 48, height: 48, borderRadius: 14, flexShrink: 0,
-                background: 'var(--glass)', backdropFilter: 'blur(20px)',
-                border: '1px solid var(--border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: 'var(--text)',
-              }}
-            >
-              <ArrowLeftIcon />
-            </motion.button>
-            <div>
-              <h1 className="font-display" style={{ fontSize: 32, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
-                Notificaciones
-              </h1>
-              <p style={{ fontSize: 15, color: 'var(--muted)', marginTop: 4 }}>
-                Historial completo de notificaciones enviadas
-              </p>
-            </div>
+          <div>
+            <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
+              Notificaciones
+            </h1>
+            <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>
+              Historial completo de notificaciones enviadas
+            </p>
           </div>
-          <ThemeToggle />
         </motion.div>
 
         {/* STATS */}
@@ -332,7 +287,6 @@ export default function NotificacionesPage() {
             )}
           </GlowingCard>
         </motion.div>
-      </div>
-    </div>
+    </>
   )
 }

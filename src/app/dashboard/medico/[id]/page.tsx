@@ -5,11 +5,9 @@ import { motion } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts'
 import api from '../../../../lib/axios'
 import { useToastStore } from '../../../../store/toast'
-import Aurora from '../../../../components/reactbits/Aurora'
 import GlowingCard from '../../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../../components/reactbits/FadeContent'
 import CountUp from '../../../../components/reactbits/CountUp'
-import ThemeToggle from '../../../../components/ui/ThemeToggle'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
   tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
@@ -37,11 +35,6 @@ const estadoColor: Record<string, string> = {
   agendada:   '#9B8EC4',
 }
 
-const ArrowLeftIcon = () => (
-  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-    <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-  </svg>
-)
 const EditIcon = () => (
   <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -155,24 +148,11 @@ const fetchData = async () => {
   const colorMedico = '#9B8EC4'
 
   return (
-    <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={0.4} speed={0.1} />
-      </div>
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03, backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
-
-      <div className="px-5 sm:px-8 lg:px-12 xl:px-14 py-8 sm:py-10" style={{ position: 'relative', zIndex: 10, maxWidth: 1400, margin: '0 auto' }}>
-
+    <>
         {/* HEADER */}
         <FadeContent direction="down" duration={0.5}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 40 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-              <motion.button onClick={() => router.push('/dashboard/medicos')}
-                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}>
-                <ArrowLeftIcon />
-              </motion.button>
-
               {/* Avatar */}
               {medico.foto_url ? (
                 <motion.img src={medico.foto_url} alt={medico.nombre}
@@ -211,14 +191,11 @@ const fetchData = async () => {
                 )}
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <motion.button onClick={() => router.push(`/dashboard/medicos`)}
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px', borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
-                <EditIcon /> Editar
-              </motion.button>
-              <ThemeToggle />
-            </div>
+            <motion.button onClick={() => router.push(`/dashboard/medicos`)}
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px', borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+              <EditIcon /> Editar
+            </motion.button>
           </div>
         </FadeContent>
 
@@ -489,7 +466,6 @@ const fetchData = async () => {
             </GlowingCard>
           </FadeContent>
         )}
-      </div>
-    </div>
+    </>
   )
 }

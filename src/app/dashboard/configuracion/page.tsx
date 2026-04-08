@@ -6,7 +6,6 @@ import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
 import { useThemeStore } from '../../../store/theme'
 import { useToastStore } from '../../../store/toast'
-import Aurora from '../../../components/reactbits/Aurora'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import BlurText from '../../../components/reactbits/BlurText'
@@ -1014,33 +1013,16 @@ export default function ConfiguracionPage() {
 
   // ─── Main layout
   return (
-    <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
-      {/* Background */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={0.4} speed={0.1} />
-      </div>
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03, backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
-
-      <div className="px-5 sm:px-8 lg:px-12 xl:px-14 py-8 sm:py-10" style={{ position: 'relative', zIndex: 10, maxWidth: 1200, margin: '0 auto' }}>
-
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* HEADER */}
         <FadeContent direction="down" duration={0.5}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 40 }}>
-            <motion.button
-              onClick={() => router.push('/dashboard')}
-              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-              style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}
-            >
-              <ArrowLeftIcon />
-            </motion.button>
-            <div>
-              <h1 className="font-display" style={{ fontSize: 32, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
-                <BlurText text="Configuración" delay={50} />
-              </h1>
-              <p style={{ fontSize: 15, color: 'var(--muted)', marginTop: 4 }}>
-                Administra tu cuenta, clínica y preferencias
-              </p>
-            </div>
+          <div style={{ marginBottom: 32 }}>
+            <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
+              <BlurText text="Configuración" delay={50} />
+            </h1>
+            <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>
+              Administra tu cuenta, clínica y preferencias
+            </p>
           </div>
         </FadeContent>
 
@@ -1094,7 +1076,6 @@ export default function ConfiguracionPage() {
             </AnimatePresence>
           </FadeContent>
         </div>
-      </div>
 
       <ConfirmModal
         open={confirmDelete.open}
