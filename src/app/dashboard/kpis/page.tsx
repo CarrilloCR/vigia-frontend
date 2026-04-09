@@ -1,13 +1,14 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, AreaChart, Area, Legend,
-  ReferenceLine, ReferenceArea
+  ReferenceLine, ReferenceArea, ReferenceDot
 } from 'recharts'
 import api from '../../../lib/axios'
+import { Alerta } from '../../../types'
 import { useAuthStore } from '../../../store/auth'
 import { useToastStore } from '../../../store/toast'
 import { useKpiPipStore } from '../../../store/kpiPip'
@@ -97,6 +98,9 @@ export default function KPIsPage() {
   const [vista, setVista] = useState<'individual' | 'comparar'>('individual')
   const [horas, setHoras] = useState(2)
   const [chartSize, setChartSize] = useState<'normal' | 'grande' | 'completo'>('grande')
+  const [alertasKpi, setAlertasKpi] = useState<Alerta[]>([])
+  const [mostrarDeteccion, setMostrarDeteccion] = useState(true)
+  const [alertaDetalleId, setAlertaDetalleId] = useState<number | null>(null)
   const router = useRouter()
   const { user } = useAuthStore()
   const toast = useToastStore()
@@ -111,9 +115,18 @@ export default function KPIsPage() {
 
   useEffect(() => {
     fetchKPIs()
-    const interval = setInterval(fetchKPIs, 30000)
+    fetchAlertasKpi()
+    const interval = setInterval(() => { fetchKPIs(); fetchAlertasKpi() }, 30000)
     return () => clearInterval(interval)
   }, [clinicaId, horas])
+
+  const fetchAlertasKpi = async () => {
+    try {
+      const res = await api.get('/alertas/')
+      const all: Alerta[] = res.data.results || res.data
+      setAlertasKpi(all)
+    } catch { /* silent */ }
+  }
 
   const fetchKPIs = async (manual = false) => {
     if (manual) setRefreshing(true)
@@ -144,7 +157,43 @@ export default function KPIsPage() {
     }
   }
 
-  const datosActuales = kpiData[kpiSeleccionado] || []
+  // Get alerts relevant to the selected KPI
+  const alertasDelKpi = alertasKpi.filter(a => a.tipo_kpi === kpiSeleccionado)
+
+  // Get the latest alert with Prophet forecast data for this KPI
+  const alertaConProphet = alertasDelKpi.find(a =>
+    a.detalle_deteccion?.prophet?.forecast?.length
+  )
+  const prophetForecast = alertaConProphet?.detalle_deteccion?.prophet?.forecast || []
+
+  // Build chart data enriched with Prophet bands and anomaly markers
+  const datosActualesRaw = kpiData[kpiSeleccionado] || []
+  const datosActuales = datosActualesRaw.map(d => {
+    // Find matching Prophet forecast point
+    const prophetPoint = prophetForecast.find(f => {
+      const fTime = new Date(f.fecha).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
+      return fTime === d.fecha
+    })
+    return {
+      ...d,
+      ...(prophetPoint && mostrarDeteccion ? {
+        prophet_yhat: prophetPoint.yhat,
+        prophet_lower: prophetPoint.yhat_lower,
+        prophet_upper: prophetPoint.yhat_upper,
+      } : {}),
+    }
+  })
+
+  // Find anomaly points to mark on chart
+  const anomalyPoints = mostrarDeteccion ? alertasDelKpi
+    .filter(a => a.estado === 'activa')
+    .map(a => {
+      const time = new Date(a.creada_en).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
+      const dataIdx = datosActuales.findIndex(d => d.fecha === time)
+      return { ...a, chartTime: time, dataIdx }
+    })
+    .filter(a => a.dataIdx >= 0) : []
+
   const cfg = kpiConfig[kpiSeleccionado]
   const umbralActual = kpiUmbrales[kpiSeleccionado] || null
 
@@ -352,6 +401,22 @@ export default function KPIsPage() {
                     <p style={{ fontSize: 14, color: 'var(--muted)' }}>
                       Últimas {horas}h · {datosActuales.length} registros
                     </p>
+                    {mostrarDeteccion && (alertasDelKpi.length > 0 || prophetForecast.length > 0) && (
+                      <div style={{ display: 'flex', gap: 14, marginTop: 6, fontSize: 11 }}>
+                        {prophetForecast.length > 0 && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#7CB5E8' }}>
+                            <svg width="16" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="#7CB5E8" strokeWidth="2" strokeDasharray="4 2"/></svg>
+                            Prophet
+                          </span>
+                        )}
+                        {anomalyPoints.length > 0 && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#E8A0C4' }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#E8A0C4' }} />
+                            {anomalyPoints.length} anomalía{anomalyPoints.length > 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     {/* Controles de tamaño */}
@@ -368,6 +433,21 @@ export default function KPIsPage() {
                         </motion.button>
                       ))}
                     </div>
+                    {/* Toggle detección */}
+                    <motion.button onClick={() => setMostrarDeteccion(!mostrarDeteccion)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                      title={mostrarDeteccion ? 'Ocultar detección' : 'Mostrar detección'}
+                      style={{
+                        padding: '6px 12px', borderRadius: 10, fontSize: 11, fontWeight: 600,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                        background: mostrarDeteccion ? 'rgba(124,181,232,0.15)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${mostrarDeteccion ? 'rgba(124,181,232,0.3)' : 'var(--border)'}`,
+                        color: mostrarDeteccion ? '#7CB5E8' : 'var(--muted)',
+                      }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/>
+                      </svg>
+                      AI
+                    </motion.button>
                     {/* Minimizar a PiP */}
                     <motion.button onClick={minimizarAPip} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                       title="Minimizar gráfico"
@@ -436,11 +516,193 @@ export default function KPIsPage() {
                         fill="url(#colorKpi)" dot={false}
                         activeDot={{ r: 6, fill: cfg?.color, stroke: 'var(--void)', strokeWidth: 2 }}
                       />
+                      {/* Prophet forecast band */}
+                      {mostrarDeteccion && datosActuales.some((d: any) => d.prophet_upper) && (
+                        <>
+                          <Area
+                            type="monotone" dataKey="prophet_upper" name="Prophet (sup)"
+                            stroke="transparent" fill="transparent" dot={false} activeDot={false}
+                            legendType="none"
+                          />
+                          <Area
+                            type="monotone" dataKey="prophet_lower" name="Prophet (inf)"
+                            stroke="transparent" fill="rgba(124,181,232,0.10)" dot={false} activeDot={false}
+                            legendType="none"
+                          />
+                          <Line
+                            type="monotone" dataKey="prophet_yhat" name="Prophet"
+                            stroke="#7CB5E8" strokeWidth={1.5} strokeDasharray="6 3"
+                            dot={false} activeDot={{ r: 4, fill: '#7CB5E8', stroke: 'var(--void)', strokeWidth: 2 }}
+                          />
+                        </>
+                      )}
+                      {/* Anomaly markers */}
+                      {anomalyPoints.map(ap => {
+                        const d = datosActuales[ap.dataIdx]
+                        if (!d) return null
+                        return (
+                          <ReferenceDot
+                            key={ap.id}
+                            x={d.fecha}
+                            y={d.valor}
+                            r={6}
+                            fill="#E8A0C4"
+                            stroke="var(--void)"
+                            strokeWidth={2}
+                          />
+                        )
+                      })}
                     </AreaChart>
                   </ResponsiveContainer>
                 )}
               </GlowingCard>
             </FadeContent>
+
+            {/* DETECTION ALERTS FOR THIS KPI */}
+            {mostrarDeteccion && alertasDelKpi.length > 0 && (
+              <FadeContent direction="up" delay={0.25} duration={0.4}>
+                <GlowingCard className="p-5 sm:p-6">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                      </svg>
+                      <h3 className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                        Detección de Anomalías — {cfg?.label}
+                      </h3>
+                    </div>
+                    <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>
+                      {alertasDelKpi.filter(a => a.estado === 'activa').length} activas
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto' }}>
+                    {alertasDelKpi.slice(0, 5).map(a => {
+                      const sevColor = a.severidad === 'critica' ? '#E8A0C4' : a.severidad === 'alta' ? '#9B8EC4' : a.severidad === 'media' ? '#C4B5E8' : '#A0C4B5'
+                      const d = a.detalle_deteccion
+                      const isExpanded = alertaDetalleId === a.id
+                      return (
+                        <motion.div key={a.id} layout
+                          style={{
+                            padding: '12px 14px', borderRadius: 14,
+                            background: `${sevColor}08`, border: `1px solid ${sevColor}25`,
+                          }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: sevColor, boxShadow: `0 0 6px ${sevColor}` }} />
+                            <span style={{ fontSize: 12, fontWeight: 600, color: sevColor, padding: '2px 8px', borderRadius: 10, background: `${sevColor}15` }}>
+                              {a.severidad}
+                            </span>
+                            <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                              {a.metodo_deteccion?.startsWith('ensemble:') ? 'Ensemble' : a.metodo_deteccion || 'Estadístico'}
+                            </span>
+                            {/* Methods that voted */}
+                            {d?.ensemble && d.ensemble.metodos_disponibles.length > 1 && (
+                              <div style={{ display: 'flex', gap: 4, marginLeft: 4 }}>
+                                {d.ensemble.metodos_disponibles.map(m => {
+                                  const voted = d.ensemble!.metodos_que_flaggearon.includes(m)
+                                  const mColor = m === 'estadistico' ? '#A0C4B5' : m === 'prophet' ? '#7CB5E8' : '#E8C4A0'
+                                  return (
+                                    <span key={m} style={{
+                                      fontSize: 9, fontWeight: 700, width: 18, height: 18, borderRadius: 6,
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      background: voted ? `${mColor}25` : 'rgba(255,255,255,0.03)',
+                                      color: voted ? mColor : 'var(--muted)',
+                                      border: `1px solid ${voted ? mColor + '40' : 'var(--border)'}`,
+                                    }}
+                                    title={`${m}: ${voted ? 'anomalía' : 'normal'}`}
+                                    >
+                                      {m === 'estadistico' ? 'σ' : m === 'prophet' ? 'P' : 'F'}
+                                    </span>
+                                  )
+                                })}
+                              </div>
+                            )}
+                            <motion.button
+                              onClick={() => setAlertaDetalleId(isExpanded ? null : a.id)}
+                              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              style={{
+                                marginLeft: 'auto', width: 22, height: 22, borderRadius: 11,
+                                background: isExpanded ? 'rgba(155,142,196,0.2)' : 'rgba(255,255,255,0.05)',
+                                border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: isExpanded ? '#9B8EC4' : 'var(--muted)',
+                              }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                              </svg>
+                            </motion.button>
+                          </div>
+                          <div style={{ display: 'flex', gap: 14, fontSize: 12, flexWrap: 'wrap' }}>
+                            <span style={{ color: 'var(--muted)' }}>
+                              Detectado: <strong style={{ color: sevColor }}>{a.valor_detectado?.toFixed(1)}</strong>
+                            </span>
+                            <span style={{ color: 'var(--muted)' }}>
+                              Esperado: <strong style={{ color: 'var(--text)' }}>{a.valor_esperado?.toFixed(1)}</strong>
+                            </span>
+                            <span style={{ color: sevColor, fontWeight: 600 }}>
+                              {a.desviacion > 0 ? '+' : ''}{a.desviacion?.toFixed(1)}%
+                            </span>
+                            <span style={{ color: 'var(--muted)', marginLeft: 'auto', fontSize: 11 }}>
+                              {new Date(a.creada_en).toLocaleString('es-CR')}
+                            </span>
+                          </div>
+                          {/* Expanded detail */}
+                          {isExpanded && d && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                              style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              {/* Per-method results */}
+                              {d.estadistico && (
+                                <div style={{ padding: '8px 10px', borderRadius: 10, background: 'rgba(160,196,181,0.08)', border: '1px solid rgba(160,196,181,0.15)', fontSize: 12 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                    <span style={{ fontWeight: 700, color: '#A0C4B5' }}>σ Estadístico</span>
+                                    <span style={{ fontSize: 11, color: d.estadistico.es_anomalia ? '#E8A0C4' : '#A0C4B5' }}>
+                                      {d.estadistico.es_anomalia ? 'Anomalía' : 'Normal'}
+                                    </span>
+                                  </div>
+                                  <span style={{ color: 'var(--muted)' }}>
+                                    Desviación: {d.estadistico.desviacion}% (umbral: {d.estadistico.umbral}%) · {d.estadistico.datos_usados} datos
+                                  </span>
+                                </div>
+                              )}
+                              {d.prophet && (
+                                <div style={{ padding: '8px 10px', borderRadius: 10, background: 'rgba(124,181,232,0.08)', border: '1px solid rgba(124,181,232,0.15)', fontSize: 12 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                    <span style={{ fontWeight: 700, color: '#7CB5E8' }}>P Prophet</span>
+                                    <span style={{ fontSize: 11, color: d.prophet.es_anomalia ? '#E8A0C4' : '#A0C4B5' }}>
+                                      {d.prophet.es_anomalia ? 'Anomalía' : 'Normal'}
+                                    </span>
+                                  </div>
+                                  <span style={{ color: 'var(--muted)' }}>
+                                    Predicción: {d.prophet.yhat} · Rango [{d.prophet.yhat_lower} — {d.prophet.yhat_upper}] · {d.prophet.datos_entrenamiento} datos
+                                  </span>
+                                </div>
+                              )}
+                              {d.pyod && (
+                                <div style={{ padding: '8px 10px', borderRadius: 10, background: 'rgba(232,196,160,0.08)', border: '1px solid rgba(232,196,160,0.15)', fontSize: 12 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                    <span style={{ fontWeight: 700, color: '#E8C4A0' }}>F Isolation Forest</span>
+                                    <span style={{ fontSize: 11, color: d.pyod.es_anomalia ? '#E8A0C4' : '#A0C4B5' }}>
+                                      {d.pyod.es_anomalia ? 'Outlier' : 'Normal'}
+                                    </span>
+                                  </div>
+                                  <span style={{ color: 'var(--muted)' }}>
+                                    Score: {d.pyod.anomaly_score} (threshold: {d.pyod.threshold}) · Media: {d.pyod.media_historica} ±{d.pyod.std_historica?.toFixed(1)}
+                                  </span>
+                                </div>
+                              )}
+                              {a.recomendacion && (
+                                <div style={{ padding: '8px 10px', borderRadius: 10, background: 'rgba(155,142,196,0.08)', border: '1px solid rgba(155,142,196,0.15)', fontSize: 12 }}>
+                                  <span style={{ fontWeight: 700, color: '#C4B5E8', fontSize: 11 }}>Recomendación IA:</span>
+                                  <p style={{ color: 'var(--text)', opacity: 0.85, marginTop: 4, lineHeight: 1.6 }}>{a.recomendacion}</p>
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                </GlowingCard>
+              </FadeContent>
+            )}
 
             {/* KPI STATS GRID */}
             {chartSize !== 'completo' && (

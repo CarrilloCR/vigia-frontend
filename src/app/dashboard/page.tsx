@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/axios'
-import { Alerta } from '../../types'
+import { Alerta, DetalleDeteccion } from '../../types'
 import { useAuthStore } from '../../store/auth'
 import { useToastStore } from '../../store/toast'
 import Aurora from '../../components/reactbits/Aurora'
@@ -29,6 +29,250 @@ const sevConfig: Record<string, { label: string; color: string }> = {
   media:   { label: 'Media',   color: '#C4B5E8' },
   alta:    { label: 'Alta',    color: '#9B8EC4' },
   critica: { label: 'Crítica', color: '#E8A0C4' },
+}
+
+const metodoDeteccionConfig: Record<string, { label: string; color: string; icon: string }> = {
+  estadistico: { label: 'Estadístico', color: '#A0C4B5', icon: 'σ' },
+  prophet:     { label: 'Prophet',     color: '#7CB5E8', icon: 'P' },
+  pyod:        { label: 'PyOD',        color: '#E8C4A0', icon: 'F' },
+}
+
+function parseMetodoDeteccion(metodo: string | undefined): { label: string; color: string; methods: string[]; isEnsemble: boolean } {
+  if (!metodo) return { label: 'Estadístico', color: '#A0C4B5', methods: ['estadistico'], isEnsemble: false }
+
+  if (metodo.startsWith('ensemble:')) {
+    const parts = metodo.replace('ensemble:', '').split('+').filter(Boolean)
+    if (parts[0] === 'sin_anomalia') {
+      return { label: 'Ensemble (sin anomalía)', color: '#A0C4B5', methods: [], isEnsemble: true }
+    }
+    const labels = parts.map(p => metodoDeteccionConfig[p]?.label || p)
+    return { label: labels.join(' + '), color: '#C4B5E8', methods: parts, isEnsemble: true }
+  }
+
+  const cfg = metodoDeteccionConfig[metodo]
+  return { label: cfg?.label || metodo, color: cfg?.color || '#A0C4B5', methods: [metodo], isEnsemble: false }
+}
+
+const MetodoBadge = ({ metodo }: { metodo: string | undefined }) => {
+  const parsed = parseMetodoDeteccion(metodo)
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
+      background: parsed.isEnsemble
+        ? 'linear-gradient(135deg, rgba(124,181,232,0.15), rgba(232,196,160,0.15))'
+        : `${parsed.color}18`,
+      color: parsed.color,
+      border: `1px solid ${parsed.color}30`,
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      whiteSpace: 'nowrap' as const,
+    }}>
+      {parsed.isEnsemble && (
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={parsed.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/>
+        </svg>
+      )}
+      {parsed.isEnsemble ? 'Ensemble' : parsed.label}
+      {parsed.isEnsemble && parsed.methods.length > 0 && (
+        <span style={{ opacity: 0.7 }}>({parsed.methods.length})</span>
+      )}
+    </span>
+  )
+}
+
+const InfoIcon = () => (
+  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+  </svg>
+)
+
+function DeteccionDetailPanel({ detalle, metodo, valorDetectado }: { detalle: DetalleDeteccion | null; metodo: string; valorDetectado: number }) {
+  if (!detalle) return null
+  const parsed = parseMetodoDeteccion(metodo)
+
+  const MethodRow = ({ name, label, color, icon, data }: {
+    name: string; label: string; color: string; icon: string;
+    data: { es_anomalia: boolean; valor_esperado: number; desviacion: number; [k: string]: any }
+  }) => (
+    <div style={{
+      padding: '12px 14px', borderRadius: 14,
+      background: data.es_anomalia ? `${color}12` : 'rgba(255,255,255,0.02)',
+      border: `1px solid ${data.es_anomalia ? color + '35' : 'var(--border)'}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{
+            width: 22, height: 22, borderRadius: 7, fontSize: 11, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: `${color}20`, color,
+          }}>{icon}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{label}</span>
+        </div>
+        <span style={{
+          fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20,
+          background: data.es_anomalia ? `${color}20` : 'rgba(160,196,181,0.15)',
+          color: data.es_anomalia ? color : 'var(--success)',
+        }}>
+          {data.es_anomalia ? 'Anomalía' : 'Normal'}
+        </span>
+      </div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 12 }}>
+        <span style={{ color: 'var(--muted)' }}>
+          Esperado: <strong style={{ color: 'var(--text)' }}>{data.valor_esperado}</strong>
+        </span>
+        <span style={{ color: 'var(--muted)' }}>
+          Desviación: <strong style={{ color }}>{data.desviacion.toFixed(1)}%</strong>
+        </span>
+        {name === 'estadistico' && data.umbral && (
+          <span style={{ color: 'var(--muted)' }}>Umbral: {data.umbral}%</span>
+        )}
+      </div>
+      {name === 'prophet' && data.yhat_lower != null && (
+        <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 10, background: 'rgba(124,181,232,0.08)', border: '1px solid rgba(124,181,232,0.15)' }}>
+          <p style={{ fontSize: 11, color: '#7CB5E8', fontWeight: 600, marginBottom: 4 }}>
+            Intervalo de confianza {data.intervalo_confianza || 90}%
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+            <span style={{ color: 'var(--muted)' }}>
+              Rango: <strong style={{ color: 'var(--text)' }}>{data.yhat_lower}</strong>
+              {' — '}
+              <strong style={{ color: 'var(--text)' }}>{data.yhat_upper}</strong>
+            </span>
+            <span style={{ color: 'var(--muted)' }}>
+              Predicción: <strong style={{ color: '#7CB5E8' }}>{data.yhat}</strong>
+            </span>
+          </div>
+          <div style={{ marginTop: 6, height: 6, borderRadius: 3, background: 'rgba(124,181,232,0.12)', position: 'relative', overflow: 'hidden' }}>
+            {/* Bar representing the confidence interval */}
+            <div style={{
+              position: 'absolute', top: 0, bottom: 0,
+              left: `${Math.max(0, Math.min(100, ((data.yhat_lower) / (data.yhat_upper * 1.3)) * 100))}%`,
+              right: `${Math.max(0, 100 - ((data.yhat_upper) / (data.yhat_upper * 1.3)) * 100)}%`,
+              background: 'rgba(124,181,232,0.3)', borderRadius: 3,
+            }} />
+            {/* Marker for actual value */}
+            <div style={{
+              position: 'absolute', top: -2, bottom: -2, width: 3, borderRadius: 2,
+              left: `${Math.max(0, Math.min(97, (valorDetectado / (data.yhat_upper * 1.3)) * 100))}%`,
+              background: valorDetectado < data.yhat_lower || valorDetectado > data.yhat_upper ? '#E8A0C4' : '#A0C4B5',
+              boxShadow: `0 0 6px ${valorDetectado < data.yhat_lower || valorDetectado > data.yhat_upper ? '#E8A0C4' : '#A0C4B5'}`,
+            }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+            <span style={{ fontSize: 10, color: 'var(--muted)' }}>{data.yhat_lower}</span>
+            <span style={{ fontSize: 10, color: valorDetectado < data.yhat_lower || valorDetectado > data.yhat_upper ? '#E8A0C4' : '#A0C4B5', fontWeight: 600 }}>
+              Actual: {valorDetectado.toFixed(1)}
+            </span>
+            <span style={{ fontSize: 10, color: 'var(--muted)' }}>{data.yhat_upper}</span>
+          </div>
+        </div>
+      )}
+      {name === 'pyod' && data.anomaly_score != null && (
+        <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 10, background: 'rgba(232,196,160,0.08)', border: '1px solid rgba(232,196,160,0.15)' }}>
+          <p style={{ fontSize: 11, color: '#E8C4A0', fontWeight: 600, marginBottom: 4 }}>Isolation Forest</p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 12 }}>
+            <span style={{ color: 'var(--muted)' }}>
+              Score: <strong style={{ color: data.es_outlier ? '#E8A0C4' : '#A0C4B5' }}>{data.anomaly_score}</strong>
+            </span>
+            <span style={{ color: 'var(--muted)' }}>
+              Threshold: <strong style={{ color: 'var(--text)' }}>{data.threshold}</strong>
+            </span>
+            <span style={{ color: 'var(--muted)' }}>
+              Media: {data.media_historica} (±{data.std_historica?.toFixed(1)})
+            </span>
+          </div>
+          {/* Score bar */}
+          <div style={{ marginTop: 6, height: 6, borderRadius: 3, background: 'rgba(232,196,160,0.12)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{
+              position: 'absolute', top: 0, bottom: 0, left: 0, borderRadius: 3,
+              width: `${Math.min(100, Math.max(5, Math.abs(data.anomaly_score) / (Math.abs(data.threshold) * 2) * 100))}%`,
+              background: data.es_outlier
+                ? 'linear-gradient(90deg, #E8C4A0, #E8A0C4)'
+                : 'linear-gradient(90deg, #A0C4B5, #E8C4A0)',
+            }} />
+            {/* Threshold marker */}
+            <div style={{
+              position: 'absolute', top: -1, bottom: -1, width: 2, borderRadius: 1,
+              left: `${Math.min(95, Math.abs(data.threshold) / (Math.abs(data.threshold) * 2) * 100)}%`,
+              background: '#E8C4A0', opacity: 0.7,
+            }} />
+          </div>
+        </div>
+      )}
+      {data.datos_entrenamiento && (
+        <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 6 }}>
+          {data.datos_entrenamiento || data.datos_usados} registros analizados
+        </p>
+      )}
+    </div>
+  )
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: 'auto' }}
+      exit={{ opacity: 0, height: 0 }}
+      style={{ overflow: 'hidden', marginBottom: 12 }}
+    >
+      <div style={{
+        padding: '16px', borderRadius: 16,
+        background: 'linear-gradient(135deg, rgba(155,142,196,0.06), rgba(124,181,232,0.04))',
+        border: '1px solid rgba(155,142,196,0.15)',
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#9B8EC4', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Detalle de Detección
+          </span>
+          {detalle.ensemble && (
+            <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--muted)' }}>
+              Votos: {detalle.ensemble.votos}/{detalle.ensemble.total_metodos}
+            </span>
+          )}
+        </div>
+
+        {/* Voting summary */}
+        {detalle.ensemble && detalle.ensemble.total_metodos > 1 && (
+          <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+            {detalle.ensemble.metodos_disponibles.map(m => {
+              const voted = detalle.ensemble!.metodos_que_flaggearon.includes(m)
+              const cfg = metodoDeteccionConfig[m]
+              return (
+                <div key={m} style={{
+                  flex: 1, padding: '8px 10px', borderRadius: 10, textAlign: 'center',
+                  background: voted ? `${cfg?.color || '#9B8EC4'}15` : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${voted ? (cfg?.color || '#9B8EC4') + '40' : 'var(--border)'}`,
+                }}>
+                  <div style={{ fontSize: 16, marginBottom: 2 }}>{voted ? '⚠' : '✓'}</div>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: voted ? cfg?.color : 'var(--success)' }}>
+                    {cfg?.label || m}
+                  </p>
+                  <p style={{ fontSize: 10, color: 'var(--muted)' }}>
+                    {voted ? 'Anomalía' : 'Normal'}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Per-method details */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {detalle.estadistico && (
+            <MethodRow name="estadistico" label="Estadístico" color="#A0C4B5" icon="σ" data={detalle.estadistico} />
+          )}
+          {detalle.prophet && (
+            <MethodRow name="prophet" label="Prophet" color="#7CB5E8" icon="P" data={detalle.prophet} />
+          )}
+          {detalle.pyod && (
+            <MethodRow name="pyod" label="PyOD (Isolation Forest)" color="#E8C4A0" icon="F" data={detalle.pyod} />
+          )}
+        </div>
+      </div>
+    </motion.div>
+  )
 }
 
 const ShieldIcon = () => (
@@ -245,6 +489,7 @@ function MedicosList({ clinicaId }: { clinicaId: number }) {
 }
 
 type FiltroSeveridad = 'todas' | 'critica' | 'alta' | 'media' | 'baja'
+type FiltroMetodo = 'todos' | 'estadistico' | 'prophet' | 'pyod' | 'ensemble'
 type VistaAlertas = 'activas' | 'historial'
 
 export default function DashboardPage() {
@@ -254,9 +499,11 @@ export default function DashboardPage() {
   const [motorLoading, setMotorLoading] = useState(false)
   const [notifPendientes, setNotifPendientes] = useState(0)
   const [filtroSev, setFiltroSev] = useState<FiltroSeveridad>('todas')
+  const [filtroMetodo, setFiltroMetodo] = useState<FiltroMetodo>('todos')
   const [vistaAlertas, setVistaAlertas] = useState<VistaAlertas>('activas')
   const [ocultarTodas, setOcultarTodas] = useState(false)
   const [feedbackDado, setFeedbackDado] = useState<Record<number, 'util' | 'no_util'>>({})
+  const [detalleExpandido, setDetalleExpandido] = useState<Record<number, boolean>>({})
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
   const toast = useToastStore()
@@ -302,7 +549,7 @@ export default function DashboardPage() {
       await fetchAlertas()
       await fetchHistorial()
       await fetchNotifs()
-      toast.success('Análisis completado', 'El motor de alertas se ejecutó correctamente.')
+      toast.success('Análisis completado', 'El motor de detección (Estadístico + Prophet + PyOD) se ejecutó correctamente.')
     } catch {
       toast.error('Error en el análisis', 'No se pudo ejecutar el motor de alertas. Intenta de nuevo.')
     } finally { setMotorLoading(false) }
@@ -356,15 +603,24 @@ export default function DashboardPage() {
     }
   }
 
+  const filtrarPorMetodo = (a: Alerta) => {
+    if (filtroMetodo === 'todos') return true
+    if (filtroMetodo === 'ensemble') return (a.metodo_deteccion || '').startsWith('ensemble:')
+    if (filtroMetodo === 'estadistico') return a.metodo_deteccion === 'estadistico' || (!a.metodo_deteccion)
+    return a.metodo_deteccion === filtroMetodo
+  }
+
   const alertasFiltradas = alertas.filter(a =>
-    filtroSev === 'todas' || a.severidad === filtroSev
+    (filtroSev === 'todas' || a.severidad === filtroSev) && filtrarPorMetodo(a)
   )
 
   const historialFiltrado = historial.filter(a =>
-    filtroSev === 'todas' || a.severidad === filtroSev
+    (filtroSev === 'todas' || a.severidad === filtroSev) && filtrarPorMetodo(a)
   )
 
   const listaActual = vistaAlertas === 'activas' ? alertasFiltradas : historialFiltrado
+
+  const ensembleCount = alertas.filter(a => (a.metodo_deteccion || '').startsWith('ensemble:')).length
 
   const stats = [
     { label: 'Total activas',  value: alertas.length, color: '#9B8EC4', filtro: 'todas' as FiltroSeveridad },
@@ -379,6 +635,14 @@ export default function DashboardPage() {
     { key: 'alta',    label: 'Altas',    color: '#9B8EC4' },
     { key: 'media',   label: 'Medias',   color: '#C4B5E8' },
     { key: 'baja',    label: 'Bajas',    color: '#A0C4B5' },
+  ]
+
+  const filtrosMetodo: { key: FiltroMetodo; label: string; color: string }[] = [
+    { key: 'todos',       label: 'Todos',       color: '#9B8EC4' },
+    { key: 'ensemble',    label: 'Ensemble',    color: '#C4B5E8' },
+    { key: 'estadistico', label: 'Estadístico', color: '#A0C4B5' },
+    { key: 'prophet',     label: 'Prophet',     color: '#7CB5E8' },
+    { key: 'pyod',        label: 'PyOD',        color: '#E8C4A0' },
   ]
 
   return (
@@ -505,7 +769,12 @@ export default function DashboardPage() {
                 <CountUp to={s.value} duration={1} />
               </p>
               <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
-              <div style={{ marginTop: 16, height: 3, borderRadius: 4, background: `${s.color}20` }}>
+              {i === 0 && ensembleCount > 0 && (
+                <p style={{ fontSize: 11, color: '#C4B5E8', marginTop: 6, fontWeight: 500 }}>
+                  {ensembleCount} por ensemble
+                </p>
+              )}
+              <div style={{ marginTop: i === 0 && ensembleCount > 0 ? 8 : 16, height: 3, borderRadius: 4, background: `${s.color}20` }}>
                 <motion.div initial={{ width: 0 }} animate={{ width: s.value > 0 ? '100%' : '0%' }}
                   transition={{ duration: 1, delay: i * 0.1 }}
                   style={{ height: '100%', borderRadius: 4, background: s.color }} />
@@ -562,6 +831,24 @@ export default function DashboardPage() {
                       color: filtroSev === f.key ? f.color : 'var(--muted)',
                       borderWidth: 1, borderStyle: 'solid',
                       borderColor: filtroSev === f.key ? `${f.color}50` : 'var(--border)',
+                      transition: 'all 0.2s',
+                    }}>
+                    {f.label}
+                  </motion.button>
+                ))}
+
+                {/* Filtros método detección */}
+                <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 4px' }} />
+                {filtrosMetodo.map(f => (
+                  <motion.button key={f.key} onClick={() => setFiltroMetodo(f.key)}
+                    whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    style={{
+                      padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                      cursor: 'pointer', border: 'none',
+                      background: filtroMetodo === f.key ? `${f.color}25` : 'rgba(255,255,255,0.03)',
+                      color: filtroMetodo === f.key ? f.color : 'var(--muted)',
+                      borderWidth: 1, borderStyle: 'solid',
+                      borderColor: filtroMetodo === f.key ? `${f.color}50` : 'var(--border)',
                       transition: 'all 0.2s',
                     }}>
                     {f.label}
@@ -640,6 +927,23 @@ export default function DashboardPage() {
                                 <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
                                   {kpiLabel[a.tipo_kpi] || a.tipo_kpi}
                                 </span>
+                                <MetodoBadge metodo={a.metodo_deteccion} />
+                                {a.detalle_deteccion && (
+                                  <motion.button
+                                    onClick={(e) => { e.stopPropagation(); setDetalleExpandido(prev => ({ ...prev, [a.id]: !prev[a.id] })) }}
+                                    whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                                    style={{
+                                      width: 24, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                                      background: detalleExpandido[a.id] ? 'rgba(155,142,196,0.25)' : 'rgba(155,142,196,0.1)',
+                                      color: detalleExpandido[a.id] ? '#9B8EC4' : 'var(--muted)',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      transition: 'all 0.2s',
+                                    }}
+                                    title="Ver detalle de detección"
+                                  >
+                                    <InfoIcon />
+                                  </motion.button>
+                                )}
                                 {vistaAlertas === 'historial' && (
                                   <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'var(--muted)', border: '1px solid var(--border)', marginLeft: 'auto' }}>
                                     {a.estado}
@@ -650,7 +954,7 @@ export default function DashboardPage() {
                                 {a.mensaje}
                               </p>
                               {/* Valores detectados */}
-                              <div style={{ display: 'flex', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+                              <div style={{ display: 'flex', gap: 16, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                                 <span style={{ fontSize: 12, color: 'var(--muted)' }}>
                                   Detectado: <strong style={{ color: cfg.color }}>{a.valor_detectado?.toFixed(1)}</strong>
                                 </span>
@@ -662,7 +966,26 @@ export default function DashboardPage() {
                                     {a.desviacion > 0 ? '+' : ''}{a.desviacion.toFixed(1)}% desviación
                                   </span>
                                 )}
+                                {a.metodo_deteccion && parseMetodoDeteccion(a.metodo_deteccion).isEnsemble && parseMetodoDeteccion(a.metodo_deteccion).methods.length > 0 && (
+                                  <span style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    Detectado por: {parseMetodoDeteccion(a.metodo_deteccion).methods.map(m => (
+                                      <span key={m} style={{
+                                        fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 10,
+                                        background: `${metodoDeteccionConfig[m]?.color || '#A0C4B5'}18`,
+                                        color: metodoDeteccionConfig[m]?.color || '#A0C4B5',
+                                      }}>
+                                        {metodoDeteccionConfig[m]?.icon}{' '}{metodoDeteccionConfig[m]?.label || m}
+                                      </span>
+                                    ))}
+                                  </span>
+                                )}
                               </div>
+                              {/* Detalle de detección expandible */}
+                              <AnimatePresence>
+                                {detalleExpandido[a.id] && (
+                                  <DeteccionDetailPanel detalle={a.detalle_deteccion} metodo={a.metodo_deteccion} valorDetectado={a.valor_detectado} />
+                                )}
+                              </AnimatePresence>
                               {/* Recomendación IA */}
                               {a.recomendacion && (
                                 <div style={{

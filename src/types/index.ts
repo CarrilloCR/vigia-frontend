@@ -71,6 +71,53 @@ export interface Encuesta {
   respondida_en: string
 }
 
+export interface DetalleMetodoBase {
+  es_anomalia: boolean
+  valor_esperado: number
+  desviacion: number
+  datos_usados?: number
+  umbral?: number
+}
+
+export interface DetalleEstadistico extends DetalleMetodoBase {
+  umbral: number
+  datos_usados: number
+}
+
+export interface DetalleProphet extends DetalleMetodoBase {
+  yhat: number
+  yhat_lower: number
+  yhat_upper: number
+  intervalo_confianza: number
+  datos_entrenamiento: number
+  forecast?: { fecha: string; yhat: number; yhat_lower: number; yhat_upper: number }[]
+}
+
+export interface DetallePyod extends DetalleMetodoBase {
+  anomaly_score: number
+  threshold: number
+  es_outlier: boolean
+  media_historica: number
+  std_historica: number
+  datos_entrenamiento: number
+  contamination: number
+}
+
+export interface DetalleEnsemble {
+  metodos_disponibles: string[]
+  metodos_que_flaggearon: string[]
+  votos: number
+  total_metodos: number
+  resultado: string
+}
+
+export interface DetalleDeteccion {
+  estadistico?: DetalleEstadistico
+  prophet?: DetalleProphet
+  pyod?: DetallePyod
+  ensemble?: DetalleEnsemble
+}
+
 export interface Alerta {
   id: number
   clinica: number
@@ -83,6 +130,8 @@ export interface Alerta {
   severidad: 'baja' | 'media' | 'alta' | 'critica'
   mensaje: string
   recomendacion: string
+  metodo_deteccion: string
+  detalle_deteccion: DetalleDeteccion | null
   estado: 'activa' | 'revisada' | 'resuelta'
   creada_en: string
   revisada_en: string | null
