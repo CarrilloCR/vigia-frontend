@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../lib/axios'
@@ -102,6 +102,82 @@ const ResolveAllIcon = () => (
     <polyline points="20 12 9 23 4 18"/>
   </svg>
 )
+
+const liveKpiConfig: Record<string, { label: string; color: string; unit: string }> = {
+  tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
+  tasa_noshow:       { label: 'No-Show',      color: '#C4B5E8', unit: '%' },
+  ingresos_dia:      { label: 'Ingresos',     color: '#A0C4B5', unit: '$' },
+  ocupacion_agenda:  { label: 'Ocupación',    color: '#BBA8E8', unit: '%' },
+  ticket_promedio:   { label: 'Ticket',       color: '#9B8EC4', unit: '$' },
+  pacientes_nuevos:  { label: 'Pac. Nuevos',  color: '#7C6FBF', unit: '' },
+  retencion_90:      { label: 'Retención',    color: '#A8C4A0', unit: '%' },
+  nps:               { label: 'NPS',          color: '#C4B5E8', unit: '' },
+  citas_reagendadas: { label: 'Reagendadas',  color: '#E8C4A0', unit: '' },
+}
+
+interface LiveKpi { id: number; tipo: string; valor: number; fecha_hora: string }
+
+function GeneradorLiveWidget({ clinicaId }: { clinicaId: number }) {
+  const [count, setCount] = useState(0)
+  const router = useRouter()
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const res = await api.get(`/kpis/?clinica=${clinicaId}&horas=1`)
+        const data = res.data.results || res.data
+        setCount(data.length)
+      } catch { /* silent */ }
+    }
+    fetch()
+    const id = setInterval(fetch, 20000)
+    return () => clearInterval(id)
+  }, [clinicaId])
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }}
+      onClick={() => router.push('/dashboard/generador')}
+      whileHover={{ scale: 1.02, borderColor: 'rgba(160,196,181,0.45)' }}
+      whileTap={{ scale: 0.98 }}
+      style={{
+        padding: '16px 20px', borderRadius: 20, cursor: 'pointer',
+        background: 'linear-gradient(135deg, rgba(160,196,181,0.12), rgba(160,196,181,0.04))',
+        border: '1px solid rgba(160,196,181,0.25)',
+        display: 'flex', alignItems: 'center', gap: 14,
+      }}>
+      {/* Animated activity icon */}
+      <motion.div
+        animate={{ boxShadow: ['0 0 8px rgba(160,196,181,0.3)', '0 0 20px rgba(160,196,181,0.6)', '0 0 8px rgba(160,196,181,0.3)'] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        style={{
+          width: 42, height: 42, borderRadius: 14, flexShrink: 0,
+          background: 'linear-gradient(135deg, #A0C4B5, #7AB5A3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+        <motion.svg width="20" height="20" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
+          animate={{ pathLength: [0, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </motion.svg>
+      </motion.div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="font-display" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Generador</span>
+          <motion.div
+            animate={{ scale: [1, 1.4, 1], opacity: [1, 0.4, 1] }}
+            transition={{ duration: 1.6, repeat: Infinity }}
+            style={{ width: 6, height: 6, borderRadius: '50%', background: '#A0C4B5', boxShadow: '0 0 8px #A0C4B5' }}
+          />
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+          {count > 0 ? <><strong style={{ color: '#A0C4B5' }}>{count}</strong> registros (1h)</> : 'Esperando datos...'}
+        </p>
+      </div>
+
+      <span style={{ color: 'var(--muted)', flexShrink: 0 }}><ArrowRightIcon /></span>
+    </motion.div>
+  )
+}
 
 interface Medico {
   id: number
@@ -701,33 +777,8 @@ export default function DashboardPage() {
               </GlowingCard>
             </motion.div>
 
-            {/* Accesos Rápidos */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {[
-                  { label: 'Pacientes', path: '/dashboard/pacientes', color: '#A0C4B5', icon: <svg width="16" height="16" fill="none" stroke="#A0C4B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> },
-                  { label: 'Citas', path: '/dashboard/citas', color: '#C4B5E8', icon: <svg width="16" height="16" fill="none" stroke="#C4B5E8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
-                  { label: 'KPIs', path: '/dashboard/kpis', color: '#9B8EC4', icon: <svg width="16" height="16" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
-                  { label: 'Ajustes', path: '/dashboard/configuracion', color: '#E8A0C4', icon: <svg width="16" height="16" fill="none" stroke="#E8A0C4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> },
-                ].map((item, i) => (
-                  <motion.div
-                    key={item.path}
-                    onClick={() => router.push(item.path)}
-                    whileHover={{ scale: 1.03, borderColor: `${item.color}50` }}
-                    whileTap={{ scale: 0.97 }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      padding: '14px 14px', borderRadius: 16, cursor: 'pointer',
-                      background: `${item.color}08`, border: `1px solid ${item.color}20`,
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    {item.icon}
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{item.label}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+            {/* Generador en Vivo — mini */}
+            <GeneradorLiveWidget clinicaId={clinicaId} />
           </div>
         </div>
       </div>

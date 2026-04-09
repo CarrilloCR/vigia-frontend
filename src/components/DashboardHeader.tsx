@@ -78,6 +78,15 @@ const navItems = [
     ),
   },
   {
+    path: '/dashboard/generador',
+    label: 'Generador',
+    icon: (
+      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+    ),
+  },
+  {
     path: '/dashboard/correos',
     label: 'Correos',
     icon: (
