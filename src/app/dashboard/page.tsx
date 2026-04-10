@@ -24,6 +24,61 @@ const kpiLabel: Record<string, string> = {
   citas_reagendadas: 'Reagendadas',
 }
 
+const kpiDescripcion: Record<string, { corta: string; detalle: string; unidad: string }> = {
+  tasa_cancelacion: {
+    corta: 'Porcentaje de citas canceladas sobre el total agendado.',
+    detalle: 'Un valor alto indica problemas de compromiso del paciente o dificultades en la agenda. Se calcula como (citas canceladas ÷ total citas agendadas) × 100.',
+    unidad: '%',
+  },
+  tasa_noshow: {
+    corta: 'Porcentaje de pacientes que no asistieron sin avisar.',
+    detalle: 'Los no-shows generan pérdidas directas de ingreso y tiempo. Se calcula como (inasistencias sin aviso ÷ total citas confirmadas) × 100.',
+    unidad: '%',
+  },
+  ingresos_dia: {
+    corta: 'Ingresos totales generados en el día por consultas.',
+    detalle: 'Suma de los ingresos registrados en las citas completadas durante el día. Incluye consultas, procedimientos y servicios facturados.',
+    unidad: '$',
+  },
+  ocupacion_agenda: {
+    corta: 'Porcentaje de bloques de agenda utilizados.',
+    detalle: 'Mide qué tan aprovechada está la capacidad instalada de la clínica. Se calcula como (citas atendidas ÷ slots disponibles) × 100.',
+    unidad: '%',
+  },
+  ticket_promedio: {
+    corta: 'Ingreso promedio por cita atendida en el sistema.',
+    detalle: 'El ticket promedio refleja el valor económico de cada consulta. Se calcula como ingresos totales ÷ número de citas completadas. Un ticket bajo puede indicar problemas de cobro o servicios subutilizados.',
+    unidad: '$',
+  },
+  pacientes_nuevos: {
+    corta: 'Cantidad de pacientes que visitan la clínica por primera vez.',
+    detalle: 'Indicador de crecimiento de la base de pacientes. Un descenso puede señalar problemas de captación o pérdida de competitividad.',
+    unidad: 'pac.',
+  },
+  retencion_90: {
+    corta: 'Porcentaje de pacientes que regresaron en los últimos 90 días.',
+    detalle: 'Mide la fidelidad del paciente. Se calcula como (pacientes con al menos 2 visitas en 90 días ÷ total pacientes activos) × 100. Un valor bajo indica problemas de seguimiento o satisfacción.',
+    unidad: '%',
+  },
+  nps: {
+    corta: 'Net Promoter Score: índice de satisfacción y lealtad del paciente.',
+    detalle: 'Escala de -100 a 100. Valores por encima de 50 son excelentes. Se calcula restando el % de detractores (puntuación 0–6) al % de promotores (9–10). Valores negativos indican alta insatisfacción.',
+    unidad: 'puntos',
+  },
+  citas_reagendadas: {
+    corta: 'Número de citas que fueron movidas a otra fecha.',
+    detalle: 'Un volumen alto de reagendamientos puede indicar problemas organizativos o de disponibilidad médica. Se cuentan todas las citas cuyo estado pasó a "reagendada" en el período.',
+    unidad: 'citas',
+  },
+}
+
+const sevDescripcion: Record<string, { desc: string; condicion: string }> = {
+  baja:    { desc: 'Variación menor, monitorear si el patrón continúa.',                   condicion: 'Desviación < 35%' },
+  media:   { desc: 'Desviación moderada que merece seguimiento pero no acción inmediata.', condicion: 'Desviación 35–60%' },
+  alta:    { desc: 'Anomalía significativa que requiere revisión y posible intervención.',  condicion: 'Desviación 60–80%' },
+  critica: { desc: 'Anomalía severa con posible impacto operativo o financiero urgente.',  condicion: 'Desviación > 80% o múltiples métodos coinciden' },
+}
+
 const sevConfig: Record<string, { label: string; color: string }> = {
   baja:    { label: 'Baja',    color: '#A0C4B5' },
   media:   { label: 'Media',   color: '#C4B5E8' },
@@ -85,126 +140,214 @@ const InfoIcon = () => (
   </svg>
 )
 
-function DeteccionDetailPanel({ detalle, metodo, valorDetectado }: { detalle: DetalleDeteccion | null; metodo: string; valorDetectado: number }) {
+function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
+  detalle: DetalleDeteccion | null; metodo: string; valorDetectado: number; tipoKpi: string
+}) {
   if (!detalle) return null
-  const parsed = parseMetodoDeteccion(metodo)
+
+  const kpiDesc = kpiDescripcion[tipoKpi]
 
   const MethodRow = ({ name, label, color, icon, data }: {
     name: string; label: string; color: string; icon: string;
     data: { es_anomalia: boolean; valor_esperado: number; desviacion: number; [k: string]: any }
-  }) => (
-    <div style={{
-      padding: '12px 14px', borderRadius: 14,
-      background: data.es_anomalia ? `${color}12` : 'rgba(255,255,255,0.02)',
-      border: `1px solid ${data.es_anomalia ? color + '35' : 'var(--border)'}`,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+  }) => {
+    const outOfRange = name === 'prophet' && data.yhat_lower != null
+      ? (valorDetectado < data.yhat_lower || valorDetectado > data.yhat_upper)
+      : false
+
+    return (
+      <div style={{
+        padding: '14px 16px', borderRadius: 14,
+        background: data.es_anomalia ? `${color}10` : 'rgba(255,255,255,0.02)',
+        border: `1px solid ${data.es_anomalia ? color + '35' : 'var(--border)'}`,
+      }}>
+        {/* Method header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              width: 24, height: 24, borderRadius: 8, fontSize: 12, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: `${color}22`, color,
+            }}>{icon}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{label}</span>
+          </div>
           <span style={{
-            width: 22, height: 22, borderRadius: 7, fontSize: 11, fontWeight: 700,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: `${color}20`, color,
-          }}>{icon}</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{label}</span>
+            fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
+            background: data.es_anomalia ? `${color}22` : 'rgba(160,196,181,0.15)',
+            color: data.es_anomalia ? color : 'var(--success)',
+          }}>
+            {data.es_anomalia ? 'Anomalía detectada' : 'Normal'}
+          </span>
         </div>
-        <span style={{
-          fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 20,
-          background: data.es_anomalia ? `${color}20` : 'rgba(160,196,181,0.15)',
-          color: data.es_anomalia ? color : 'var(--success)',
-        }}>
-          {data.es_anomalia ? 'Anomalía' : 'Normal'}
-        </span>
-      </div>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 12 }}>
-        <span style={{ color: 'var(--muted)' }}>
-          Esperado: <strong style={{ color: 'var(--text)' }}>{data.valor_esperado}</strong>
-        </span>
-        <span style={{ color: 'var(--muted)' }}>
-          Desviación: <strong style={{ color }}>{data.desviacion.toFixed(1)}%</strong>
-        </span>
-        {name === 'estadistico' && data.umbral && (
-          <span style={{ color: 'var(--muted)' }}>Umbral: {data.umbral}%</span>
+
+        {/* Method description */}
+        {name === 'estadistico' && (
+          <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10, lineHeight: 1.6 }}>
+            Compara el valor actual con el promedio histórico usando desviaciones estándar (σ). Si el valor supera el umbral de tolerancia configurado, se marca como anomalía.
+          </p>
+        )}
+        {name === 'prophet' && (
+          <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10, lineHeight: 1.6 }}>
+            Modelo de predicción de series temporales (Meta/Facebook). Aprende patrones de tendencia, estacionalidad semanal y efectos de días especiales para predecir el valor esperado a futuro con un intervalo de confianza.
+          </p>
+        )}
+        {name === 'pyod' && (
+          <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10, lineHeight: 1.6 }}>
+            Isolation Forest (PyOD): detecta puntos anómalos aislando observaciones inusuales en el espacio multidimensional de datos. Produce un score de anomalía: cuanto más negativo, más alejado está del comportamiento normal histórico.
+          </p>
+        )}
+
+        {/* Core metrics */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12, marginBottom: 8 }}>
+          <div style={{ padding: '6px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+            <span style={{ color: 'var(--muted)', fontSize: 10, display: 'block', marginBottom: 2 }}>Valor esperado</span>
+            <strong style={{ color: 'var(--text)' }}>
+              {kpiDesc?.unidad === '$' ? `$${data.valor_esperado}` : `${data.valor_esperado}${kpiDesc?.unidad === '%' ? '%' : ''}`}
+            </strong>
+            <span style={{ fontSize: 10, color: 'var(--muted)', display: 'block', marginTop: 1 }}>
+              {name === 'estadistico' ? 'Promedio histórico' : name === 'prophet' ? 'Predicción del modelo' : 'Media del período'}
+            </span>
+          </div>
+
+          <div style={{ padding: '6px 10px', borderRadius: 10, background: `${color}10`, border: `1px solid ${color}30` }}>
+            <span style={{ color: 'var(--muted)', fontSize: 10, display: 'block', marginBottom: 2 }}>Desviación</span>
+            <strong style={{ color }}>
+              {data.desviacion > 0 ? '+' : ''}{data.desviacion.toFixed(1)}%
+            </strong>
+            <span style={{ fontSize: 10, color: 'var(--muted)', display: 'block', marginTop: 1 }}>
+              Diferencia vs esperado
+            </span>
+          </div>
+
+          {name === 'estadistico' && data.umbral != null && (
+            <div style={{ padding: '6px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+              <span style={{ color: 'var(--muted)', fontSize: 10, display: 'block', marginBottom: 2 }}>Umbral</span>
+              <strong style={{ color: 'var(--text)' }}>{data.umbral}%</strong>
+              <span style={{ fontSize: 10, color: 'var(--muted)', display: 'block', marginTop: 1 }}>
+                Límite de tolerancia
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Prophet confidence interval chart */}
+        {name === 'prophet' && data.yhat_lower != null && (
+          <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(124,181,232,0.07)', border: '1px solid rgba(124,181,232,0.18)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <p style={{ fontSize: 11, color: '#7CB5E8', fontWeight: 700 }}>
+                Predicción Prophet — Intervalo de confianza {data.intervalo_confianza || 90}%
+              </p>
+              <span style={{ fontSize: 10, color: outOfRange ? '#E8A0C4' : '#A0C4B5', fontWeight: 600 }}>
+                {outOfRange ? 'Valor fuera del rango' : 'Valor dentro del rango'}
+              </span>
+            </div>
+            <p style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 8, lineHeight: 1.5 }}>
+              La zona azul es el rango donde se espera que caiga el valor con {data.intervalo_confianza || 90}% de certeza.
+              La línea vertical muestra el valor real. Si cae fuera de la zona, Prophet lo considera anomalía.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+              <span style={{ color: 'var(--muted)' }}>
+                Predicción: <strong style={{ color: '#7CB5E8' }}>{data.yhat}</strong>
+              </span>
+              <span style={{ color: 'var(--muted)' }}>
+                Rango: <strong style={{ color: 'var(--text)' }}>{data.yhat_lower}</strong>
+                {' — '}
+                <strong style={{ color: 'var(--text)' }}>{data.yhat_upper}</strong>
+              </span>
+            </div>
+            {/* Chart */}
+            <div style={{ height: 8, borderRadius: 4, background: 'rgba(124,181,232,0.1)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{
+                position: 'absolute', top: 0, bottom: 0,
+                left: `${Math.max(0, Math.min(100, (data.yhat_lower / (data.yhat_upper * 1.3)) * 100))}%`,
+                right: `${Math.max(0, 100 - (data.yhat_upper / (data.yhat_upper * 1.3)) * 100)}%`,
+                background: 'rgba(124,181,232,0.35)', borderRadius: 4,
+              }} />
+              <div style={{
+                position: 'absolute', top: -2, bottom: -2, width: 3, borderRadius: 2,
+                left: `${Math.max(0, Math.min(97, (valorDetectado / (data.yhat_upper * 1.3)) * 100))}%`,
+                background: outOfRange ? '#E8A0C4' : '#A0C4B5',
+                boxShadow: `0 0 8px ${outOfRange ? '#E8A0C4' : '#A0C4B5'}`,
+              }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: 'var(--muted)' }}>{data.yhat_lower} (mín)</span>
+              <span style={{ fontSize: 10, color: outOfRange ? '#E8A0C4' : '#A0C4B5', fontWeight: 700 }}>
+                Actual: {valorDetectado.toFixed(1)}
+              </span>
+              <span style={{ fontSize: 10, color: 'var(--muted)' }}>{data.yhat_upper} (máx)</span>
+            </div>
+            {data.datos_entrenamiento != null && (
+              <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 6 }}>
+                Modelo entrenado con {data.datos_entrenamiento} registros históricos
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* PyOD score chart */}
+        {name === 'pyod' && data.anomaly_score != null && (
+          <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(232,196,160,0.07)', border: '1px solid rgba(232,196,160,0.18)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <p style={{ fontSize: 11, color: '#E8C4A0', fontWeight: 700 }}>Score de Anomalía (Isolation Forest)</p>
+              <span style={{ fontSize: 10, color: data.es_outlier ? '#E8A0C4' : '#A0C4B5', fontWeight: 600 }}>
+                {data.es_outlier ? 'Outlier detectado' : 'Punto normal'}
+              </span>
+            </div>
+            <p style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 8, lineHeight: 1.5 }}>
+              La barra muestra qué tan "anómalo" es el punto (score). La línea vertical marca el umbral:
+              si el score supera esa línea, el punto es considerado un outlier (fuera de lo normal histórico).
+            </p>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12, marginBottom: 8 }}>
+              <span style={{ color: 'var(--muted)' }}>
+                Score: <strong style={{ color: data.es_outlier ? '#E8A0C4' : '#A0C4B5' }}>{data.anomaly_score}</strong>
+              </span>
+              <span style={{ color: 'var(--muted)' }}>
+                Umbral: <strong style={{ color: '#E8C4A0' }}>{data.threshold}</strong>
+              </span>
+              {data.media_historica != null && (
+                <span style={{ color: 'var(--muted)' }}>
+                  Media hist.: <strong style={{ color: 'var(--text)' }}>{data.media_historica}</strong>
+                  {data.std_historica != null && <> ± {data.std_historica.toFixed(1)}</>}
+                </span>
+              )}
+            </div>
+            {/* Bar */}
+            <div style={{ height: 8, borderRadius: 4, background: 'rgba(232,196,160,0.1)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{
+                position: 'absolute', top: 0, bottom: 0, left: 0, borderRadius: 4,
+                width: `${Math.min(100, Math.max(5, Math.abs(data.anomaly_score) / (Math.abs(data.threshold) * 2) * 100))}%`,
+                background: data.es_outlier
+                  ? 'linear-gradient(90deg, #E8C4A0, #E8A0C4)'
+                  : 'linear-gradient(90deg, #A0C4B5, #E8C4A0)',
+              }} />
+              <div style={{
+                position: 'absolute', top: -1, bottom: -1, width: 2, borderRadius: 1,
+                left: `${Math.min(95, Math.abs(data.threshold) / (Math.abs(data.threshold) * 2) * 100)}%`,
+                background: '#E8C4A0',
+              }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: 'var(--muted)' }}>Normal (0)</span>
+              <span style={{ fontSize: 10, color: '#E8C4A0' }}>Umbral: {data.threshold}</span>
+            </div>
+            {data.datos_entrenamiento != null && (
+              <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 6 }}>
+                Modelo entrenado con {data.datos_entrenamiento} registros históricos
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Estadístico: datos usados */}
+        {name === 'estadistico' && (data.datos_usados ?? data.datos_entrenamiento) != null && (
+          <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 8 }}>
+            {data.datos_usados ?? data.datos_entrenamiento} registros históricos considerados
+          </p>
         )}
       </div>
-      {name === 'prophet' && data.yhat_lower != null && (
-        <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 10, background: 'rgba(124,181,232,0.08)', border: '1px solid rgba(124,181,232,0.15)' }}>
-          <p style={{ fontSize: 11, color: '#7CB5E8', fontWeight: 600, marginBottom: 4 }}>
-            Intervalo de confianza {data.intervalo_confianza || 90}%
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-            <span style={{ color: 'var(--muted)' }}>
-              Rango: <strong style={{ color: 'var(--text)' }}>{data.yhat_lower}</strong>
-              {' — '}
-              <strong style={{ color: 'var(--text)' }}>{data.yhat_upper}</strong>
-            </span>
-            <span style={{ color: 'var(--muted)' }}>
-              Predicción: <strong style={{ color: '#7CB5E8' }}>{data.yhat}</strong>
-            </span>
-          </div>
-          <div style={{ marginTop: 6, height: 6, borderRadius: 3, background: 'rgba(124,181,232,0.12)', position: 'relative', overflow: 'hidden' }}>
-            {/* Bar representing the confidence interval */}
-            <div style={{
-              position: 'absolute', top: 0, bottom: 0,
-              left: `${Math.max(0, Math.min(100, ((data.yhat_lower) / (data.yhat_upper * 1.3)) * 100))}%`,
-              right: `${Math.max(0, 100 - ((data.yhat_upper) / (data.yhat_upper * 1.3)) * 100)}%`,
-              background: 'rgba(124,181,232,0.3)', borderRadius: 3,
-            }} />
-            {/* Marker for actual value */}
-            <div style={{
-              position: 'absolute', top: -2, bottom: -2, width: 3, borderRadius: 2,
-              left: `${Math.max(0, Math.min(97, (valorDetectado / (data.yhat_upper * 1.3)) * 100))}%`,
-              background: valorDetectado < data.yhat_lower || valorDetectado > data.yhat_upper ? '#E8A0C4' : '#A0C4B5',
-              boxShadow: `0 0 6px ${valorDetectado < data.yhat_lower || valorDetectado > data.yhat_upper ? '#E8A0C4' : '#A0C4B5'}`,
-            }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-            <span style={{ fontSize: 10, color: 'var(--muted)' }}>{data.yhat_lower}</span>
-            <span style={{ fontSize: 10, color: valorDetectado < data.yhat_lower || valorDetectado > data.yhat_upper ? '#E8A0C4' : '#A0C4B5', fontWeight: 600 }}>
-              Actual: {valorDetectado.toFixed(1)}
-            </span>
-            <span style={{ fontSize: 10, color: 'var(--muted)' }}>{data.yhat_upper}</span>
-          </div>
-        </div>
-      )}
-      {name === 'pyod' && data.anomaly_score != null && (
-        <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 10, background: 'rgba(232,196,160,0.08)', border: '1px solid rgba(232,196,160,0.15)' }}>
-          <p style={{ fontSize: 11, color: '#E8C4A0', fontWeight: 600, marginBottom: 4 }}>Isolation Forest</p>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 12 }}>
-            <span style={{ color: 'var(--muted)' }}>
-              Score: <strong style={{ color: data.es_outlier ? '#E8A0C4' : '#A0C4B5' }}>{data.anomaly_score}</strong>
-            </span>
-            <span style={{ color: 'var(--muted)' }}>
-              Threshold: <strong style={{ color: 'var(--text)' }}>{data.threshold}</strong>
-            </span>
-            <span style={{ color: 'var(--muted)' }}>
-              Media: {data.media_historica} (±{data.std_historica?.toFixed(1)})
-            </span>
-          </div>
-          {/* Score bar */}
-          <div style={{ marginTop: 6, height: 6, borderRadius: 3, background: 'rgba(232,196,160,0.12)', position: 'relative', overflow: 'hidden' }}>
-            <div style={{
-              position: 'absolute', top: 0, bottom: 0, left: 0, borderRadius: 3,
-              width: `${Math.min(100, Math.max(5, Math.abs(data.anomaly_score) / (Math.abs(data.threshold) * 2) * 100))}%`,
-              background: data.es_outlier
-                ? 'linear-gradient(90deg, #E8C4A0, #E8A0C4)'
-                : 'linear-gradient(90deg, #A0C4B5, #E8C4A0)',
-            }} />
-            {/* Threshold marker */}
-            <div style={{
-              position: 'absolute', top: -1, bottom: -1, width: 2, borderRadius: 1,
-              left: `${Math.min(95, Math.abs(data.threshold) / (Math.abs(data.threshold) * 2) * 100)}%`,
-              background: '#E8C4A0', opacity: 0.7,
-            }} />
-          </div>
-        </div>
-      )}
-      {data.datos_entrenamiento && (
-        <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 6 }}>
-          {data.datos_entrenamiento || data.datos_usados} registros analizados
-        </p>
-      )}
-    </div>
-  )
+    )
+  }
 
   return (
     <motion.div
@@ -216,59 +359,92 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado }: { detalle: De
       <div style={{
         padding: '16px', borderRadius: 16,
         background: 'linear-gradient(135deg, rgba(155,142,196,0.06), rgba(124,181,232,0.04))',
-        border: '1px solid rgba(155,142,196,0.15)',
+        border: '1px solid rgba(155,142,196,0.18)',
       }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
           </svg>
           <span style={{ fontSize: 12, fontWeight: 700, color: '#9B8EC4', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Detalle de Detección
+            Información de Detección
           </span>
           {detalle.ensemble && (
             <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--muted)' }}>
-              Votos: {detalle.ensemble.votos}/{detalle.ensemble.total_metodos}
+              {detalle.ensemble.votos}/{detalle.ensemble.total_metodos} métodos detectaron anomalía
             </span>
           )}
         </div>
 
-        {/* Voting summary */}
+        {/* KPI description */}
+        {kpiDesc && (
+          <div style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(155,142,196,0.07)', border: '1px solid rgba(155,142,196,0.18)', marginBottom: 14 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#9B8EC4', marginBottom: 4 }}>¿Qué es este KPI?</p>
+            <p style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.7, marginBottom: 4, opacity: 0.9 }}>{kpiDesc.corta}</p>
+            <p style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6 }}>{kpiDesc.detalle}</p>
+          </div>
+        )}
+
+        {/* Ensemble voting summary */}
         {detalle.ensemble && detalle.ensemble.total_metodos > 1 && (
-          <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-            {detalle.ensemble.metodos_disponibles.map(m => {
-              const voted = detalle.ensemble!.metodos_que_flaggearon.includes(m)
-              const cfg = metodoDeteccionConfig[m]
-              return (
-                <div key={m} style={{
-                  flex: 1, padding: '8px 10px', borderRadius: 10, textAlign: 'center',
-                  background: voted ? `${cfg?.color || '#9B8EC4'}15` : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${voted ? (cfg?.color || '#9B8EC4') + '40' : 'var(--border)'}`,
-                }}>
-                  <div style={{ fontSize: 16, marginBottom: 2 }}>{voted ? '⚠' : '✓'}</div>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: voted ? cfg?.color : 'var(--success)' }}>
-                    {cfg?.label || m}
-                  </p>
-                  <p style={{ fontSize: 10, color: 'var(--muted)' }}>
-                    {voted ? 'Anomalía' : 'Normal'}
-                  </p>
-                </div>
-              )
-            })}
+          <div style={{ marginBottom: 14 }}>
+            <p style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, lineHeight: 1.5 }}>
+              <strong style={{ color: 'var(--text)' }}>Modo Ensemble:</strong> se combinan múltiples métodos de detección. La alerta se activa cuando al menos {Math.ceil(detalle.ensemble.total_metodos / 2)} de {detalle.ensemble.total_metodos} métodos coinciden en detectar una anomalía. Esto reduce falsos positivos al requerir consenso entre modelos independientes.
+            </p>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {detalle.ensemble.metodos_disponibles.map(m => {
+                const voted = detalle.ensemble!.metodos_que_flaggearon.includes(m)
+                const cfg = metodoDeteccionConfig[m]
+                return (
+                  <div key={m} style={{
+                    flex: 1, padding: '10px 12px', borderRadius: 12, textAlign: 'center',
+                    background: voted ? `${cfg?.color || '#9B8EC4'}15` : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${voted ? (cfg?.color || '#9B8EC4') + '40' : 'var(--border)'}`,
+                  }}>
+                    <div style={{ fontSize: 18, marginBottom: 3 }}>{voted ? '⚠' : '✓'}</div>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: voted ? cfg?.color : 'var(--success)' }}>
+                      {cfg?.label || m}
+                    </p>
+                    <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
+                      {voted ? 'Detectó anomalía' : 'Sin anomalía'}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
 
         {/* Per-method details */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {detalle.estadistico && (
-            <MethodRow name="estadistico" label="Estadístico" color="#A0C4B5" icon="σ" data={detalle.estadistico} />
+            <MethodRow name="estadistico" label="Método Estadístico (σ)" color="#A0C4B5" icon="σ" data={detalle.estadistico} />
           )}
           {detalle.prophet && (
-            <MethodRow name="prophet" label="Prophet" color="#7CB5E8" icon="P" data={detalle.prophet} />
+            <MethodRow name="prophet" label="Prophet — Predicción Temporal" color="#7CB5E8" icon="P" data={detalle.prophet} />
           )}
           {detalle.pyod && (
-            <MethodRow name="pyod" label="PyOD (Isolation Forest)" color="#E8C4A0" icon="F" data={detalle.pyod} />
+            <MethodRow name="pyod" label="PyOD — Isolation Forest" color="#E8C4A0" icon="F" data={detalle.pyod} />
           )}
+        </div>
+
+        {/* Severity explanation */}
+        <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6 }}>¿Cómo se determina la severidad?</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {Object.entries(sevDescripcion).map(([key, val]) => {
+              const sev = sevConfig[key]
+              return (
+                <div key={key} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 11 }}>
+                  <span style={{ minWidth: 52, fontWeight: 700, color: sev.color, fontSize: 11 }}>{sev.label}</span>
+                  <span style={{ color: 'var(--muted)', lineHeight: 1.5 }}>{val.condicion} — {val.desc}</span>
+                </div>
+              )
+            })}
+          </div>
+          <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5, opacity: 0.7 }}>
+            En modo Ensemble, la severidad puede elevarse automáticamente cuando múltiples métodos detectan anomalía simultáneamente.
+          </p>
         </div>
       </div>
     </motion.div>
@@ -950,6 +1126,11 @@ export default function DashboardPage() {
                                   </span>
                                 )}
                               </div>
+                              {kpiDescripcion[a.tipo_kpi] && (
+                                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, lineHeight: 1.5, fontStyle: 'italic' }}>
+                                  {kpiDescripcion[a.tipo_kpi].corta}
+                                </p>
+                              )}
                               <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--text)', opacity: 0.85, marginBottom: 12 }}>
                                 {a.mensaje}
                               </p>
@@ -983,7 +1164,7 @@ export default function DashboardPage() {
                               {/* Detalle de detección expandible */}
                               <AnimatePresence>
                                 {detalleExpandido[a.id] && (
-                                  <DeteccionDetailPanel detalle={a.detalle_deteccion} metodo={a.metodo_deteccion} valorDetectado={a.valor_detectado} />
+                                  <DeteccionDetailPanel detalle={a.detalle_deteccion} metodo={a.metodo_deteccion} valorDetectado={a.valor_detectado} tipoKpi={a.tipo_kpi} />
                                 )}
                               </AnimatePresence>
                               {/* Recomendación IA */}
