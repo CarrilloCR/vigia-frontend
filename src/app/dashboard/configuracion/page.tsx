@@ -262,7 +262,7 @@ export default function ConfiguracionPage() {
 
   // ─── Data fetching
   useEffect(() => {
-    if ((activeSection === 'clinica' || activeSection === 'automatizacion') && !clinica) {
+    if ((activeSection === 'clinica' || activeSection === 'automatizacion' || activeSection === 'notificaciones') && !clinica) {
       setLoadingClinica(true)
       Promise.all([
         api.get(`/clinicas/${clinicaId}/`).catch(() => null),
