@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { Notificacion } from '../../../types'
 import { useToastStore } from '../../../store/toast'
+import { useAuthStore } from '../../../store/auth'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 
 const estadoConfig: Record<string, { color: string; bg: string; label: string }> = {
@@ -53,13 +54,18 @@ export default function NotificacionesPage() {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState<string>('todos')
+  const [filtroKpi, setFiltroKpi] = useState('')
+  const { user } = useAuthStore()
+  const clinicaId = user?.clinica_id || 1
+  const toast = useToastStore()
+
   useEffect(() => {
     fetchNotificaciones()
   }, [])
 
   const fetchNotificaciones = async () => {
     try {
-      const res = await api.get('/notificaciones/')
+      const res = await api.get(`/notificaciones/?clinica=${clinicaId}`)
       setNotificaciones(res.data.results || res.data)
     } catch {
       useToastStore.getState().error('Error al cargar notificaciones', 'No se pudieron obtener las notificaciones.')
@@ -68,9 +74,17 @@ export default function NotificacionesPage() {
     }
   }
 
-  const filtradas = filtro === 'todos'
-    ? notificaciones
-    : notificaciones.filter(n => n.estado === filtro)
+  const marcarTodasLeidas = async () => {
+    try {
+      await api.post('/notificaciones/marcar_todas_leidas/', { clinica_id: clinicaId })
+      await fetchNotificaciones()
+      toast.success('Notificaciones actualizadas')
+    } catch { toast.error('Error al actualizar notificaciones') }
+  }
+
+  const filtradas = notificaciones
+    .filter(n => filtro === 'todos' || n.estado === filtro)
+    .filter(n => filtroKpi === '' || (n as any).alerta_tipo_kpi === filtroKpi)
 
   const stats = [
     { label: 'Total',      value: notificaciones.length,                                          color: '#9B8EC4' },
@@ -97,6 +111,19 @@ export default function NotificacionesPage() {
               Historial completo de notificaciones enviadas
             </p>
           </div>
+          <motion.button
+            onClick={marcarTodasLeidas}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', border: 'none',
+              background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+              color: 'white',
+            }}
+          >
+            Marcar todas leídas
+          </motion.button>
         </motion.div>
 
         {/* STATS */}

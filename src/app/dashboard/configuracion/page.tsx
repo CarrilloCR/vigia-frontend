@@ -220,6 +220,10 @@ export default function ConfiguracionPage() {
     sonido: true,
   })
 
+  // ─── WhatsApp state
+  const [whatsappNumero, setWhatsappNumero] = useState('')
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false)
+
   // ─── Automatización state
   const [motorConfig, setMotorConfig] = useState({
     motor_automatico: false,
@@ -239,6 +243,12 @@ export default function ConfiguracionPage() {
   // ─── Integraciones state
   const [integraciones, setIntegraciones] = useState<IntegracionExterna[]>([])
   const [loadingIntegraciones, setLoadingIntegraciones] = useState(true)
+
+  // ─── CSV state
+  const [csvTipo, setCsvTipo] = useState<'kpi' | 'citas'>('kpi')
+  const [csvFile, setCsvFile] = useState<File | null>(null)
+  const [csvLoading, setCsvLoading] = useState(false)
+  const [csvResult, setCsvResult] = useState<{ creados: number; errores: string[]; total_filas: number } | null>(null)
 
   // ─── Facturación state
   const [plan, setPlan] = useState<PlanFacturacion | null>(null)
@@ -261,6 +271,7 @@ export default function ConfiguracionPage() {
         if (clinRes?.data) {
           setClinica(clinRes.data)
           setEditClinica({ nombre: clinRes.data.nombre, email: clinRes.data.email })
+          setWhatsappNumero(clinRes.data.whatsapp_numero || '')
           setMotorConfig({
             motor_automatico: clinRes.data.motor_automatico ?? false,
             motor_intervalo_horas: clinRes.data.motor_intervalo_horas ?? 1,
@@ -383,6 +394,33 @@ export default function ConfiguracionPage() {
     } catch {
       showToast('Error al sincronizar', 'error')
     }
+  }
+
+  const handleImportarCSV = async () => {
+    if (!csvFile) return showToast('Selecciona un archivo', 'error')
+    setCsvLoading(true)
+    const form = new FormData()
+    form.append('clinica_id', String(clinicaId))
+    form.append('tipo', csvTipo)
+    form.append('file', csvFile)
+    try {
+      const res = await api.post('/integraciones/importar_csv/', form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      setCsvResult(res.data)
+      showToast(`${res.data.creados} registros importados correctamente`)
+    } catch (err: any) {
+      showToast(err.response?.data?.error || 'Error al importar', 'error')
+    } finally { setCsvLoading(false) }
+  }
+
+  const handleSaveWhatsapp = async () => {
+    setSavingWhatsapp(true)
+    try {
+      await api.patch(`/clinicas/${clinicaId}/`, { whatsapp_numero: whatsappNumero })
+      showToast('Número de WhatsApp guardado')
+    } catch { showToast('Error al guardar', 'error') }
+    finally { setSavingWhatsapp(false) }
   }
 
   // ─── Skeleton loader
@@ -794,6 +832,31 @@ export default function ConfiguracionPage() {
                 )}
               </GlowingCard>
             </div>
+
+            {/* WhatsApp */}
+            <div style={{ marginTop: 24 }}>
+              <GlowingCard className="p-6 sm:p-8 lg:p-10">
+                <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+                  WhatsApp
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
+                  Configura el número de WhatsApp para recibir notificaciones de alertas.
+                </p>
+                <div style={{ marginBottom: 20 }}>
+                  <label style={labelStyle}>Número de teléfono</label>
+                  <input
+                    value={whatsappNumero}
+                    onChange={e => setWhatsappNumero(e.target.value)}
+                    placeholder="+506 8888-8888"
+                    style={inputStyle}
+                  />
+                  <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
+                    Formato internacional: +506 8888-8888. Requiere configuración de Twilio.
+                  </p>
+                </div>
+                <SaveButton onClick={handleSaveWhatsapp} loading={savingWhatsapp} label="Guardar número" />
+              </GlowingCard>
+            </div>
           </motion.div>
         )
 
@@ -1092,6 +1155,129 @@ export default function ConfiguracionPage() {
                 )}
               </GlowingCard>
             )}
+
+            {/* CSV Import */}
+            <div style={{ marginTop: 24 }}>
+              <GlowingCard className="p-6 sm:p-8 lg:p-10">
+                <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+                  Importar CSV
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
+                  Importa registros de KPIs o citas desde un archivo CSV.
+                </p>
+
+                {/* Tipo selector */}
+                <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                  {(['kpi', 'citas'] as const).map(tipo => (
+                    <motion.button
+                      key={tipo}
+                      onClick={() => { setCsvTipo(tipo); setCsvResult(null) }}
+                      whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                      style={{
+                        padding: '10px 24px', borderRadius: 12, fontSize: 14, fontWeight: 600,
+                        cursor: 'pointer', border: 'none',
+                        background: csvTipo === tipo ? 'rgba(155,142,196,0.15)' : 'rgba(255,255,255,0.04)',
+                        borderWidth: 2, borderStyle: 'solid',
+                        borderColor: csvTipo === tipo ? 'var(--primary)' : 'var(--border)',
+                        color: csvTipo === tipo ? 'var(--primary)' : 'var(--muted)',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      {tipo === 'kpi' ? 'KPIs' : 'Citas'}
+                    </motion.button>
+                  ))}
+                </div>
+
+                {/* Columnas esperadas */}
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: 'rgba(155,142,196,0.06)', border: '1px solid rgba(155,142,196,0.15)' }}>
+                  {csvTipo === 'kpi'
+                    ? 'Columnas esperadas: medico_id, tipo, valor, registrado_en'
+                    : 'Columnas esperadas: medico_id, paciente_nombre, fecha_hora, tipo, estado'}
+                </p>
+
+                {/* File input */}
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: 'block', cursor: 'pointer' }}>
+                    <div style={{
+                      padding: '32px', borderRadius: 16, textAlign: 'center',
+                      background: csvFile ? 'rgba(160,196,181,0.06)' : 'rgba(255,255,255,0.03)',
+                      border: `2px dashed ${csvFile ? 'rgba(160,196,181,0.4)' : 'var(--border)'}`,
+                      transition: 'all 0.2s',
+                    }}>
+                      {csvFile ? (
+                        <div>
+                          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--success)', marginBottom: 4 }}>{csvFile.name}</p>
+                          <p style={{ fontSize: 13, color: 'var(--muted)' }}>{(csvFile.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ color: 'var(--muted)', marginBottom: 8, display: 'flex', justifyContent: 'center' }}>
+                            <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                              <polyline points="17 8 12 3 7 8"/>
+                              <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                          </div>
+                          <p style={{ fontSize: 14, color: 'var(--muted)' }}>Selecciona un archivo .csv</p>
+                        </div>
+                      )}
+                    </div>
+                    <input type="file" accept=".csv" onChange={e => { setCsvFile(e.target.files?.[0] || null); setCsvResult(null) }} style={{ display: 'none' }} />
+                  </label>
+                </div>
+
+                {/* Import button */}
+                <motion.button
+                  onClick={handleImportarCSV}
+                  disabled={csvLoading || !csvFile}
+                  whileHover={{ scale: csvLoading || !csvFile ? 1 : 1.02 }}
+                  whileTap={{ scale: csvLoading || !csvFile ? 1 : 0.98 }}
+                  style={{
+                    padding: '13px 32px', borderRadius: 14,
+                    background: csvFile ? 'linear-gradient(135deg, var(--primary), var(--accent))' : 'rgba(255,255,255,0.06)',
+                    color: csvFile ? 'white' : 'var(--muted)',
+                    fontSize: 14, fontWeight: 600, border: 'none',
+                    cursor: csvLoading || !csvFile ? 'not-allowed' : 'pointer',
+                    opacity: csvLoading ? 0.7 : 1,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  {csvLoading && (
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }} />
+                  )}
+                  {csvLoading ? 'Importando...' : 'Importar'}
+                </motion.button>
+
+                {/* Result */}
+                <AnimatePresence>
+                  {csvResult && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                      style={{
+                        marginTop: 20, padding: '18px 22px', borderRadius: 16,
+                        background: csvResult.errores.length === 0 ? 'rgba(160,196,181,0.08)' : 'rgba(232,160,196,0.08)',
+                        border: `1px solid ${csvResult.errores.length === 0 ? 'rgba(160,196,181,0.3)' : 'rgba(232,160,196,0.3)'}`,
+                      }}
+                    >
+                      <p style={{ fontSize: 15, fontWeight: 600, color: csvResult.errores.length === 0 ? 'var(--success)' : 'var(--danger)', marginBottom: 8 }}>
+                        {csvResult.creados} registros importados de {csvResult.total_filas} filas
+                      </p>
+                      {csvResult.errores.length > 0 && (
+                        <div>
+                          <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>{csvResult.errores.length} errores:</p>
+                          <div style={{ maxHeight: 120, overflowY: 'auto' }}>
+                            {csvResult.errores.map((e, i) => (
+                              <p key={i} style={{ fontSize: 12, color: 'var(--danger)', marginBottom: 3 }}>• {e}</p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </GlowingCard>
+            </div>
           </motion.div>
         )
 
