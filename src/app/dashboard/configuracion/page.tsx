@@ -101,10 +101,25 @@ const MapPinIcon = () => (
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
   </svg>
 )
+const AutoIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+  </svg>
+)
+const SparklesIcon = () => (
+  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="M5 3l.7 2.1L7.8 6l-2.1.7L5 8.8l-.7-2.1L2.2 6l2.1-.7z"/><path d="M19 15l.7 2.1 2.1.7-2.1.7L19 20.5l-.7-2.1-2.1-.7 2.1-.7z"/>
+  </svg>
+)
+const ClockIcon = () => (
+  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+  </svg>
+)
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Section = 'perfil' | 'seguridad' | 'clinica' | 'notificaciones' | 'apariencia' | 'integraciones' | 'facturacion'
+type Section = 'perfil' | 'seguridad' | 'clinica' | 'notificaciones' | 'automatizacion' | 'apariencia' | 'integraciones' | 'facturacion'
 
 interface EmailNotificacion {
   id: number
@@ -119,6 +134,7 @@ const SECTIONS: { key: Section; label: string; icon: React.ReactNode; desc: stri
   { key: 'seguridad', label: 'Seguridad', icon: <LockIcon />, desc: 'Contraseña y acceso' },
   { key: 'clinica', label: 'Clínica', icon: <BuildingIcon />, desc: 'Datos de la clínica' },
   { key: 'notificaciones', label: 'Notificaciones', icon: <BellIcon />, desc: 'Alertas y correos' },
+  { key: 'automatizacion', label: 'Automatización', icon: <AutoIcon />, desc: 'Motor y análisis IA' },
   { key: 'apariencia', label: 'Apariencia', icon: <PaletteIcon />, desc: 'Tema y visualización' },
   { key: 'integraciones', label: 'Integraciones', icon: <LinkIcon />, desc: 'Conexiones externas' },
   { key: 'facturacion', label: 'Facturación', icon: <CreditCardIcon />, desc: 'Plan y pagos' },
@@ -204,6 +220,14 @@ export default function ConfiguracionPage() {
     sonido: true,
   })
 
+  // ─── Automatización state
+  const [motorConfig, setMotorConfig] = useState({
+    motor_automatico: false,
+    motor_intervalo_horas: 1 as 1 | 6 | 12 | 24,
+    claude_activo: true,
+  })
+  const [savingMotor, setSavingMotor] = useState(false)
+
   // ─── Apariencia state
   const { isDark, toggle: toggleTheme } = useThemeStore()
   const [apariencia, setApariencia] = useState({
@@ -228,7 +252,7 @@ export default function ConfiguracionPage() {
 
   // ─── Data fetching
   useEffect(() => {
-    if (activeSection === 'clinica' && !clinica) {
+    if ((activeSection === 'clinica' || activeSection === 'automatizacion') && !clinica) {
       setLoadingClinica(true)
       Promise.all([
         api.get(`/clinicas/${clinicaId}/`).catch(() => null),
@@ -237,6 +261,11 @@ export default function ConfiguracionPage() {
         if (clinRes?.data) {
           setClinica(clinRes.data)
           setEditClinica({ nombre: clinRes.data.nombre, email: clinRes.data.email })
+          setMotorConfig({
+            motor_automatico: clinRes.data.motor_automatico ?? false,
+            motor_intervalo_horas: clinRes.data.motor_intervalo_horas ?? 1,
+            claude_activo: clinRes.data.claude_activo ?? true,
+          })
         }
         if (sedesRes?.data) setSedes(sedesRes.data.results || sedesRes.data)
       }).finally(() => setLoadingClinica(false))
@@ -329,6 +358,22 @@ export default function ConfiguracionPage() {
       showToast('Email eliminado')
     } catch { showToast('Error al eliminar', 'error') }
     setConfirmDelete({ open: false, id: 0, label: '' })
+  }
+
+  const handleSaveMotorConfig = async () => {
+    setSavingMotor(true)
+    try {
+      const res = await api.patch(`/clinicas/${clinicaId}/`, motorConfig)
+      setClinica(res.data)
+      setMotorConfig({
+        motor_automatico: res.data.motor_automatico,
+        motor_intervalo_horas: res.data.motor_intervalo_horas,
+        claude_activo: res.data.claude_activo,
+      })
+      showToast('Configuración de automatización guardada')
+    } catch {
+      showToast('Error al guardar la configuración', 'error')
+    } finally { setSavingMotor(false) }
   }
 
   const handleSyncIntegracion = async (id: number) => {
@@ -749,6 +794,169 @@ export default function ConfiguracionPage() {
                 )}
               </GlowingCard>
             </div>
+          </motion.div>
+        )
+
+      // ═══════════════════════════════════════════════════════════
+      // AUTOMATIZACIÓN
+      // ═══════════════════════════════════════════════════════════
+      case 'automatizacion':
+        return (
+          <motion.div key="automatizacion" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+            <h2 className="font-display" style={sectionTitle}>Automatización</h2>
+            <p style={sectionDesc}>
+              Controla si el motor de análisis corre automáticamente y si Claude genera recomendaciones.
+              Desactiva cuando no necesites monitoreo activo para evitar costos innecesarios.
+            </p>
+
+            {loadingClinica ? <Skeleton count={2} h={80} /> : (
+              <>
+                {/* Motor automático */}
+                <GlowingCard className="p-6 sm:p-8 lg:p-10">
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 14, background: motorConfig.motor_automatico ? 'rgba(160,196,181,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${motorConfig.motor_automatico ? 'rgba(160,196,181,0.3)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: motorConfig.motor_automatico ? 'var(--success)' : 'var(--muted)', flexShrink: 0, transition: 'all 0.25s' }}>
+                      <AutoIcon />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
+                        Motor automático
+                      </h3>
+                      <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, lineHeight: 1.5 }}>
+                        Cuando está activo, Celery Beat corre el análisis de anomalías automáticamente
+                        según el intervalo configurado, sin que tengas que hacerlo manualmente.
+                      </p>
+                    </div>
+                  </div>
+
+                  <SettingRow
+                    label="Activar motor automático"
+                    desc="El análisis se ejecutará en segundo plano según el intervalo definido"
+                  >
+                    <ToggleSwitch
+                      checked={motorConfig.motor_automatico}
+                      onChange={v => setMotorConfig(p => ({ ...p, motor_automatico: v }))}
+                    />
+                  </SettingRow>
+
+                  {/* Intervalo — solo visible si está activo */}
+                  <AnimatePresence>
+                    {motorConfig.motor_automatico && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <div style={{ padding: '20px 0 8px 0' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                            <ClockIcon />
+                            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Intervalo de análisis</span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                            {([1, 6, 12, 24] as const).map(h => (
+                              <motion.button
+                                key={h}
+                                onClick={() => setMotorConfig(p => ({ ...p, motor_intervalo_horas: h }))}
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.97 }}
+                                style={{
+                                  padding: '14px 8px',
+                                  borderRadius: 14,
+                                  background: motorConfig.motor_intervalo_horas === h
+                                    ? 'rgba(155,142,196,0.15)' : 'rgba(255,255,255,0.03)',
+                                  border: motorConfig.motor_intervalo_horas === h
+                                    ? '2px solid var(--primary)' : '1px solid var(--border)',
+                                  color: motorConfig.motor_intervalo_horas === h ? 'var(--primary)' : 'var(--muted)',
+                                  fontSize: 13, fontWeight: motorConfig.motor_intervalo_horas === h ? 700 : 500,
+                                  cursor: 'pointer', textAlign: 'center',
+                                  transition: 'all 0.2s',
+                                }}
+                              >
+                                {h === 1 ? 'Cada hora' : `Cada ${h}h`}
+                              </motion.button>
+                            ))}
+                          </div>
+                          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 12, opacity: 0.7 }}>
+                            Celery Beat verifica cada hora; solo dispara el motor si ya pasó el intervalo configurado.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Último run */}
+                  {clinica?.ultimo_motor_en && (
+                    <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <ClockIcon />
+                      <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+                        Último análisis:{' '}
+                        <strong style={{ color: 'var(--text)' }}>
+                          {new Date(clinica.ultimo_motor_en).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' })}
+                        </strong>
+                      </span>
+                    </div>
+                  )}
+                </GlowingCard>
+
+                {/* Claude IA */}
+                <div style={{ marginTop: 24 }}>
+                  <GlowingCard className="p-6 sm:p-8 lg:p-10">
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, background: motorConfig.claude_activo ? 'rgba(124,181,232,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${motorConfig.claude_activo ? 'rgba(124,181,232,0.25)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: motorConfig.claude_activo ? '#7CB5E8' : 'var(--muted)', flexShrink: 0, transition: 'all 0.25s' }}>
+                        <SparklesIcon />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
+                          Recomendaciones con Claude IA
+                        </h3>
+                        <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, lineHeight: 1.5 }}>
+                          Cuando hay alertas de severidad alta o crítica, Claude genera una recomendación
+                          en lenguaje natural. Cada llamada consume tokens de la API de Anthropic.
+                        </p>
+                      </div>
+                    </div>
+
+                    <SettingRow
+                      label="Activar recomendaciones IA"
+                      desc="Solo se activa en alertas altas y críticas para minimizar el uso"
+                    >
+                      <ToggleSwitch
+                        checked={motorConfig.claude_activo}
+                        onChange={v => setMotorConfig(p => ({ ...p, claude_activo: v }))}
+                      />
+                    </SettingRow>
+
+                    {/* Billing warning */}
+                    <AnimatePresence>
+                      {motorConfig.claude_activo && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          style={{ overflow: 'hidden' }}
+                        >
+                          <div style={{ marginTop: 16, padding: '14px 18px', borderRadius: 14, background: 'rgba(232,200,100,0.06)', border: '1px solid rgba(232,200,100,0.2)', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                            <svg width="16" height="16" fill="none" stroke="#E8C864" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{ flexShrink: 0, marginTop: 1 }}>
+                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            <p style={{ fontSize: 12, color: 'rgba(232,200,100,0.9)', lineHeight: 1.6 }}>
+                              Activo. Cada análisis con alertas alta/crítica consume ~200 tokens por alerta (claude-sonnet-4-6).
+                              Desactiva si no necesitas recomendaciones para reducir costos de API.
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </GlowingCard>
+                </div>
+
+                {/* Save */}
+                <div style={{ marginTop: 28 }}>
+                  <SaveButton onClick={handleSaveMotorConfig} loading={savingMotor} label="Guardar automatización" />
+                </div>
+              </>
+            )}
           </motion.div>
         )
 

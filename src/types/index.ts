@@ -5,6 +5,10 @@ export interface Clinica {
   plan: string
   activa: boolean
   creada_en: string
+  motor_automatico: boolean
+  motor_intervalo_horas: 1 | 6 | 12 | 24
+  ultimo_motor_en: string | null
+  claude_activo: boolean
 }
 
 export interface Sede {
