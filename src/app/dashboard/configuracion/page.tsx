@@ -840,18 +840,18 @@ export default function ConfiguracionPage() {
                   WhatsApp
                 </h3>
                 <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
-                  Configura el número de WhatsApp para recibir notificaciones de alertas.
+                  Configura los números de WhatsApp para recibir notificaciones de alertas.
                 </p>
                 <div style={{ marginBottom: 20 }}>
-                  <label style={labelStyle}>Número de teléfono</label>
+                  <label style={labelStyle}>Números de teléfono</label>
                   <input
                     value={whatsappNumero}
                     onChange={e => setWhatsappNumero(e.target.value)}
-                    placeholder="+506 8888-8888"
+                    placeholder="+50688888888, +50699999999"
                     style={inputStyle}
                   />
                   <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
-                    Formato internacional: +506 8888-8888. Requiere configuración de Twilio.
+                    Formato internacional. Separa múltiples números con coma. Requiere Twilio.
                   </p>
                 </div>
                 <SaveButton onClick={handleSaveWhatsapp} loading={savingWhatsapp} label="Guardar número" />
