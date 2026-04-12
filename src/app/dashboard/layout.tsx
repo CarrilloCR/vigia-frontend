@@ -17,7 +17,12 @@ function AccesoRestringido({ rol }: { rol: string }) {
       animate={{ opacity: 1, scale: 1 }}
       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 20, textAlign: 'center' }}
     >
-      <div style={{ fontSize: 56 }}>🔒</div>
+      <div style={{ width: 64, height: 64, borderRadius: 20, background: 'rgba(155,142,196,0.1)', border: '1px solid rgba(155,142,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="28" height="28" fill="none" stroke="rgba(155,142,196,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Acceso restringido</h2>
       <p style={{ color: 'var(--muted)', fontSize: 14, maxWidth: 360, margin: 0, lineHeight: 1.6 }}>
         Tu rol actual (<strong style={{ color: 'var(--text)' }}>{ROL_LABELS[rol] ?? rol}</strong>) no tiene acceso a esta sección.

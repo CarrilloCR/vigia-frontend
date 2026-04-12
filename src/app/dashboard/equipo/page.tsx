@@ -317,7 +317,7 @@ export default function EquipoPage() {
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>Rol solicitado</label>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {ROLES.filter(r => r.key !== 'admin' && r.key !== user?.rol).map(r => {
+                  {ROLES.filter(r => r.key !== user?.rol).map(r => {
                     const rs = ROL_STYLE[r.key]
                     return (
                       <motion.button key={r.key}
