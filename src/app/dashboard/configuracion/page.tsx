@@ -1148,7 +1148,8 @@ export default function ConfiguracionPage() {
                   const umbral = cfg.umbral_sensibilidad
                   const umbralColor = umbral <= 15 ? '#A0C4B5' : umbral <= 25 ? '#9B8EC4' : '#C4B5E8'
                   return (
-                    <GlowingCard key={kpi.key} className="p-0 overflow-hidden" style={{ opacity: cfg.activa ? 1 : 0.5, transition: 'opacity 0.2s' }}>
+                    <div key={kpi.key} style={{ opacity: cfg.activa ? 1 : 0.5, transition: 'opacity 0.2s' }}>
+                    <GlowingCard className="p-0 overflow-hidden">
                       {/* Fila principal: nombre + toggle */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{kpi.label}</span>
@@ -1188,6 +1189,7 @@ export default function ConfiguracionPage() {
                         </select>
                       </div>
                     </GlowingCard>
+                    </div>
                   )
                 })}
 

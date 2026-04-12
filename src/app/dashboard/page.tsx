@@ -11,6 +11,7 @@ import GlowingCard from '../../components/reactbits/GlowingCard'
 import CountUp from '../../components/reactbits/CountUp'
 import ThemeToggle from '../../components/ui/ThemeToggle'
 import VigiaLogo from '../../components/ui/VigiaLogo'
+import { puedeOperar, ROL_LABELS, ROL_COLORS } from '../../lib/permisos'
 
 const kpiLabel: Record<string, string> = {
   tasa_cancelacion: 'Cancelación',
@@ -684,6 +685,7 @@ export default function DashboardPage() {
   const { user, clearAuth } = useAuthStore()
   const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
+  const puedeEjecutar = puedeOperar(user?.rol)
 
   useEffect(() => {
     fetchAlertas()
@@ -841,12 +843,23 @@ export default function DashboardPage() {
               <VigiaLogo size={68} />
             </motion.div>
             <div>
-              <p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
-              <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>{user?.clinica_nombre || 'Panel de control'}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
+                {user?.rol && (() => {
+                  const rc = ROL_COLORS[user.rol] ?? ROL_COLORS.viewer
+                  return (
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}>
+                      {ROL_LABELS[user.rol] ?? user.rol}
+                    </span>
+                  )
+                })()}
+              </div>
+              <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>{user?.nombre} · {user?.clinica_nombre || 'Panel de control'}</p>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {puedeEjecutar && (
             <motion.button onClick={ejecutarMotor} disabled={motorLoading}
               whileHover={{ scale: motorLoading ? 1 : 1.03 }} whileTap={{ scale: 0.97 }}
               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, #7AB5A3, var(--success))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: motorLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 20px rgba(160,196,181,0.3)', opacity: motorLoading ? 0.7 : 1 }}>
@@ -855,6 +868,7 @@ export default function DashboardPage() {
                 : <BoltIcon />}
               {motorLoading ? 'Analizando...' : 'Ejecutar análisis'}
             </motion.button>
+            )}
 
             <motion.button onClick={() => router.push('/dashboard/notificaciones')}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -1040,12 +1054,14 @@ export default function DashboardPage() {
                       <EyeOffIcon />
                       {ocultarTodas ? 'Mostrar' : 'Ocultar'}
                     </motion.button>
+                    {puedeEjecutar && (
                     <motion.button onClick={resolverTodas}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                       style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid rgba(160,196,181,0.3)', background: 'rgba(160,196,181,0.08)', color: 'var(--success)' }}>
                       <ResolveAllIcon />
                       Revisar todas
                     </motion.button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1195,14 +1211,16 @@ export default function DashboardPage() {
                               </p>
                             </div>
 
-                            {/* Acciones — solo en vista activas */}
+                            {/* Acciones — solo en vista activas y con permisos */}
                             {vistaAlertas === 'activas' && (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+                                {puedeEjecutar && (
                                 <motion.button onClick={() => marcarRevisada(a.id)}
                                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                   style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
                                   <CheckIcon /> Revisada
                                 </motion.button>
+                                )}
                                 <div style={{ display: 'flex', gap: 8 }}>
                                   {feedbackDado[a.id] ? (
                                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
