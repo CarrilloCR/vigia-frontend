@@ -120,7 +120,7 @@ export default function AuthPage() {
         password: registerData.password, nombre_clinica: registerData.nombre_clinica,
       })
       setAuth(res.data.user, res.data.tokens.access, res.data.tokens.refresh)
-      toast.success('Cuenta creada', 'Tu cuenta y clínica fueron registradas exitosamente.')
+      toast.success('Cuenta creada', 'Tu acceso está en revisión. Recibirás confirmación pronto.')
       router.push('/dashboard')
     } catch (err: any) {
       const data = err.response?.data

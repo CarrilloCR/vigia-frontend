@@ -1,44 +1,61 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════
+   DARK MODE (default)
+═══════════════════════════════════════════ */
 :root,
 [data-theme="dark"] {
-  --void: #0D0B14;
-  --surface: #13111E;
-  --card: #1C1830;
-  --primary: #9B8EC4;
-  --accent: #7C6FBF;
-  --glow: #C4B5E8;
-  --success: #A0C4B5;
-  --danger: #E8A0C4;
-  --text: #F0EEF8;
-  --muted: #6B6880;
-  --border: rgba(155, 142, 196, 0.18);
-  --glass: rgba(28, 24, 48, 0.7);
-  --glass-hover: rgba(34, 30, 56, 0.9);
+  --void: #09080F;
+  --surface: #0F0D1A;
+  --card: #171425;
+  --primary: #A594D0;
+  --accent: #8070C8;
+  --glow: #C8B8EC;
+  --success: #A8CCB8;
+  --danger: #ECAAC8;
+  --warning: #ECCAAA;
+  --text: #F2EEF8;
+  --muted: #686480;
+  --border: rgba(165, 148, 208, 0.18);
+  --glass: rgba(23, 20, 37, 0.82);
+  --glass-hover: rgba(30, 26, 48, 0.95);
+
+  --shadow-sm:   0 2px 12px rgba(0,0,0,0.5),  0 1px 4px rgba(0,0,0,0.4);
+  --shadow-md:   0 8px 32px rgba(0,0,0,0.55), 0 3px 12px rgba(0,0,0,0.4);
+  --shadow-lg:   0 24px 64px rgba(0,0,0,0.65),0 8px 24px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 32px rgba(165,148,208,0.25), 0 4px 16px rgba(165,148,208,0.14);
 }
 
+/* ═══════════════════════════════════════════
+   LIGHT MODE — redesigned
+═══════════════════════════════════════════ */
 [data-theme="light"] {
-  --void: #F0EDF8;
-  --surface: #E8E4F4;
-  --card: #FFFFFF;
-  --primary: #7C6FBF;
-  --accent: #5A4FA8;
-  --glow: #5A4F9F;
-  --success: #2E7D64;
-  --danger: #B8467A;
-  --text: #1A1830;
-  --muted: #7B789A;
-  --border: rgba(124, 111, 191, 0.25);
-  --glass: rgba(255, 255, 255, 0.8);
-  --glass-hover: rgba(255, 255, 255, 0.95);
+  --void: #EDE8FA;
+  --surface: #E2DBEF;
+  --card: #F8F6FE;
+  --primary: #6450C8;
+  --accent: #4B38B0;
+  --glow: #4B38A8;
+  --success: #1D6B49;
+  --danger: #B02858;
+  --warning: #9A6010;
+  --text: #120E28;
+  --muted: #5E587C;
+  --border: rgba(100, 80, 200, 0.22);
+  --glass: rgba(248, 246, 254, 0.92);
+  --glass-hover: rgba(248, 246, 254, 1);
+
+  --shadow-sm:   0 2px 10px rgba(68,48,180,0.10), 0 1px 4px rgba(68,48,180,0.07);
+  --shadow-md:   0 8px 28px rgba(68,48,180,0.13), 0 3px 10px rgba(68,48,180,0.08);
+  --shadow-lg:   0 24px 56px rgba(68,48,180,0.16), 0 8px 20px rgba(68,48,180,0.10);
+  --shadow-glow: 0 0 28px rgba(100,80,200,0.22), 0 4px 12px rgba(100,80,200,0.14);
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ═══════════════════════════════════════════
+   BASE
+═══════════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
   width: 100%;
@@ -53,25 +70,96 @@ body {
   transition: background-color 0.4s ease, color 0.4s ease;
 }
 
+/* ── Light mode background ─────────────────── */
+[data-theme="light"] body {
+  background-image:
+    radial-gradient(ellipse 70% 50% at 0% 0%,   rgba(155,142,196,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 60% at 100% 100%, rgba(124,111,191,0.14) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 70% at 55% 30%,  rgba(196,181,232,0.10) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+/* ── Dark mode subtle grid ─────────────────── */
+[data-theme="dark"] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(155,142,196,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(155,142,196,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .font-display { font-family: 'Syne', sans-serif; }
 
+/* ═══════════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════════ */
 ::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; opacity: 0.6; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
+/* ═══════════════════════════════════════════
+   GLASS / CARD UTILITIES
+═══════════════════════════════════════════ */
 .glass {
   background: var(--glass);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
-.glass-hover:hover { background: var(--glass-hover); }
+.glass-hover:hover {
+  background: var(--glass-hover);
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s;
+}
 
+/* ── Light mode — elevate all rounded cards ── */
+[data-theme="light"] .rounded-2xl,
+[data-theme="light"] .rounded-3xl {
+  box-shadow: var(--shadow-md);
+}
+
+[data-theme="light"] .glass {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(100, 80, 200, 0.18);
+}
+
+/* ═══════════════════════════════════════════
+   CURSOR GLOW
+═══════════════════════════════════════════ */
+#cursor-glow {
+  position: fixed;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  transition: left 0.07s linear, top 0.07s linear;
+}
+
+[data-theme="dark"]  #cursor-glow { background: radial-gradient(circle, rgba(155,142,196,0.065) 0%, transparent 65%); }
+[data-theme="light"] #cursor-glow { background: radial-gradient(circle, rgba(100,80,200,0.075)  0%, transparent 65%); }
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════ */
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 15px rgba(155,142,196,0.3); }
-  50% { box-shadow: 0 0 35px rgba(155,142,196,0.65); }
+  0%, 100% { box-shadow: 0 0 16px rgba(155,142,196,0.3); }
+  50%       { box-shadow: 0 0 44px rgba(155,142,196,0.65); }
 }
-
 .animate-pulse-glow { animation: pulseGlow 2.5s ease infinite; }
+
+/* ═══════════════════════════════════════════
+   FORM ELEMENTS — light mode focus
+═══════════════════════════════════════════ */
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: rgba(96, 87, 136, 0.55);
+}

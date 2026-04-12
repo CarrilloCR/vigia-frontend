@@ -11,6 +11,8 @@ import GlowingCard from '../../components/reactbits/GlowingCard'
 import CountUp from '../../components/reactbits/CountUp'
 import ThemeToggle from '../../components/ui/ThemeToggle'
 import VigiaLogo from '../../components/ui/VigiaLogo'
+import SedeSelector from '../../components/ui/SedeSelector'
+import { puedeOperar, ROL_LABELS, ROL_COLORS } from '../../lib/permisos'
 
 const kpiLabel: Record<string, string> = {
   tasa_cancelacion: 'Cancelación',
@@ -625,7 +627,7 @@ function MedicosList({ clinicaId }: { clinicaId: number }) {
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {medicos.map((m, i) => (
         <motion.div
           key={m.id}
@@ -635,7 +637,7 @@ function MedicosList({ clinicaId }: { clinicaId: number }) {
           onClick={() => router.push(`/dashboard/medico/${m.id}`)}
           style={{
             display: 'flex', alignItems: 'center', gap: 14,
-            padding: '14px 16px', borderRadius: 16, cursor: 'pointer',
+            padding: '14px 18px', borderRadius: 18, cursor: 'pointer',
             background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
             transition: 'all 0.2s',
           }}
@@ -680,20 +682,23 @@ export default function DashboardPage() {
   const [ocultarTodas, setOcultarTodas] = useState(false)
   const [feedbackDado, setFeedbackDado] = useState<Record<number, 'util' | 'no_util'>>({})
   const [detalleExpandido, setDetalleExpandido] = useState<Record<number, boolean>>({})
+  const [selectedSede, setSelectedSede] = useState<number | null>(null)
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
   const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
+  const puedeEjecutar = puedeOperar(user?.rol)
 
   useEffect(() => {
     fetchAlertas()
     fetchHistorial()
     fetchNotifs()
-  }, [])
+  }, [selectedSede])
 
   const fetchAlertas = async () => {
     try {
-      const res = await api.get('/alertas/?estado=activa')
+      const params = `/alertas/?estado=activa${selectedSede ? `&sede=${selectedSede}` : ''}`
+      const res = await api.get(params)
       setAlertas(res.data.results || res.data)
     } catch {
       toast.error('Error al cargar alertas', 'No se pudieron obtener las alertas activas.')
@@ -702,7 +707,8 @@ export default function DashboardPage() {
 
   const fetchHistorial = async () => {
     try {
-      const res = await api.get('/alertas/')
+      const params = `/alertas/?${selectedSede ? `sede=${selectedSede}` : ''}`
+      const res = await api.get(params)
       setHistorial(res.data.results || res.data)
     } catch {
       toast.error('Error al cargar historial', 'No se pudo obtener el historial de alertas.')
@@ -841,12 +847,24 @@ export default function DashboardPage() {
               <VigiaLogo size={68} />
             </motion.div>
             <div>
-              <p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
-              <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>{user?.clinica_nombre || 'Panel de control'}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
+                {user?.rol && (() => {
+                  const rc = ROL_COLORS[user.rol] ?? ROL_COLORS.viewer
+                  return (
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}>
+                      {ROL_LABELS[user.rol] ?? user.rol}
+                    </span>
+                  )
+                })()}
+              </div>
+              <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>{user?.nombre} · {user?.clinica_nombre || 'Panel de control'}</p>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} />
+            {puedeEjecutar && (
             <motion.button onClick={ejecutarMotor} disabled={motorLoading}
               whileHover={{ scale: motorLoading ? 1 : 1.03 }} whileTap={{ scale: 0.97 }}
               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, #7AB5A3, var(--success))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: motorLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 20px rgba(160,196,181,0.3)', opacity: motorLoading ? 0.7 : 1 }}>
@@ -855,6 +873,7 @@ export default function DashboardPage() {
                 : <BoltIcon />}
               {motorLoading ? 'Analizando...' : 'Ejecutar análisis'}
             </motion.button>
+            )}
 
             <motion.button onClick={() => router.push('/dashboard/notificaciones')}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -929,38 +948,39 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* STATS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 48 }}>
           {stats.map((s, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
               onClick={() => { setFiltroSev(s.filtro); setVistaAlertas('activas'); setOcultarTodas(false) }}
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.02, y: -3 }} whileTap={{ scale: 0.98 }}
               style={{
-                padding: '28px', borderRadius: 24, cursor: 'pointer',
-                background: filtroSev === s.filtro ? `${s.color}18` : 'var(--glass)',
-                backdropFilter: 'blur(20px)',
-                border: `1px solid ${filtroSev === s.filtro ? s.color + '50' : 'var(--border)'}`,
-                transition: 'all 0.2s',
+                padding: '32px 28px 28px', borderRadius: 28, cursor: 'pointer',
+                background: filtroSev === s.filtro ? `${s.color}14` : 'var(--glass)',
+                backdropFilter: 'blur(24px)',
+                border: `1px solid ${filtroSev === s.filtro ? s.color + '55' : 'var(--border)'}`,
+                boxShadow: filtroSev === s.filtro ? `0 8px 32px ${s.color}20` : 'var(--shadow-md)',
+                transition: 'all 0.25s',
               }}>
-              <p className="font-display" style={{ fontSize: 48, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 10 }}>
+              <p className="font-display" style={{ fontSize: 52, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 12 }}>
                 <CountUp to={s.value} duration={1} />
               </p>
-              <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
+              <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500, letterSpacing: '0.01em' }}>{s.label}</p>
               {i === 0 && ensembleCount > 0 && (
                 <p style={{ fontSize: 11, color: '#C4B5E8', marginTop: 6, fontWeight: 500 }}>
                   {ensembleCount} por ensemble
                 </p>
               )}
-              <div style={{ marginTop: i === 0 && ensembleCount > 0 ? 8 : 16, height: 3, borderRadius: 4, background: `${s.color}20` }}>
+              <div style={{ marginTop: 20, height: 3, borderRadius: 4, background: `${s.color}18` }}>
                 <motion.div initial={{ width: 0 }} animate={{ width: s.value > 0 ? '100%' : '0%' }}
-                  transition={{ duration: 1, delay: i * 0.1 }}
-                  style={{ height: '100%', borderRadius: 4, background: s.color }} />
+                  transition={{ duration: 1.2, delay: i * 0.1, ease: 'easeOut' }}
+                  style={{ height: '100%', borderRadius: 4, background: s.color, boxShadow: `0 0 8px ${s.color}60` }} />
               </div>
             </motion.div>
           ))}
         </div>
 
         {/* MAIN GRID */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) min(420px,38%)', gap: 32 }}>
 
           {/* ALERTAS */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
@@ -982,7 +1002,7 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 12, padding: 3 }}>
                   {(['activas', 'historial'] as const).map(v => (
                     <motion.button key={v} onClick={() => setVistaAlertas(v)} whileTap={{ scale: 0.97 }}
-                      style={{ padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: vistaAlertas === v ? 'white' : 'var(--muted)' }}>
+                      style={{ padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: vistaAlertas === v ? 'white' : 'var(--muted)' }}>
                       {vistaAlertas === v && (
                         <motion.div layoutId="alertaTab"
                           style={{ position: 'absolute', inset: 0, borderRadius: 10, background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}
@@ -1001,7 +1021,7 @@ export default function DashboardPage() {
                   <motion.button key={f.key} onClick={() => setFiltroSev(f.key)}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     style={{
-                      padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                      padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500,
                       cursor: 'pointer', border: 'none',
                       background: filtroSev === f.key ? `${f.color}25` : 'rgba(255,255,255,0.03)',
                       color: filtroSev === f.key ? f.color : 'var(--muted)',
@@ -1019,7 +1039,7 @@ export default function DashboardPage() {
                   <motion.button key={f.key} onClick={() => setFiltroMetodo(f.key)}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     style={{
-                      padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                      padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500,
                       cursor: 'pointer', border: 'none',
                       background: filtroMetodo === f.key ? `${f.color}25` : 'rgba(255,255,255,0.03)',
                       color: filtroMetodo === f.key ? f.color : 'var(--muted)',
@@ -1036,16 +1056,18 @@ export default function DashboardPage() {
                   <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
                     <motion.button onClick={() => setOcultarTodas(!ocultarTodas)}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)', background: ocultarTodas ? 'rgba(155,142,196,0.15)' : 'rgba(255,255,255,0.03)', color: ocultarTodas ? 'var(--primary)' : 'var(--muted)' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)', background: ocultarTodas ? 'rgba(155,142,196,0.15)' : 'rgba(255,255,255,0.03)', color: ocultarTodas ? 'var(--primary)' : 'var(--muted)' }}>
                       <EyeOffIcon />
                       {ocultarTodas ? 'Mostrar' : 'Ocultar'}
                     </motion.button>
+                    {puedeEjecutar && (
                     <motion.button onClick={resolverTodas}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                       style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid rgba(160,196,181,0.3)', background: 'rgba(160,196,181,0.08)', color: 'var(--success)' }}>
                       <ResolveAllIcon />
                       Revisar todas
                     </motion.button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1080,7 +1102,7 @@ export default function DashboardPage() {
                   </p>
                 </motion.div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 600, overflowY: 'auto', paddingRight: 4 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxHeight: 680, overflowY: 'auto', paddingRight: 6 }}>
                   <AnimatePresence>
                     {listaActual.map((a, i) => {
                       const cfg = sevConfig[a.severidad] || sevConfig.baja
@@ -1090,7 +1112,7 @@ export default function DashboardPage() {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 16, height: 0 }}
                           transition={{ delay: i * 0.03 }}
-                          style={{ padding: '20px 22px', borderRadius: 20, background: 'rgba(255,255,255,0.03)', border: `1px solid ${cfg.color}30` }}>
+                          style={{ padding: '22px 26px', borderRadius: 22, background: 'rgba(255,255,255,0.03)', border: `1px solid ${cfg.color}28`, boxShadow: `0 4px 20px rgba(0,0,0,0.15)` }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
                             <div style={{ marginTop: 6, flexShrink: 0 }}>
                               <div style={{ width: 10, height: 10, borderRadius: '50%', background: cfg.color, boxShadow: `0 0 8px ${cfg.color}` }} />
@@ -1151,7 +1173,7 @@ export default function DashboardPage() {
                                   <span style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
                                     Detectado por: {parseMetodoDeteccion(a.metodo_deteccion).methods.map(m => (
                                       <span key={m} style={{
-                                        fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 10,
+                                        fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 10,
                                         background: `${metodoDeteccionConfig[m]?.color || '#A0C4B5'}18`,
                                         color: metodoDeteccionConfig[m]?.color || '#A0C4B5',
                                       }}>
@@ -1195,14 +1217,16 @@ export default function DashboardPage() {
                               </p>
                             </div>
 
-                            {/* Acciones — solo en vista activas */}
+                            {/* Acciones — solo en vista activas y con permisos */}
                             {vistaAlertas === 'activas' && (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+                                {puedeEjecutar && (
                                 <motion.button onClick={() => marcarRevisada(a.id)}
                                   whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                   style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
                                   <CheckIcon /> Revisada
                                 </motion.button>
+                                )}
                                 <div style={{ display: 'flex', gap: 8 }}>
                                   {feedbackDado[a.id] ? (
                                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}

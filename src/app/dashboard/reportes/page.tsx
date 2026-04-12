@@ -11,6 +11,7 @@ import { useToastStore } from '../../../store/toast'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import CountUp from '../../../components/reactbits/CountUp'
 import FadeContent from '../../../components/reactbits/FadeContent'
+import SedeSelector from '../../../components/ui/SedeSelector'
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
@@ -52,6 +53,7 @@ export default function ReportesPage() {
   const { user } = useAuthStore()
   const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
+  const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   const [rango, setRango] = useState<7 | 30 | 90>(30)
   const [alertas, setAlertas] = useState<any[]>([])
@@ -61,10 +63,11 @@ export default function ReportesPage() {
 
   useEffect(() => {
     setLoading(true)
+    const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
     Promise.all([
-      api.get(`/alertas/?clinica=${clinicaId}&dias=${rango}`).catch(() => ({ data: [] })),
+      api.get(`/alertas/?clinica=${clinicaId}&dias=${rango}${sedeParam}`).catch(() => ({ data: [] })),
       api.get(`/medicos/?clinica=${clinicaId}`).catch(() => ({ data: [] })),
-      api.get(`/kpis/?clinica=${clinicaId}&horas=${rango * 24}`).catch(() => ({ data: [] })),
+      api.get(`/kpis/?clinica=${clinicaId}&horas=${rango * 24}${sedeParam}`).catch(() => ({ data: [] })),
     ]).then(([alertasRes, medicosRes, kpiRes]) => {
       setAlertas(alertasRes.data.results || alertasRes.data || [])
       setMedicos(medicosRes.data.results || medicosRes.data || [])
@@ -72,7 +75,7 @@ export default function ReportesPage() {
     }).catch(() => {
       toast.error('Error al cargar datos del reporte')
     }).finally(() => setLoading(false))
-  }, [rango, clinicaId])
+  }, [rango, clinicaId, selectedSede])
 
   const stats = useMemo(() => ({
     total: alertas.length,
@@ -179,6 +182,7 @@ export default function ReportesPage() {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
           {/* Rango selector */}
           <div style={{ display: 'flex', gap: 6 }}>
             {([7, 30, 90] as const).map(d => (

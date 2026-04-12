@@ -16,6 +16,7 @@ import GlowingCard from '../../../components/reactbits/GlowingCard'
 import CountUp from '../../../components/reactbits/CountUp'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import ShinyText from '../../../components/reactbits/ShinyText'
+import SedeSelector from '../../../components/ui/SedeSelector'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
   tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
@@ -327,6 +328,7 @@ export default function KPIsPage() {
   const toast = useToastStore()
   const pipStore = useKpiPipStore()
   const clinicaId = user?.clinica_id || 1
+  const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   const chartHeights: Record<string, number> = { normal: 320, grande: 460, completo: 620 }
   const chartHeight = chartHeights[chartSize]
@@ -338,11 +340,11 @@ export default function KPIsPage() {
     fetchAlertasKpi()
     const interval = setInterval(() => { fetchKPIs(); fetchAlertasKpi() }, 30000)
     return () => clearInterval(interval)
-  }, [clinicaId, horas])
+  }, [clinicaId, horas, selectedSede])
 
   const fetchAlertasKpi = async () => {
     try {
-      const res = await api.get(`/alertas/?clinica=${clinicaId}`)
+      const res = await api.get(`/alertas/?clinica=${clinicaId}${selectedSede ? `&sede=${selectedSede}` : ''}`)
       setAlertasKpi(res.data.results || res.data)
     } catch { /* silent */ }
   }
@@ -350,7 +352,7 @@ export default function KPIsPage() {
   const fetchKPIs = async (manual = false) => {
     if (manual) setRefreshing(true)
     try {
-      const res = await api.get(`/kpis/?clinica=${clinicaId}&horas=${horas}`)
+      const res = await api.get(`/kpis/?clinica=${clinicaId}&horas=${horas}${selectedSede ? `&sede=${selectedSede}` : ''}`)
       const data = res.data.results || res.data
 
       const agrupado: Record<string, KPIData[]> = {}
@@ -517,6 +519,7 @@ export default function KPIsPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
             {/* Time range */}
             <div style={{ display: 'flex', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 14, padding: 4 }}>
               {[2, 6, 12, 24].map(h => (
@@ -624,7 +627,7 @@ export default function KPIsPage() {
                   <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10, padding: 3 }}>
                     {(['normal', 'grande', 'completo'] as const).map(s => (
                       <motion.button key={s} onClick={() => setChartSize(s)} whileTap={{ scale: 0.95 }}
-                        style={{ padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 500, cursor: 'pointer', border: 'none', background: chartSize === s ? 'rgba(155,142,196,0.2)' : 'transparent', color: chartSize === s ? 'var(--primary)' : 'var(--muted)' }}>
+                        style={{ padding: '8px 14px', borderRadius: 8, fontSize: 11, fontWeight: 500, cursor: 'pointer', border: 'none', background: chartSize === s ? 'rgba(155,142,196,0.2)' : 'transparent', color: chartSize === s ? 'var(--primary)' : 'var(--muted)' }}>
                         {s === 'normal' ? 'S' : s === 'grande' ? 'M' : 'L'}
                       </motion.button>
                     ))}
@@ -951,7 +954,7 @@ export default function KPIsPage() {
                         {isExpanded && d && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {d.estadistico && (
-                              <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(160,196,181,0.08)', border: '1px solid rgba(160,196,181,0.2)', fontSize: 12 }}>
+                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(160,196,181,0.08)', border: '1px solid rgba(160,196,181,0.2)', fontSize: 12 }}>
                                 <p style={{ fontWeight: 700, color: '#A0C4B5', marginBottom: 3 }}>σ Estadístico — {d.estadistico.es_anomalia ? '⚠ Anomalía' : '✓ Normal'}</p>
                                 <p style={{ color: 'var(--muted)', lineHeight: 1.5 }}>
                                   Desviación: <strong style={{ color: '#A0C4B5' }}>{d.estadistico.desviacion}%</strong> (umbral: {d.estadistico.umbral}%) ·{' '}
@@ -960,7 +963,7 @@ export default function KPIsPage() {
                               </div>
                             )}
                             {d.prophet && (
-                              <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(124,181,232,0.08)', border: '1px solid rgba(124,181,232,0.2)', fontSize: 12 }}>
+                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(124,181,232,0.08)', border: '1px solid rgba(124,181,232,0.2)', fontSize: 12 }}>
                                 <p style={{ fontWeight: 700, color: '#7CB5E8', marginBottom: 3 }}>P Prophet — {d.prophet.es_anomalia ? '⚠ Fuera del rango' : '✓ Dentro del rango'}</p>
                                 <p style={{ color: 'var(--muted)', lineHeight: 1.5 }}>
                                   Predicción: <strong style={{ color: '#7CB5E8' }}>{d.prophet.yhat}</strong> ·
@@ -970,7 +973,7 @@ export default function KPIsPage() {
                               </div>
                             )}
                             {d.pyod && (
-                              <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(232,196,160,0.08)', border: '1px solid rgba(232,196,160,0.2)', fontSize: 12 }}>
+                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(232,196,160,0.08)', border: '1px solid rgba(232,196,160,0.2)', fontSize: 12 }}>
                                 <p style={{ fontWeight: 700, color: '#E8C4A0', marginBottom: 3 }}>F Isolation Forest — {d.pyod.es_anomalia ? '⚠ Outlier' : '✓ Normal'}</p>
                                 <p style={{ color: 'var(--muted)', lineHeight: 1.5 }}>
                                   Score: <strong style={{ color: d.pyod.es_outlier ? '#E8A0C4' : '#A0C4B5' }}>{d.pyod.anomaly_score}</strong> (umbral: {d.pyod.threshold}) ·
@@ -979,7 +982,7 @@ export default function KPIsPage() {
                               </div>
                             )}
                             {a.recomendacion && (
-                              <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(155,142,196,0.08)', border: '1px solid rgba(155,142,196,0.2)', fontSize: 12 }}>
+                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(155,142,196,0.08)', border: '1px solid rgba(155,142,196,0.2)', fontSize: 12 }}>
                                 <p style={{ fontWeight: 700, color: '#C4B5E8', fontSize: 11, marginBottom: 4 }}>Recomendación IA</p>
                                 <p style={{ color: 'var(--text)', opacity: 0.85, lineHeight: 1.6 }}>{a.recomendacion}</p>
                               </div>

@@ -33,11 +33,13 @@ export default function Input({
         </label>
       )}
       <div
-        className="relative flex items-center rounded-xl transition-all duration-200"
+        className="relative flex items-center rounded-2xl transition-all duration-200"
         style={{
           background: 'var(--glass)',
           border: `1px solid ${focused ? 'var(--primary)' : error ? 'var(--danger)' : 'var(--border)'}`,
-          boxShadow: focused ? '0 0 0 3px rgba(155, 142, 196, 0.15)' : 'none',
+          boxShadow: focused
+            ? '0 0 0 3px rgba(155, 142, 196, 0.18), var(--shadow-sm)'
+            : 'var(--shadow-sm)',
         }}
       >
         {icon && (
@@ -50,7 +52,7 @@ export default function Input({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={placeholder}
-          className="w-full px-4 py-3 bg-transparent outline-none text-sm"
+          className="w-full px-5 py-4 bg-transparent outline-none text-sm"
           style={{ color: 'var(--text)' }}
         />
         {type === 'password' && (

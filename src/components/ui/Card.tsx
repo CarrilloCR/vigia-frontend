@@ -26,7 +26,7 @@ export default function Card({
       transition={{ duration: 0.3, delay }}
       whileHover={hover ? { y: -2, scale: 1.01 } : {}}
       onClick={onClick}
-      className={`glass rounded-2xl p-5 ${hover ? 'cursor-pointer glass-hover' : ''} ${glow ? 'animate-pulse-glow' : ''} ${className}`}
+      className={`glass rounded-3xl p-7 ${hover ? 'cursor-pointer glass-hover' : ''} ${glow ? 'animate-pulse-glow' : ''} ${className}`}
     >
       {children}
     </motion.div>

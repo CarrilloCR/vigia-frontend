@@ -93,7 +93,11 @@ export default function EquipoPage() {
 
   const fetchSolicitudes = async () => {
     try {
-      const res = await api.get(`/solicitudes-rol/?clinica=${clinicaId}&estado=pendiente`)
+      // admin ve todas las solicitudes (todas las clínicas), gerente solo la suya
+      const url = user?.rol === 'admin'
+        ? `/solicitudes-rol/?estado=pendiente`
+        : `/solicitudes-rol/?clinica=${clinicaId}&estado=pendiente`
+      const res = await api.get(url)
       setSolicitudes(res.data.results || res.data)
     } catch { /* silent */ }
   }
@@ -268,6 +272,9 @@ export default function EquipoPage() {
                           {s.usuario_nombre || s.usuario_email}
                         </p>
                         <p style={{ fontSize: 12, color: 'var(--muted)' }}>{s.usuario_email}</p>
+                        {user?.rol === 'admin' && s.clinica_nombre && (
+                          <p style={{ fontSize: 11, color: 'var(--primary)', marginTop: 2 }}>{s.clinica_nombre}</p>
+                        )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 12, color: 'var(--muted)' }}>Solicita →</span>
@@ -317,7 +324,7 @@ export default function EquipoPage() {
               <div style={{ marginBottom: 20 }}>
                 <label style={labelStyle}>Rol solicitado</label>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {ROLES.filter(r => r.key !== 'admin' && r.key !== user?.rol).map(r => {
+                  {ROLES.filter(r => r.key !== user?.rol).map(r => {
                     const rs = ROL_STYLE[r.key]
                     return (
                       <motion.button key={r.key}

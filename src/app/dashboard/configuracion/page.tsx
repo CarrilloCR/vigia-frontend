@@ -236,6 +236,14 @@ export default function ConfiguracionPage() {
   const [editClinica, setEditClinica] = useState({ nombre: '', email: '' })
   const [savingClinica, setSavingClinica] = useState(false)
 
+  // ─── Sede CRUD state
+  const [showNuevaSede, setShowNuevaSede] = useState(false)
+  const [nuevaSedeForm, setNuevaSedeForm] = useState({ nombre: '', direccion: '', telefono: '' })
+  const [savingSede, setSavingSede] = useState(false)
+  const [editandoSede, setEditandoSede] = useState<number | null>(null)
+  const [editSedeForm, setEditSedeForm] = useState({ nombre: '', direccion: '', telefono: '' })
+  const [confirmDeleteSede, setConfirmDeleteSede] = useState<{ open: boolean; id: number; nombre: string }>({ open: false, id: 0, nombre: '' })
+
   // ─── Notificaciones state
   const [emails, setEmails] = useState<EmailNotificacion[]>([])
   const [loadingEmails, setLoadingEmails] = useState(true)
@@ -397,6 +405,54 @@ export default function ConfiguracionPage() {
     } catch {
       showToast('Error al actualizar la clínica', 'error')
     } finally { setSavingClinica(false) }
+  }
+
+  const handleCrearSede = async () => {
+    if (!nuevaSedeForm.nombre.trim()) return showToast('El nombre es requerido', 'error')
+    setSavingSede(true)
+    try {
+      const res = await api.post('/sedes/', { ...nuevaSedeForm, clinica: clinicaId, activa: true })
+      setSedes(prev => [...prev, res.data])
+      setNuevaSedeForm({ nombre: '', direccion: '', telefono: '' })
+      setShowNuevaSede(false)
+      showToast('Sede creada correctamente')
+    } catch {
+      showToast('Error al crear la sede', 'error')
+    } finally { setSavingSede(false) }
+  }
+
+  const handleEditarSede = async (id: number) => {
+    if (!editSedeForm.nombre.trim()) return showToast('El nombre es requerido', 'error')
+    setSavingSede(true)
+    try {
+      const res = await api.patch(`/sedes/${id}/`, editSedeForm)
+      setSedes(prev => prev.map(s => s.id === id ? res.data : s))
+      setEditandoSede(null)
+      showToast('Sede actualizada')
+    } catch {
+      showToast('Error al actualizar la sede', 'error')
+    } finally { setSavingSede(false) }
+  }
+
+  const handleToggleActiva = async (sede: Sede) => {
+    try {
+      const res = await api.patch(`/sedes/${sede.id}/`, { activa: !sede.activa })
+      setSedes(prev => prev.map(s => s.id === sede.id ? res.data : s))
+      showToast(`Sede ${res.data.activa ? 'activada' : 'desactivada'}`)
+    } catch {
+      showToast('Error al cambiar el estado', 'error')
+    }
+  }
+
+  const handleEliminarSede = async (id: number) => {
+    try {
+      await api.delete(`/sedes/${id}/`)
+      setSedes(prev => prev.filter(s => s.id !== id))
+      setConfirmDeleteSede({ open: false, id: 0, nombre: '' })
+      showToast('Sede eliminada')
+    } catch {
+      showToast('No se puede eliminar — tiene datos asociados', 'error')
+    }
   }
 
   const handleAddEmail = async () => {
@@ -739,45 +795,171 @@ export default function ConfiguracionPage() {
                       <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
                         Sedes
                       </h3>
-                      <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
-                        {sedes.length} {sedes.length === 1 ? 'sede' : 'sedes'}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                          {sedes.length} {sedes.length === 1 ? 'sede' : 'sedes'}
+                        </span>
+                        <motion.button
+                          onClick={() => { setShowNuevaSede(v => !v); setEditandoSede(null) }}
+                          whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+                            borderRadius: 10, background: showNuevaSede ? 'rgba(155,142,196,0.2)' : 'rgba(155,142,196,0.1)',
+                            border: '1px solid rgba(155,142,196,0.3)', color: 'var(--primary)',
+                            fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                          }}>
+                          <PlusIcon /> Nueva sede
+                        </motion.button>
+                      </div>
                     </div>
+
+                    {/* Create form */}
+                    <AnimatePresence>
+                      {showNuevaSede && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                          style={{ overflow: 'hidden', marginBottom: 20 }}>
+                          <div style={{ padding: '20px', borderRadius: 16, background: 'rgba(155,142,196,0.06)', border: '1px solid rgba(155,142,196,0.2)', marginBottom: 4 }}>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', marginBottom: 16 }}>Nueva sede</p>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 16 }}>
+                              <div>
+                                <label style={labelStyle}>Nombre *</label>
+                                <input value={nuevaSedeForm.nombre} onChange={e => setNuevaSedeForm({ ...nuevaSedeForm, nombre: e.target.value })}
+                                  placeholder="Ej: Sede Norte" style={inputStyle} />
+                              </div>
+                              <div>
+                                <label style={labelStyle}>Dirección</label>
+                                <input value={nuevaSedeForm.direccion} onChange={e => setNuevaSedeForm({ ...nuevaSedeForm, direccion: e.target.value })}
+                                  placeholder="Dirección física" style={inputStyle} />
+                              </div>
+                              <div>
+                                <label style={labelStyle}>Teléfono</label>
+                                <input value={nuevaSedeForm.telefono} onChange={e => setNuevaSedeForm({ ...nuevaSedeForm, telefono: e.target.value })}
+                                  placeholder="Teléfono de contacto" style={inputStyle} />
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 10 }}>
+                              <motion.button onClick={handleCrearSede} disabled={savingSede}
+                                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                                style={{ padding: '9px 20px', borderRadius: 10, background: 'var(--primary)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', opacity: savingSede ? 0.7 : 1 }}>
+                                {savingSede ? 'Guardando...' : 'Crear sede'}
+                              </motion.button>
+                              <motion.button onClick={() => setShowNuevaSede(false)}
+                                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                                style={{ padding: '9px 20px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)' }}>
+                                Cancelar
+                              </motion.button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
                     {sedes.length === 0 ? (
                       <p style={{ fontSize: 14, color: 'var(--muted)', textAlign: 'center', padding: '32px 0' }}>
-                        No hay sedes registradas
+                        No hay sedes registradas. Crea la primera sede de tu clínica.
                       </p>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {sedes.map((s, i) => (
-                          <motion.div key={s.id}
-                            initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.05 }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
-                            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(155,142,196,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
-                              <MapPinIcon />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{s.nombre}</p>
-                              <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{s.direccion || 'Sin dirección'}</p>
-                            </div>
-                            {s.telefono && (
-                              <span style={{ fontSize: 13, color: 'var(--muted)' }}>{s.telefono}</span>
-                            )}
-                            <span style={{
-                              fontSize: 12, padding: '4px 12px', borderRadius: 20,
-                              background: s.activa ? 'rgba(160,196,181,0.12)' : 'rgba(232,160,196,0.1)',
-                              color: s.activa ? 'var(--success)' : 'var(--danger)',
-                              border: s.activa ? '1px solid rgba(160,196,181,0.2)' : '1px solid rgba(232,160,196,0.2)',
-                            }}>
-                              {s.activa ? 'Activa' : 'Inactiva'}
-                            </span>
-                          </motion.div>
-                        ))}
+                        <AnimatePresence>
+                          {sedes.map((s, i) => (
+                            <motion.div key={s.id}
+                              initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}
+                              transition={{ delay: i * 0.04 }}
+                              style={{ borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                              {/* Row */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px' }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(155,142,196,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                                  <MapPinIcon />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{s.nombre}</p>
+                                  <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>
+                                    {s.direccion || 'Sin dirección'}{s.telefono ? ` · ${s.telefono}` : ''}
+                                  </p>
+                                </div>
+                                {/* Status toggle */}
+                                <motion.button onClick={() => handleToggleActiva(s)}
+                                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                                  title={s.activa ? 'Desactivar sede' : 'Activar sede'}
+                                  style={{
+                                    fontSize: 12, padding: '4px 12px', borderRadius: 20, cursor: 'pointer',
+                                    background: s.activa ? 'rgba(160,196,181,0.12)' : 'rgba(232,160,196,0.1)',
+                                    color: s.activa ? 'var(--success)' : 'var(--danger)',
+                                    border: s.activa ? '1px solid rgba(160,196,181,0.2)' : '1px solid rgba(232,160,196,0.2)',
+                                  }}>
+                                  {s.activa ? 'Activa' : 'Inactiva'}
+                                </motion.button>
+                                {/* Edit */}
+                                <motion.button
+                                  onClick={() => { setEditandoSede(editandoSede === s.id ? null : s.id); setEditSedeForm({ nombre: s.nombre, direccion: s.direccion || '', telefono: s.telefono || '' }); setShowNuevaSede(false) }}
+                                  whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                                  style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: editandoSede === s.id ? 'rgba(155,142,196,0.2)' : 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--primary)', cursor: 'pointer' }}>
+                                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </motion.button>
+                                {/* Delete */}
+                                <motion.button
+                                  onClick={() => setConfirmDeleteSede({ open: true, id: s.id, nombre: s.nombre })}
+                                  whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                                  style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(232,160,196,0.08)', border: '1px solid rgba(232,160,196,0.15)', color: 'var(--danger)', cursor: 'pointer' }}>
+                                  <TrashIcon />
+                                </motion.button>
+                              </div>
+
+                              {/* Inline edit form */}
+                              <AnimatePresence>
+                                {editandoSede === s.id && (
+                                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                                    style={{ overflow: 'hidden' }}>
+                                    <div style={{ padding: '16px 20px 20px', borderTop: '1px solid var(--border)', background: 'rgba(155,142,196,0.04)' }}>
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
+                                        <div>
+                                          <label style={labelStyle}>Nombre *</label>
+                                          <input value={editSedeForm.nombre} onChange={e => setEditSedeForm({ ...editSedeForm, nombre: e.target.value })} style={inputStyle} />
+                                        </div>
+                                        <div>
+                                          <label style={labelStyle}>Dirección</label>
+                                          <input value={editSedeForm.direccion} onChange={e => setEditSedeForm({ ...editSedeForm, direccion: e.target.value })} style={inputStyle} />
+                                        </div>
+                                        <div>
+                                          <label style={labelStyle}>Teléfono</label>
+                                          <input value={editSedeForm.telefono} onChange={e => setEditSedeForm({ ...editSedeForm, telefono: e.target.value })} style={inputStyle} />
+                                        </div>
+                                      </div>
+                                      <div style={{ display: 'flex', gap: 10 }}>
+                                        <motion.button onClick={() => handleEditarSede(s.id)} disabled={savingSede}
+                                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, background: 'var(--primary)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', opacity: savingSede ? 0.7 : 1 }}>
+                                          <CheckIcon /> Guardar
+                                        </motion.button>
+                                        <motion.button onClick={() => setEditandoSede(null)}
+                                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                                          style={{ padding: '8px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)' }}>
+                                          Cancelar
+                                        </motion.button>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
                       </div>
                     )}
                   </GlowingCard>
                 </div>
+
+                {/* Confirm delete sede */}
+                <ConfirmModal
+                  open={confirmDeleteSede.open}
+                  title="Eliminar sede"
+                  message={`¿Eliminar la sede "${confirmDeleteSede.nombre}"? Esta acción no se puede deshacer.`}
+                  confirmLabel="Eliminar"
+                  variant="danger"
+                  onConfirm={() => handleEliminarSede(confirmDeleteSede.id)}
+                  onCancel={() => setConfirmDeleteSede({ open: false, id: 0, nombre: '' })}
+                />
               </>
             )}
           </motion.div>
@@ -1148,7 +1330,8 @@ export default function ConfiguracionPage() {
                   const umbral = cfg.umbral_sensibilidad
                   const umbralColor = umbral <= 15 ? '#A0C4B5' : umbral <= 25 ? '#9B8EC4' : '#C4B5E8'
                   return (
-                    <GlowingCard key={kpi.key} className="p-0 overflow-hidden" style={{ opacity: cfg.activa ? 1 : 0.5, transition: 'opacity 0.2s' }}>
+                    <div key={kpi.key} style={{ opacity: cfg.activa ? 1 : 0.5, transition: 'opacity 0.2s' }}>
+                    <GlowingCard className="p-0 overflow-hidden">
                       {/* Fila principal: nombre + toggle */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{kpi.label}</span>
@@ -1188,6 +1371,7 @@ export default function ConfiguracionPage() {
                         </select>
                       </div>
                     </GlowingCard>
+                    </div>
                   )
                 })}
 

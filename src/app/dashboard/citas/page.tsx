@@ -9,6 +9,7 @@ import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import CountUp from '../../../components/reactbits/CountUp'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
+import SedeSelector from '../../../components/ui/SedeSelector'
 
 interface Cita {
   id: number
@@ -78,13 +79,15 @@ export default function CitasPage() {
   const { user } = useAuthStore()
   const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
+  const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
-  useEffect(() => { fetchData() }, [clinicaId])
+  useEffect(() => { fetchData() }, [clinicaId, selectedSede])
 
   const fetchData = async () => {
     try {
+      const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
       const [citasRes, medicosRes, pacientesRes] = await Promise.all([
-        api.get(`/citas/?clinica=${clinicaId}`),
+        api.get(`/citas/?clinica=${clinicaId}${sedeParam}`),
         api.get(`/medicos/?clinica=${clinicaId}`),
         api.get(`/pacientes/?clinica=${clinicaId}`),
       ])
@@ -164,11 +167,14 @@ export default function CitasPage() {
               <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Citas</h1>
               <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>{citasFiltradas.length} registros</p>
             </div>
-            <motion.button onClick={() => { setShowModal(true); setError('') }}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
-              <PlusIcon /> Agendar cita
-            </motion.button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
+              <motion.button onClick={() => { setShowModal(true); setError('') }}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
+                <PlusIcon /> Agendar cita
+              </motion.button>
+            </div>
           </div>
         </FadeContent>
 
@@ -188,7 +194,7 @@ export default function CitasPage() {
         </FadeContent>
 
         {/* GRID PRINCIPAL */}
-        <div style={{ display: 'grid', gridTemplateColumns: citasPorMedico.length > 0 ? '1fr 340px' : '1fr', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: citasPorMedico.length > 0 ? 'minmax(0,1fr) min(340px,36%)' : '1fr', gap: 24 }}>
 
           {/* LISTA CITAS */}
           <div>
@@ -212,7 +218,7 @@ export default function CitasPage() {
                       <motion.button key={e} onClick={() => setFiltroEstado(e)}
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                         style={{
-                          padding: '8px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: 'none',
+                          padding: '9px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: 'none',
                           background: filtroEstado === e ? `${cfg?.color || 'var(--primary)'}25` : 'rgba(255,255,255,0.03)',
                           color: filtroEstado === e ? (cfg?.color || 'var(--primary)') : 'var(--muted)',
                           borderWidth: 1, borderStyle: 'solid',

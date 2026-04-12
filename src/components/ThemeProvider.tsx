@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useThemeStore } from '../store/theme'
 import ToastContainer from './ui/ToastContainer'
+import CursorGlow from './ui/CursorGlow'
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { isDark } = useThemeStore()
@@ -20,6 +21,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
 
   return (
     <>
+      <CursorGlow />
       {children}
       <ToastContainer />
     </>

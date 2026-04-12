@@ -6,6 +6,7 @@ import { useToastStore } from '../store/toast'
 import api from '../lib/axios'
 import VigiaLogo from './ui/VigiaLogo'
 import ThemeToggle from './ui/ThemeToggle'
+import { NAV_PERMISOS, ROL_LABELS, ROL_COLORS } from '../lib/permisos'
 
 const LogoutIcon = () => (
   <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -148,6 +149,16 @@ export default function DashboardHeader() {
     return pathname.startsWith(item.path)
   }
 
+  // Filter nav items by user role
+  const visibleNav = navItems.filter(item => {
+    const permisos = NAV_PERMISOS[item.path]
+    if (!permisos) return user?.rol === 'admin'
+    return permisos.includes((user?.rol ?? 'viewer') as 'admin' | 'gerente' | 'medico' | 'viewer')
+  })
+
+  const rolColor = ROL_COLORS[user?.rol ?? 'viewer'] ?? ROL_COLORS.viewer
+  const rolLabel = ROL_LABELS[user?.rol ?? 'viewer'] ?? 'Visualizador'
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -16 }}
@@ -157,7 +168,7 @@ export default function DashboardHeader() {
         marginBottom: 32, flexWrap: 'wrap', gap: 16,
       }}
     >
-      {/* Logo + nombre */}
+      {/* Logo + nombre + rol */}
       <motion.div
         onClick={() => router.push('/dashboard')}
         style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}
@@ -170,14 +181,23 @@ export default function DashboardHeader() {
           <VigiaLogo size={48} />
         </motion.div>
         <div>
-          <p className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>{user?.clinica_nombre || 'Panel de control'}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <p className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
+            <span style={{
+              fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+              background: rolColor.bg, color: rolColor.text, border: `1px solid ${rolColor.border}`,
+              letterSpacing: '0.02em',
+            }}>
+              {rolLabel}
+            </span>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>{user?.nombre} · {user?.clinica_nombre || 'Panel de control'}</p>
         </div>
       </motion.div>
 
-      {/* Navegación */}
+      {/* Navegación filtrada por rol */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-        {navItems.map(item => {
+        {visibleNav.map(item => {
           const active = isActive(item)
           return (
             <motion.button
@@ -187,7 +207,7 @@ export default function DashboardHeader() {
               whileTap={{ scale: 0.97 }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500,
+                padding: '10px 18px', borderRadius: 14, fontSize: 13, fontWeight: 500,
                 cursor: 'pointer', border: 'none',
                 background: active ? 'rgba(155,142,196,0.15)' : 'var(--glass)',
                 backdropFilter: 'blur(20px)',
@@ -195,6 +215,7 @@ export default function DashboardHeader() {
                 borderColor: active ? 'rgba(155,142,196,0.4)' : 'var(--border)',
                 color: active ? 'var(--primary)' : 'var(--muted)',
                 transition: 'all 0.2s',
+                boxShadow: active ? 'var(--shadow-glow)' : 'var(--shadow-sm)',
               }}
             >
               {item.icon}
@@ -211,10 +232,11 @@ export default function DashboardHeader() {
           whileTap={{ scale: 0.97 }}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            padding: '10px 14px', borderRadius: 12,
+            padding: '10px 18px', borderRadius: 14,
             background: 'var(--glass)', backdropFilter: 'blur(20px)',
             border: '1px solid var(--border)',
             color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            boxShadow: 'var(--shadow-sm)',
           }}
         >
           <LogoutIcon /> Salir
