@@ -974,7 +974,7 @@ export default function DashboardPage() {
         </div>
 
         {/* MAIN GRID */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) min(420px,38%)', gap: 24 }}>
 
           {/* ALERTAS */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
@@ -996,7 +996,7 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 12, padding: 3 }}>
                   {(['activas', 'historial'] as const).map(v => (
                     <motion.button key={v} onClick={() => setVistaAlertas(v)} whileTap={{ scale: 0.97 }}
-                      style={{ padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: vistaAlertas === v ? 'white' : 'var(--muted)' }}>
+                      style={{ padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: vistaAlertas === v ? 'white' : 'var(--muted)' }}>
                       {vistaAlertas === v && (
                         <motion.div layoutId="alertaTab"
                           style={{ position: 'absolute', inset: 0, borderRadius: 10, background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}
@@ -1015,7 +1015,7 @@ export default function DashboardPage() {
                   <motion.button key={f.key} onClick={() => setFiltroSev(f.key)}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     style={{
-                      padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                      padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500,
                       cursor: 'pointer', border: 'none',
                       background: filtroSev === f.key ? `${f.color}25` : 'rgba(255,255,255,0.03)',
                       color: filtroSev === f.key ? f.color : 'var(--muted)',
@@ -1033,7 +1033,7 @@ export default function DashboardPage() {
                   <motion.button key={f.key} onClick={() => setFiltroMetodo(f.key)}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     style={{
-                      padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                      padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500,
                       cursor: 'pointer', border: 'none',
                       background: filtroMetodo === f.key ? `${f.color}25` : 'rgba(255,255,255,0.03)',
                       color: filtroMetodo === f.key ? f.color : 'var(--muted)',
@@ -1050,7 +1050,7 @@ export default function DashboardPage() {
                   <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
                     <motion.button onClick={() => setOcultarTodas(!ocultarTodas)}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)', background: ocultarTodas ? 'rgba(155,142,196,0.15)' : 'rgba(255,255,255,0.03)', color: ocultarTodas ? 'var(--primary)' : 'var(--muted)' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)', background: ocultarTodas ? 'rgba(155,142,196,0.15)' : 'rgba(255,255,255,0.03)', color: ocultarTodas ? 'var(--primary)' : 'var(--muted)' }}>
                       <EyeOffIcon />
                       {ocultarTodas ? 'Mostrar' : 'Ocultar'}
                     </motion.button>
@@ -1167,7 +1167,7 @@ export default function DashboardPage() {
                                   <span style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
                                     Detectado por: {parseMetodoDeteccion(a.metodo_deteccion).methods.map(m => (
                                       <span key={m} style={{
-                                        fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 10,
+                                        fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 10,
                                         background: `${metodoDeteccionConfig[m]?.color || '#A0C4B5'}18`,
                                         color: metodoDeteccionConfig[m]?.color || '#A0C4B5',
                                       }}>

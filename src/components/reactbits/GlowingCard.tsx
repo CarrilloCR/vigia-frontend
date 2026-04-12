@@ -5,9 +5,10 @@ import { motion } from 'framer-motion'
 interface GlowingCardProps {
   children: React.ReactNode
   className?: string
+  style?: React.CSSProperties
 }
 
-export default function GlowingCard({ children, className = '' }: GlowingCardProps) {
+export default function GlowingCard({ children, className = '', style }: GlowingCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [glowPos, setGlowPos] = useState({ x: 50, y: 50 })
 
@@ -33,6 +34,7 @@ export default function GlowingCard({ children, className = '' }: GlowingCardPro
         WebkitBackdropFilter: 'blur(28px)',
         border: '1px solid var(--border)',
         boxShadow: 'var(--shadow-lg)',
+        ...style,
       }}
     >
       {/* Glow effect */}

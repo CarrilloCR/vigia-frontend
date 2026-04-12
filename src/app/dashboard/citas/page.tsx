@@ -188,7 +188,7 @@ export default function CitasPage() {
         </FadeContent>
 
         {/* GRID PRINCIPAL */}
-        <div style={{ display: 'grid', gridTemplateColumns: citasPorMedico.length > 0 ? '1fr 340px' : '1fr', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: citasPorMedico.length > 0 ? 'minmax(0,1fr) min(340px,36%)' : '1fr', gap: 24 }}>
 
           {/* LISTA CITAS */}
           <div>
@@ -212,7 +212,7 @@ export default function CitasPage() {
                       <motion.button key={e} onClick={() => setFiltroEstado(e)}
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                         style={{
-                          padding: '8px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: 'none',
+                          padding: '9px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: 'none',
                           background: filtroEstado === e ? `${cfg?.color || 'var(--primary)'}25` : 'rgba(255,255,255,0.03)',
                           color: filtroEstado === e ? (cfg?.color || 'var(--primary)') : 'var(--muted)',
                           borderWidth: 1, borderStyle: 'solid',
