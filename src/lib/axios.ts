@@ -11,9 +11,14 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  const { accessToken, user } = useAuthStore.getState()
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`
+  }
+  // Gerentes only see data from their sede — auto-append sede param to all GETs
+  if (user?.rol === 'gerente' && user.sede_id && config.method === 'get') {
+    const sep = config.url?.includes('?') ? '&' : '?'
+    config.url = `${config.url}${sep}sede=${user.sede_id}`
   }
   return config
 })

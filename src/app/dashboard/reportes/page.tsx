@@ -52,7 +52,7 @@ const DownloadIcon = () => (
 export default function ReportesPage() {
   const { user } = useAuthStore()
   const toast = useToastStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   const [rango, setRango] = useState<7 | 30 | 90>(30)

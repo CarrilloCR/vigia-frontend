@@ -327,7 +327,7 @@ export default function KPIsPage() {
   const { user } = useAuthStore()
   const toast = useToastStore()
   const pipStore = useKpiPipStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   const chartHeights: Record<string, number> = { normal: 320, grande: 460, completo: 620 }

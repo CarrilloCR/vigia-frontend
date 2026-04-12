@@ -686,7 +686,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
   const toast = useToastStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const puedeEjecutar = puedeOperar(user?.rol)
 
   useEffect(() => {
@@ -1126,6 +1126,11 @@ export default function DashboardPage() {
                                   {kpiLabel[a.tipo_kpi] || a.tipo_kpi}
                                 </span>
                                 <MetodoBadge metodo={a.metodo_deteccion} />
+                                {a.sede_nombre && (
+                                  <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20, background: 'rgba(160,196,181,0.15)', color: '#A0C4B5', border: '1px solid rgba(160,196,181,0.3)' }}>
+                                    {a.sede_nombre}
+                                  </span>
+                                )}
                                 {a.detalle_deteccion && (
                                   <motion.button
                                     onClick={(e) => { e.stopPropagation(); setDetalleExpandido(prev => ({ ...prev, [a.id]: !prev[a.id] })) }}

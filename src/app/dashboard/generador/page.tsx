@@ -89,12 +89,14 @@ function formatValor(tipo: string, valor: number) {
 export default function GeneradorPage() {
   const { user } = useAuthStore()
   const toast = useToastStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   const [registros, setRegistros] = useState<RegistroKPI[]>([])
   const [loading, setLoading] = useState(true)
   const [live, setLive] = useState(true)
+  const [generadorActivo, setGeneradorActivo] = useState<boolean | null>(null)
+  const [togglingGenerador, setTogglingGenerador] = useState(false)
   const [horas, setHoras] = useState(6)
   const [filtroTipo, setFiltroTipo] = useState<string>('todos')
   const [ultimaActualizacion, setUltimaActualizacion] = useState<Date | null>(null)
@@ -130,8 +132,24 @@ export default function GeneradorPage() {
   }
 
   useEffect(() => {
+    // Fetch clinica state to know if generador is on
+    api.get(`/clinicas/${clinicaId}/`).then(res => setGeneradorActivo(res.data.generador_activo)).catch(() => {})
     fetchRegistros()
   }, [horas, selectedSede])
+
+  const handleToggleGenerador = async () => {
+    setTogglingGenerador(true)
+    try {
+      const res = await api.post('/generador/toggle/', { clinica_id: clinicaId })
+      setGeneradorActivo(res.data.generador_activo)
+      toast.success(
+        res.data.generador_activo ? 'Generador activado' : 'Generador detenido',
+        res.data.generador_activo ? 'El backend volverá a producir datos cada 5 min.' : 'El backend dejará de generar datos en el próximo ciclo.'
+      )
+    } catch {
+      toast.error('Error', 'No se pudo cambiar el estado del generador.')
+    } finally { setTogglingGenerador(false) }
+  }
 
   useEffect(() => {
     if (!live) return
@@ -168,7 +186,7 @@ export default function GeneradorPage() {
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-            <PulseDot color={live ? '#A0C4B5' : '#9B8EC4'} />
+            <PulseDot color={generadorActivo ? '#A0C4B5' : '#E8A0C4'} />
             <h1 className="font-display" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
               Generador en Vivo
             </h1>
@@ -180,18 +198,42 @@ export default function GeneradorPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
+
+          {/* Toggle generador backend */}
+          <motion.button
+            onClick={handleToggleGenerador}
+            disabled={togglingGenerador || generadorActivo === null}
+            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500,
+              background: generadorActivo ? 'rgba(160,196,181,0.15)' : 'rgba(232,160,196,0.1)',
+              border: `1px solid ${generadorActivo ? 'rgba(160,196,181,0.35)' : 'rgba(232,160,196,0.3)'}`,
+              color: generadorActivo ? 'var(--success)' : 'var(--danger)',
+              cursor: togglingGenerador || generadorActivo === null ? 'not-allowed' : 'pointer',
+              backdropFilter: 'blur(20px)',
+              opacity: togglingGenerador ? 0.6 : 1,
+            }}>
+            {togglingGenerador
+              ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }} style={{ width: 14, height: 14, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%' }} />
+              : generadorActivo ? <PauseIcon /> : <PlayIcon />
+            }
+            {generadorActivo ? 'Generador ON' : 'Generador OFF'}
+          </motion.button>
+
+          {/* Toggle live polling */}
           <motion.button onClick={() => setLive(!live)}
             whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500,
-              background: live ? 'rgba(160,196,181,0.15)' : 'var(--glass)',
-              border: `1px solid ${live ? 'rgba(160,196,181,0.35)' : 'var(--border)'}`,
-              color: live ? 'var(--success)' : 'var(--muted)',
+              background: live ? 'rgba(155,142,196,0.15)' : 'var(--glass)',
+              border: `1px solid ${live ? 'rgba(155,142,196,0.3)' : 'var(--border)'}`,
+              color: live ? 'var(--primary)' : 'var(--muted)',
               cursor: 'pointer', backdropFilter: 'blur(20px)',
             }}>
             {live ? <PauseIcon /> : <PlayIcon />}
-            {live ? 'En vivo' : 'Pausado'}
+            {live ? 'Vista en vivo' : 'Vista pausada'}
           </motion.button>
 
           <motion.button onClick={fetchRegistros}

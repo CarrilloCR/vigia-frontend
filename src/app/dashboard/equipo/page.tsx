@@ -60,7 +60,7 @@ const labelStyle: React.CSSProperties = {
 export default function EquipoPage() {
   const { user } = useAuthStore()
   const toast = useToastStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const esAdmin = user?.rol === 'admin' || user?.rol === 'gerente'
 
   const [usuarios, setUsuarios] = useState<any[]>([])

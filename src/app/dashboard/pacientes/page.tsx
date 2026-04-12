@@ -20,7 +20,11 @@ interface Paciente {
   fecha_nacimiento: string
   primera_visita: string
   clinica: number
+  sede: number | null
+  sede_nombre: string | null
 }
+
+interface Sede { id: number; nombre: string }
 
 const colores = ['#9B8EC4','#E8A0C4','#A0C4B5','#C4B5E8','#7C6FBF','#BBA8E8','#A8C4A0','#E8C4A0']
 
@@ -85,14 +89,19 @@ export default function PacientesPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number; name: string }>({ open: false, id: 0, name: '' })
   const [form, setForm] = useState({
     nombre: '', apellido: '', telefono: '', email: '', fecha_nacimiento: '',
+    sede: '' as string | number,
   })
+  const [sedes, setSedes] = useState<Sede[]>([])
   const router = useRouter()
   const { user } = useAuthStore()
   const toast = useToastStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   useEffect(() => { fetchData() }, [clinicaId, selectedSede])
+  useEffect(() => {
+    api.get(`/sedes/?clinica=${clinicaId}`).then(res => setSedes(res.data.results || res.data)).catch(() => {})
+  }, [clinicaId])
 
   const fetchData = async () => {
     try {
@@ -116,7 +125,7 @@ export default function PacientesPage() {
     } finally { setLoading(false) }
   }
 
-  const resetForm = () => setForm({ nombre: '', apellido: '', telefono: '', email: '', fecha_nacimiento: '' })
+  const resetForm = () => setForm({ nombre: '', apellido: '', telefono: '', email: '', fecha_nacimiento: '', sede: '' })
 
   const abrirCrear = () => { resetForm(); setEditando(null); setError(''); setShowModal(true) }
 
@@ -126,6 +135,7 @@ export default function PacientesPage() {
       nombre: p.nombre, apellido: p.apellido,
       telefono: p.telefono || '', email: p.email || '',
       fecha_nacimiento: p.fecha_nacimiento || '',
+      sede: p.sede ?? '',
     })
     setError(''); setShowModal(true)
   }
@@ -134,7 +144,7 @@ export default function PacientesPage() {
     if (!form.nombre || !form.apellido) return setError('Nombre y apellido son requeridos.')
     setSaving(true); setError('')
     try {
-      const payload = { ...form, clinica: clinicaId }
+      const payload = { ...form, clinica: clinicaId, sede: form.sede || null }
       if (editando) {
         await api.put(`/pacientes/${editando.id}/`, payload)
       } else {
@@ -284,6 +294,11 @@ export default function PacientesPage() {
                             {p.email && <p style={{ fontSize: 12, color: 'var(--muted)' }}>✉ {p.email}</p>}
                             {p.telefono && <p style={{ fontSize: 12, color: 'var(--muted)' }}>📞 {p.telefono}</p>}
                             {edad !== null && <p style={{ fontSize: 12, color: 'var(--muted)' }}>🎂 {edad} años</p>}
+                            {p.sede_nombre && (
+                              <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 20, background: 'rgba(160,196,181,0.15)', color: '#A0C4B5', border: '1px solid rgba(160,196,181,0.3)' }}>
+                                {p.sede_nombre}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -367,6 +382,16 @@ export default function PacientesPage() {
                   <input type="date" value={form.fecha_nacimiento} onChange={e => setForm({ ...form, fecha_nacimiento: e.target.value })}
                     style={{ width: '100%', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, outline: 'none' }} />
                 </div>
+                {sedes.length > 0 && (
+                  <div>
+                    <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sede</p>
+                    <select value={form.sede} onChange={e => setForm({ ...form, sede: e.target.value })}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, outline: 'none' }}>
+                      <option value="">Sin sede específica</option>
+                      {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
 
               {error && (

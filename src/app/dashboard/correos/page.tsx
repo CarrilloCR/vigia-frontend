@@ -58,7 +58,7 @@ export default function CorreosPage() {
   const [success, setSuccess] = useState('')
   const router = useRouter()
   const { user } = useAuthStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
 
   useEffect(() => { fetchEmails() }, [clinicaId])
 

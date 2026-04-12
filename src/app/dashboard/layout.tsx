@@ -68,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Check route permission (skip for main dashboard - always accessible)
   const permisos = NAV_PERMISOS[pathname]
   const rol = user?.rol ?? 'viewer'
-  const sinAcceso = !isMainDashboard && permisos !== undefined && !permisos.includes(rol as 'admin' | 'gerente' | 'medico' | 'viewer')
+  const sinAcceso = !isMainDashboard && rol !== 'superadmin' && permisos !== undefined && !permisos.includes(rol as 'admin' | 'gerente' | 'medico' | 'viewer')
 
   // Dashboard principal maneja su propio layout completo
   if (isMainDashboard) return (

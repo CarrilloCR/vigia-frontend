@@ -58,7 +58,7 @@ export default function NotificacionesPage() {
   const [filtroKpi, setFiltroKpi] = useState('')
   const [selectedSede, setSelectedSede] = useState<number | null>(null)
   const { user } = useAuthStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const toast = useToastStore()
 
   useEffect(() => {

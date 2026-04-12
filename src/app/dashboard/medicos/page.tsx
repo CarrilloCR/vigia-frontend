@@ -12,6 +12,8 @@ import CountUp from '../../../components/reactbits/CountUp'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
 import SedeSelector from '../../../components/ui/SedeSelector'
 
+interface Sede { id: number; nombre: string }
+
 interface Medico {
   id: number
   nombre: string
@@ -24,6 +26,8 @@ interface Medico {
   fecha_ingreso: string
   activo: boolean
   clinica: number
+  sede: number | null
+  sede_nombre: string | null
 }
 
 const especialidades = [
@@ -89,14 +93,19 @@ export default function MedicosPage() {
   const [form, setForm] = useState({
     nombre: '', apellido: '', especialidad: 'Medicina General',
     email: '', telefono: '', descripcion: '', foto_url: '', fecha_ingreso: '',
+    sede: '' as string | number,
   })
+  const [sedes, setSedes] = useState<Sede[]>([])
   const router = useRouter()
   const { user } = useAuthStore()
   const toast = useToastStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   useEffect(() => { fetchMedicos() }, [clinicaId, selectedSede])
+  useEffect(() => {
+    api.get(`/sedes/?clinica=${clinicaId}`).then(res => setSedes(res.data.results || res.data)).catch(() => {})
+  }, [clinicaId])
 
   const fetchMedicos = async () => {
     try {
@@ -108,7 +117,7 @@ export default function MedicosPage() {
   }
 
   const resetForm = () => {
-    setForm({ nombre: '', apellido: '', especialidad: 'Medicina General', email: '', telefono: '', descripcion: '', foto_url: '', fecha_ingreso: '' })
+    setForm({ nombre: '', apellido: '', especialidad: 'Medicina General', email: '', telefono: '', descripcion: '', foto_url: '', fecha_ingreso: '', sede: '' })
     setFotoPreview('')
   }
 
@@ -120,6 +129,7 @@ export default function MedicosPage() {
       nombre: m.nombre, apellido: m.apellido, especialidad: m.especialidad,
       email: m.email, telefono: m.telefono || '', descripcion: m.descripcion || '',
       foto_url: m.foto_url || '', fecha_ingreso: m.fecha_ingreso || '',
+      sede: m.sede ?? '',
     })
     setFotoPreview(m.foto_url || '')
     setError(''); setShowModal(true)
@@ -142,7 +152,7 @@ export default function MedicosPage() {
     if (!form.nombre || !form.apellido) return setError('Nombre y apellido son requeridos.')
     setSaving(true); setError('')
     try {
-      const payload = { ...form, clinica: clinicaId, activo: true }
+      const payload = { ...form, clinica: clinicaId, activo: true, sede: form.sede || null }
       if (editando) {
         await api.put(`/medicos/${editando.id}/`, payload)
       } else {
@@ -286,9 +296,16 @@ export default function MedicosPage() {
                             )}
                             <div>
                               <p style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Dr. {m.nombre} {m.apellido}</p>
-                              <span style={{ fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 20, background: `${color}18`, color: color, border: `1px solid ${color}30` }}>
-                                {m.especialidad}
-                              </span>
+                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 20, background: `${color}18`, color: color, border: `1px solid ${color}30` }}>
+                                  {m.especialidad}
+                                </span>
+                                {m.sede_nombre && (
+                                  <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20, background: 'rgba(160,196,181,0.15)', color: '#A0C4B5', border: '1px solid rgba(160,196,181,0.3)' }}>
+                                    {m.sede_nombre}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
@@ -395,6 +412,18 @@ export default function MedicosPage() {
                     {especialidades.map(e => <option key={e} value={e}>{e}</option>)}
                   </select>
                 </div>
+
+                {/* Sede */}
+                {sedes.length > 0 && (
+                  <div>
+                    <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sede</p>
+                    <select value={form.sede} onChange={e => setForm({ ...form, sede: e.target.value })}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, outline: 'none' }}>
+                      <option value="">Sin sede específica</option>
+                      {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                    </select>
+                  </div>
+                )}
 
                 {/* Email y Teléfono */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

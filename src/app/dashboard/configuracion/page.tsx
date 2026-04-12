@@ -127,7 +127,7 @@ const SlidersIcon = () => (
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Section = 'perfil' | 'seguridad' | 'clinica' | 'notificaciones' | 'automatizacion' | 'alertas' | 'apariencia' | 'integraciones' | 'facturacion'
+type Section = 'perfil' | 'seguridad' | 'clinica' | 'notificaciones' | 'automatizacion' | 'alertas' | 'apariencia' | 'integraciones' | 'facturacion' | 'superadmin'
 
 interface EmailNotificacion {
   id: number
@@ -160,7 +160,7 @@ const KPI_TIPOS: { key: string; label: string }[] = [
   { key: 'nps',                label: 'Net Promoter Score' },
 ]
 
-const SECTIONS: { key: Section; label: string; icon: React.ReactNode; desc: string }[] = [
+const SECTIONS: { key: Section; label: string; icon: React.ReactNode; desc: string; superadminOnly?: boolean }[] = [
   { key: 'perfil', label: 'Perfil', icon: <UserIcon />, desc: 'Información personal' },
   { key: 'seguridad', label: 'Seguridad', icon: <LockIcon />, desc: 'Contraseña y acceso' },
   { key: 'clinica', label: 'Clínica', icon: <BuildingIcon />, desc: 'Datos de la clínica' },
@@ -170,6 +170,7 @@ const SECTIONS: { key: Section; label: string; icon: React.ReactNode; desc: stri
   { key: 'apariencia', label: 'Apariencia', icon: <PaletteIcon />, desc: 'Tema y visualización' },
   { key: 'integraciones', label: 'Integraciones', icon: <LinkIcon />, desc: 'Conexiones externas' },
   { key: 'facturacion', label: 'Facturación', icon: <CreditCardIcon />, desc: 'Plan y pagos' },
+  { key: 'superadmin', label: 'Super Admin', icon: <BuildingIcon />, desc: 'Gestión global de clínicas', superadminOnly: true },
 ]
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
@@ -215,7 +216,7 @@ const sectionDesc: React.CSSProperties = {
 export default function ConfiguracionPage() {
   const router = useRouter()
   const { user } = useAuthStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
 
   const [activeSection, setActiveSection] = useState<Section>('perfil')
   const toast = useToastStore()
@@ -289,6 +290,17 @@ export default function ConfiguracionPage() {
   const [integraciones, setIntegraciones] = useState<IntegracionExterna[]>([])
   const [loadingIntegraciones, setLoadingIntegraciones] = useState(true)
 
+  // ─── Super Admin state
+  const [todasClinicas, setTodasClinicas] = useState<Clinica[]>([])
+  const [loadingTodasClinicas, setLoadingTodasClinicas] = useState(false)
+  const [nuevaClinicaForm, setNuevaClinicaForm] = useState({ nombre: '', email: '', plan: 'basico' })
+  const [savingNuevaClinica, setSavingNuevaClinica] = useState(false)
+  const [confirmDeleteClinica, setConfirmDeleteClinica] = useState<{ open: boolean; id: number; nombre: string }>({ open: false, id: 0, nombre: '' })
+  const [deletingClinica, setDeletingClinica] = useState(false)
+  const [expandedClinica, setExpandedClinica] = useState<number | null>(null)
+  const [sedesPorClinica, setSedesPorClinica] = useState<Record<number, Sede[]>>({})
+  const [loadingSedesClinica, setLoadingSedesClinica] = useState<Record<number, boolean>>({})
+
   // ─── CSV state
   const [csvTipo, setCsvTipo] = useState<'kpi' | 'citas'>('kpi')
   const [csvFile, setCsvFile] = useState<File | null>(null)
@@ -348,6 +360,10 @@ export default function ConfiguracionPage() {
         .catch(() => {})
         .finally(() => setLoadingPlan(false))
     }
+    if (activeSection === 'superadmin' && user?.rol === 'superadmin' && !loadingTodasClinicas && todasClinicas.length === 0) {
+      setLoadingTodasClinicas(true)
+      api.get('/clinicas/').then(res => setTodasClinicas(res.data.results || res.data)).catch(() => {}).finally(() => setLoadingTodasClinicas(false))
+    }
     if (activeSection === 'alertas' && loadingConfigAlertas) {
       api.get(`/configuraciones-alerta/?clinica=${clinicaId}`)
         .then(res => {
@@ -364,7 +380,7 @@ export default function ConfiguracionPage() {
         .catch(() => {})
         .finally(() => setLoadingConfigAlertas(false))
     }
-  }, [activeSection, clinicaId, clinica, loadingEmails, loadingIntegraciones, loadingPlan, loadingConfigAlertas])
+  }, [activeSection, clinicaId, clinica, loadingEmails, loadingIntegraciones, loadingPlan, loadingConfigAlertas, loadingTodasClinicas, todasClinicas.length])
 
   // ─── Handlers
   const handleSavePerfil = async () => {
@@ -1763,6 +1779,177 @@ export default function ConfiguracionPage() {
             )}
           </motion.div>
         )
+
+      // ═══════════════════════════════════════════════════════════
+      // SUPER ADMIN
+      // ═══════════════════════════════════════════════════════════
+      case 'superadmin':
+        return (
+          <motion.div key="superadmin" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+            <h2 className="font-display" style={sectionTitle}>Gestión global de clínicas</h2>
+            <p style={sectionDesc}>Crea, administra y elimina clínicas del sistema.</p>
+
+            {/* Crear nueva clínica */}
+            <GlowingCard className="p-6 sm:p-8 lg:p-10" style={{ marginBottom: 24 }}>
+              <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
+                Nueva clínica
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 12, alignItems: 'end' }}>
+                <div>
+                  <label style={labelStyle}>Nombre</label>
+                  <input value={nuevaClinicaForm.nombre} onChange={e => setNuevaClinicaForm({ ...nuevaClinicaForm, nombre: e.target.value })}
+                    placeholder="Clínica San José" style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Email</label>
+                  <input type="email" value={nuevaClinicaForm.email} onChange={e => setNuevaClinicaForm({ ...nuevaClinicaForm, email: e.target.value })}
+                    placeholder="admin@clinica.com" style={inputStyle} />
+                </div>
+                <motion.button
+                  onClick={async () => {
+                    if (!nuevaClinicaForm.nombre || !nuevaClinicaForm.email) return
+                    setSavingNuevaClinica(true)
+                    try {
+                      const res = await api.post('/clinicas/', { ...nuevaClinicaForm, activa: true })
+                      setTodasClinicas(prev => [...prev, res.data])
+                      setNuevaClinicaForm({ nombre: '', email: '', plan: 'basico' })
+                      toast.success('Clínica creada', `${res.data.nombre} fue registrada exitosamente.`)
+                    } catch { toast.error('Error', 'No se pudo crear la clínica.') }
+                    finally { setSavingNuevaClinica(false) }
+                  }}
+                  disabled={savingNuevaClinica || !nuevaClinicaForm.nombre || !nuevaClinicaForm.email}
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  style={{ padding: '13px 22px', borderRadius: 12, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, opacity: savingNuevaClinica ? 0.7 : 1, whiteSpace: 'nowrap' }}>
+                  <PlusIcon /> Crear
+                </motion.button>
+              </div>
+            </GlowingCard>
+
+            {/* Lista de clínicas */}
+            <GlowingCard className="p-6 sm:p-8 lg:p-10">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Todas las clínicas</h3>
+                <span style={{ fontSize: 13, padding: '4px 12px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                  {todasClinicas.length} registradas
+                </span>
+              </div>
+              {loadingTodasClinicas ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[1,2,3].map(i => <motion.div key={i} animate={{ opacity: [0.3,0.6,0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i*0.2 }} style={{ height: 72, borderRadius: 16, background: 'rgba(255,255,255,0.04)' }} />)}
+                </div>
+              ) : todasClinicas.length === 0 ? (
+                <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '32px 0' }}>No hay clínicas registradas</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {todasClinicas.map((c, i) => {
+                    const isOpen = expandedClinica === c.id
+                    const sedesC = sedesPorClinica[c.id] ?? []
+                    const loadingS = loadingSedesClinica[c.id] ?? false
+
+                    const toggleExpand = async () => {
+                      if (isOpen) { setExpandedClinica(null); return }
+                      setExpandedClinica(c.id)
+                      if (!sedesPorClinica[c.id]) {
+                        setLoadingSedesClinica(prev => ({ ...prev, [c.id]: true }))
+                        try {
+                          const res = await api.get(`/sedes/?clinica=${c.id}`)
+                          setSedesPorClinica(prev => ({ ...prev, [c.id]: res.data.results || res.data }))
+                        } catch {}
+                        finally { setLoadingSedesClinica(prev => ({ ...prev, [c.id]: false })) }
+                      }
+                    }
+
+                    return (
+                      <motion.div key={c.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+                        style={{ borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: `1px solid ${isOpen ? 'rgba(155,142,196,0.3)' : 'var(--border)'}`, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+
+                        {/* Header row */}
+                        <div
+                          onClick={toggleExpand}
+                          style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', cursor: 'pointer' }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+                            {c.nombre[0]}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{c.nombre}</p>
+                            <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{c.email} · Plan {c.plan}</p>
+                          </div>
+                          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c.activa ? 'rgba(160,196,181,0.15)' : 'rgba(232,160,196,0.1)', color: c.activa ? '#A0C4B5' : 'var(--danger)', border: `1px solid ${c.activa ? 'rgba(160,196,181,0.3)' : 'rgba(232,160,196,0.2)'}`, flexShrink: 0 }}>
+                            {c.activa ? 'Activa' : 'Inactiva'}
+                          </span>
+                          {/* Chevron */}
+                          <motion.svg
+                            animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}
+                            width="16" height="16" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                            <polyline points="6 9 12 15 18 9"/>
+                          </motion.svg>
+                          <motion.button
+                            onClick={e => { e.stopPropagation(); setConfirmDeleteClinica({ open: true, id: c.id, nombre: c.nombre }) }}
+                            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                            style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
+                            <TrashIcon />
+                          </motion.button>
+                        </div>
+
+                        {/* Sedes expandidas */}
+                        <AnimatePresence>
+                          {isOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.25 }}
+                              style={{ overflow: 'hidden' }}>
+                              <div style={{ padding: '0 20px 16px 20px', borderTop: '1px solid var(--border)' }}>
+                                <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', margin: '14px 0 10px' }}>
+                                  Sedes
+                                </p>
+                                {loadingS ? (
+                                  <div style={{ display: 'flex', gap: 8 }}>
+                                    {[1,2].map(k => <motion.div key={k} animate={{ opacity: [0.3,0.6,0.3] }} transition={{ duration: 1.2, repeat: Infinity }} style={{ height: 32, width: 120, borderRadius: 10, background: 'rgba(255,255,255,0.05)' }} />)}
+                                  </div>
+                                ) : sedesC.length === 0 ? (
+                                  <p style={{ fontSize: 13, color: 'var(--muted)', fontStyle: 'italic' }}>Sin sedes registradas</p>
+                                ) : (
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                    {sedesC.map(s => (
+                                      <span key={s.id} style={{ fontSize: 13, fontWeight: 500, padding: '6px 14px', borderRadius: 10, background: s.activa ? 'rgba(155,142,196,0.1)' : 'rgba(255,255,255,0.04)', color: s.activa ? 'var(--primary)' : 'var(--muted)', border: `1px solid ${s.activa ? 'rgba(155,142,196,0.25)' : 'var(--border)'}` }}>
+                                        {s.nombre}
+                                        {!s.activa && <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.6 }}>inactiva</span>}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    )
+                  })}
+                </div>
+              )}
+            </GlowingCard>
+
+            <ConfirmModal
+              open={confirmDeleteClinica.open}
+              title="Eliminar clínica"
+              message={`¿Estás seguro de que deseas eliminar "${confirmDeleteClinica.nombre}"? Se eliminarán todos sus datos: sedes, usuarios, médicos, pacientes, citas y alertas. Esta acción es irreversible.`}
+              confirmLabel={deletingClinica ? 'Eliminando...' : 'Eliminar todo'}
+              variant="danger"
+              onConfirm={async () => {
+                setDeletingClinica(true)
+                try {
+                  await api.delete(`/clinicas/${confirmDeleteClinica.id}/`)
+                  setTodasClinicas(prev => prev.filter(c => c.id !== confirmDeleteClinica.id))
+                  toast.success('Clínica eliminada', `${confirmDeleteClinica.nombre} fue eliminada.`)
+                } catch { toast.error('Error', 'No se pudo eliminar la clínica.') }
+                finally { setDeletingClinica(false); setConfirmDeleteClinica({ open: false, id: 0, nombre: '' }) }
+              }}
+              onCancel={() => setConfirmDeleteClinica({ open: false, id: 0, nombre: '' })}
+            />
+          </motion.div>
+        )
     }
   }
 
@@ -1792,7 +1979,7 @@ export default function ConfiguracionPage() {
               background: 'var(--glass)', backdropFilter: 'blur(20px)',
               border: '1px solid var(--border)',
             }}>
-              {SECTIONS.map((s, i) => (
+              {SECTIONS.filter(s => !s.superadminOnly || user?.rol === 'superadmin').map((s, i) => (
                 <motion.button
                   key={s.key}
                   onClick={() => setActiveSection(s.key)}

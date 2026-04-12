@@ -75,8 +75,11 @@ const features = [
   { icon: <BellIcon />, title: 'Notificaciones instantáneas', desc: 'Alertas por email cuando algo cambia' },
 ]
 
+interface ClinicaPublica { id: number; nombre: string; sedes: { id: number; nombre: string }[] }
+
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [registerMode, setRegisterMode] = useState<'nueva' | 'unirse'>('nueva')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -87,10 +90,23 @@ export default function AuthPage() {
   const [registerData, setRegisterData] = useState({
     nombre: '', email: '', password: '', confirmar: '', nombre_clinica: ''
   })
+  const [clinicasPublicas, setClinicasPublicas] = useState<ClinicaPublica[]>([])
+  const [selectedClinicaId, setSelectedClinicaId] = useState<number | null>(null)
+  const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null)
 
   useEffect(() => {
     if (isAuthenticated) router.push('/dashboard')
   }, [isAuthenticated, router])
+
+  useEffect(() => {
+    if (registerMode === 'unirse' && clinicasPublicas.length === 0) {
+      api.get('/clinicas/publico/').then(res => {
+        setClinicasPublicas(res.data)
+      }).catch(() => {})
+    }
+  }, [registerMode])
+
+  const sedesDeClinica = clinicasPublicas.find(c => c.id === selectedClinicaId)?.sedes ?? []
 
   const handleLogin = async () => {
     if (!loginData.email || !loginData.password) return setError('Completa todos los campos.')
@@ -107,20 +123,32 @@ export default function AuthPage() {
   }
 
   const handleRegister = async () => {
-    if (!registerData.nombre || !registerData.email || !registerData.password || !registerData.nombre_clinica)
-      return setError('Completa todos los campos.')
+    if (!registerData.nombre || !registerData.email || !registerData.password)
+      return setError('Nombre, email y contraseña son requeridos.')
+    if (registerMode === 'nueva' && !registerData.nombre_clinica)
+      return setError('El nombre de la clínica es requerido.')
+    if (registerMode === 'unirse' && !selectedClinicaId)
+      return setError('Selecciona una clínica.')
     if (!validatePassword(registerData.password))
       return setError('La contraseña no cumple todos los requisitos.')
     if (registerData.password !== registerData.confirmar)
       return setError('Las contraseñas no coinciden.')
     setLoading(true); setError('')
     try {
-      const res = await api.post('/auth/register/', {
-        nombre: registerData.nombre, email: registerData.email,
-        password: registerData.password, nombre_clinica: registerData.nombre_clinica,
-      })
+      const payload: Record<string, any> = {
+        nombre: registerData.nombre,
+        email: registerData.email,
+        password: registerData.password,
+      }
+      if (registerMode === 'nueva') {
+        payload.nombre_clinica = registerData.nombre_clinica
+      } else {
+        payload.clinica_id = selectedClinicaId
+        if (selectedSedeId) payload.sede_id = selectedSedeId
+      }
+      const res = await api.post('/auth/register/', payload)
       setAuth(res.data.user, res.data.tokens.access, res.data.tokens.refresh)
-      toast.success('Cuenta creada', 'Tu acceso está en revisión. Recibirás confirmación pronto.')
+      toast.success('Cuenta creada', res.data.message || 'Tu acceso está en revisión. Recibirás confirmación pronto.')
       router.push('/dashboard')
     } catch (err: any) {
       const data = err.response?.data
@@ -337,11 +365,95 @@ export default function AuthPage() {
                     onChange={v => setRegisterData({ ...registerData, email: v })}
                     placeholder="admin@clinica.com" icon={<MailIcon />}
                   />
-                  <AnimatedInput
-                    label="Nombre de la clínica" value={registerData.nombre_clinica}
-                    onChange={v => setRegisterData({ ...registerData, nombre_clinica: v })}
-                    placeholder="Clínica San José" icon={<HospitalIcon />}
-                  />
+
+                  {/* Register mode toggle */}
+                  <div style={{
+                    display: 'flex', background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid var(--border)', borderRadius: 12, padding: 4,
+                  }}>
+                    {(['nueva', 'unirse'] as const).map((m) => (
+                      <motion.button
+                        key={m}
+                        onClick={() => { setRegisterMode(m); setSelectedClinicaId(null); setSelectedSedeId(null) }}
+                        style={{
+                          flex: 1, padding: '10px 0', borderRadius: 9,
+                          fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                          border: 'none', background: 'transparent',
+                          position: 'relative', overflow: 'hidden',
+                          color: registerMode === m ? 'white' : 'var(--muted)',
+                        }}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        {registerMode === m && (
+                          <motion.div
+                            layoutId="regTab"
+                            style={{
+                              position: 'absolute', inset: 0, borderRadius: 9,
+                              background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                            }}
+                            transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                          />
+                        )}
+                        <span style={{ position: 'relative', zIndex: 1 }}>
+                          {m === 'nueva' ? 'Crear nueva clínica' : 'Unirme a una existente'}
+                        </span>
+                      </motion.button>
+                    ))}
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {registerMode === 'nueva' ? (
+                      <motion.div key="nueva" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }}>
+                        <AnimatedInput
+                          label="Nombre de la clínica" value={registerData.nombre_clinica}
+                          onChange={v => setRegisterData({ ...registerData, nombre_clinica: v })}
+                          placeholder="Clínica San José" icon={<HospitalIcon />}
+                        />
+                      </motion.div>
+                    ) : (
+                      <motion.div key="unirse" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>Clínica</label>
+                          <select
+                            value={selectedClinicaId ?? ''}
+                            onChange={e => { setSelectedClinicaId(Number(e.target.value) || null); setSelectedSedeId(null) }}
+                            style={{
+                              width: '100%', padding: '12px 14px', borderRadius: 10,
+                              border: '1px solid var(--border)', background: 'var(--surface)',
+                              color: selectedClinicaId ? 'var(--text)' : 'var(--muted)',
+                              fontSize: 14, outline: 'none', cursor: 'pointer',
+                            }}
+                          >
+                            <option value="">Selecciona una clínica...</option>
+                            {clinicasPublicas.map(c => (
+                              <option key={c.id} value={c.id}>{c.nombre}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {selectedClinicaId && sedesDeClinica.length > 0 && (
+                          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.15 }}>
+                            <label style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>Sede <span style={{ color: 'var(--muted)', fontWeight: 400 }}>(opcional)</span></label>
+                            <select
+                              value={selectedSedeId ?? ''}
+                              onChange={e => setSelectedSedeId(Number(e.target.value) || null)}
+                              style={{
+                                width: '100%', padding: '12px 14px', borderRadius: 10,
+                                border: '1px solid var(--border)', background: 'var(--surface)',
+                                color: selectedSedeId ? 'var(--text)' : 'var(--muted)',
+                                fontSize: 14, outline: 'none', cursor: 'pointer',
+                              }}
+                            >
+                              <option value="">Sin sede específica</option>
+                              {sedesDeClinica.map(s => (
+                                <option key={s.id} value={s.id}>{s.nombre}</option>
+                              ))}
+                            </select>
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <div>
                     <AnimatedInput
                       label="Contraseña" type="password" value={registerData.password}

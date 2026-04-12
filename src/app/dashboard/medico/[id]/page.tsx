@@ -81,9 +81,10 @@ const fetchData = async () => {
     const med = medicoRes.data
     setMedico(med)
 
+    const sedeParam = med.sede ? `&sede=${med.sede}` : ''
     const [alertasRes, kpisRes, citasRes] = await Promise.all([
-      api.get(`/alertas/?clinica=${med.clinica}`),
-      api.get(`/kpis/?clinica=${med.clinica}&horas=48`),  // KPIs de la clínica
+      api.get(`/alertas/?clinica=${med.clinica}${sedeParam}`),
+      api.get(`/kpis/?clinica=${med.clinica}&horas=168${sedeParam}`),
       api.get(`/citas/?medico=${id}`),
     ])
     setAlertas(alertasRes.data.results || alertasRes.data)
@@ -176,6 +177,11 @@ const fetchData = async () => {
                   <span style={{ fontSize: 13, fontWeight: 500, padding: '3px 12px', borderRadius: 20, background: 'rgba(155,142,196,0.15)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
                     {medico.especialidad}
                   </span>
+                  {medico.sede_nombre && (
+                    <span style={{ fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 20, background: 'rgba(160,196,181,0.15)', color: '#A0C4B5', border: '1px solid rgba(160,196,181,0.3)' }}>
+                      {medico.sede_nombre}
+                    </span>
+                  )}
                   {medico.email && <span style={{ fontSize: 13, color: 'var(--muted)' }}>✉ {medico.email}</span>}
                   {medico.telefono && <span style={{ fontSize: 13, color: 'var(--muted)' }}>📞 {medico.telefono}</span>}
                   {medico.fecha_ingreso && (

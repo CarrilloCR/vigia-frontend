@@ -78,7 +78,7 @@ export default function CitasPage() {
   const router = useRouter()
   const { user } = useAuthStore()
   const toast = useToastStore()
-  const clinicaId = user?.clinica_id || 1
+  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   useEffect(() => { fetchData() }, [clinicaId, selectedSede])

@@ -9,6 +9,7 @@ export interface Clinica {
   motor_intervalo_horas: 1 | 6 | 12 | 24
   ultimo_motor_en: string | null
   claude_activo: boolean
+  generador_activo: boolean
 }
 
 export interface Sede {
@@ -34,16 +35,24 @@ export interface Medico {
   id: number
   clinica: number
   sede: number | null
+  sede_nombre: string | null
+  usuario: number | null
   nombre: string
   apellido: string
   especialidad: string
   email: string
+  telefono: string
+  descripcion: string
+  foto_url: string
+  fecha_ingreso: string | null
   activo: boolean
 }
 
 export interface Paciente {
   id: number
   clinica: number
+  sede: number | null
+  sede_nombre: string | null
   nombre: string
   apellido: string
   fecha_nacimiento: string | null
@@ -126,6 +135,7 @@ export interface Alerta {
   id: number
   clinica: number
   sede: number | null
+  sede_nombre: string | null
   medico: number | null
   tipo_kpi: string
   valor_detectado: number
