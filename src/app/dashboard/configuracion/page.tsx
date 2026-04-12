@@ -116,10 +116,18 @@ const ClockIcon = () => (
     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
   </svg>
 )
+const SlidersIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+    <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+    <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+    <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+  </svg>
+)
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Section = 'perfil' | 'seguridad' | 'clinica' | 'notificaciones' | 'automatizacion' | 'apariencia' | 'integraciones' | 'facturacion'
+type Section = 'perfil' | 'seguridad' | 'clinica' | 'notificaciones' | 'automatizacion' | 'alertas' | 'apariencia' | 'integraciones' | 'facturacion'
 
 interface EmailNotificacion {
   id: number
@@ -129,12 +137,36 @@ interface EmailNotificacion {
   clinica: number
 }
 
+interface ConfigAlerta {
+  id?: number
+  tipo_kpi: string
+  canal: 'email' | 'whatsapp'
+  umbral_sensibilidad: number
+  activa: boolean
+  clinica: number
+}
+
+const KPI_TIPOS: { key: string; label: string }[] = [
+  { key: 'tasa_cancelacion',   label: 'Tasa de Cancelación' },
+  { key: 'tasa_noshow',        label: 'Tasa de No Show' },
+  { key: 'ocupacion_agenda',   label: 'Ocupación de Agenda' },
+  { key: 'tiempo_espera',      label: 'Tiempo Promedio de Espera' },
+  { key: 'ingresos_dia',       label: 'Ingresos por Día' },
+  { key: 'ticket_promedio',    label: 'Ticket Promedio' },
+  { key: 'pacientes_nuevos',   label: 'Pacientes Nuevos vs Recurrentes' },
+  { key: 'retencion_90',       label: 'Retención a 90 Días' },
+  { key: 'cancelaciones_medico', label: 'Cancelaciones por Médico' },
+  { key: 'citas_reagendadas',  label: 'Citas Reagendadas' },
+  { key: 'nps',                label: 'Net Promoter Score' },
+]
+
 const SECTIONS: { key: Section; label: string; icon: React.ReactNode; desc: string }[] = [
   { key: 'perfil', label: 'Perfil', icon: <UserIcon />, desc: 'Información personal' },
   { key: 'seguridad', label: 'Seguridad', icon: <LockIcon />, desc: 'Contraseña y acceso' },
   { key: 'clinica', label: 'Clínica', icon: <BuildingIcon />, desc: 'Datos de la clínica' },
   { key: 'notificaciones', label: 'Notificaciones', icon: <BellIcon />, desc: 'Alertas y correos' },
   { key: 'automatizacion', label: 'Automatización', icon: <AutoIcon />, desc: 'Motor y análisis IA' },
+  { key: 'alertas', label: 'Reglas de Alertas', icon: <SlidersIcon />, desc: 'Umbrales por KPI' },
   { key: 'apariencia', label: 'Apariencia', icon: <PaletteIcon />, desc: 'Tema y visualización' },
   { key: 'integraciones', label: 'Integraciones', icon: <LinkIcon />, desc: 'Conexiones externas' },
   { key: 'facturacion', label: 'Facturación', icon: <CreditCardIcon />, desc: 'Plan y pagos' },
@@ -232,6 +264,11 @@ export default function ConfiguracionPage() {
   })
   const [savingMotor, setSavingMotor] = useState(false)
 
+  // ─── Config Alertas state
+  const [configAlertas, setConfigAlertas] = useState<Record<string, ConfigAlerta>>({})
+  const [loadingConfigAlertas, setLoadingConfigAlertas] = useState(true)
+  const [savingConfigAlertas, setSavingConfigAlertas] = useState(false)
+
   // ─── Apariencia state
   const { isDark, toggle: toggleTheme } = useThemeStore()
   const [apariencia, setApariencia] = useState({
@@ -303,7 +340,23 @@ export default function ConfiguracionPage() {
         .catch(() => {})
         .finally(() => setLoadingPlan(false))
     }
-  }, [activeSection, clinicaId, clinica, loadingEmails, loadingIntegraciones, loadingPlan])
+    if (activeSection === 'alertas' && loadingConfigAlertas) {
+      api.get(`/configuraciones-alerta/?clinica=${clinicaId}`)
+        .then(res => {
+          const data: ConfigAlerta[] = res.data.results || res.data
+          const map: Record<string, ConfigAlerta> = {}
+          // Inicializar todos los KPIs con defaults
+          KPI_TIPOS.forEach(k => {
+            map[k.key] = { tipo_kpi: k.key, canal: 'email', umbral_sensibilidad: 20, activa: true, clinica: clinicaId }
+          })
+          // Sobreescribir con valores reales
+          data.forEach(c => { map[c.tipo_kpi] = c })
+          setConfigAlertas(map)
+        })
+        .catch(() => {})
+        .finally(() => setLoadingConfigAlertas(false))
+    }
+  }, [activeSection, clinicaId, clinica, loadingEmails, loadingIntegraciones, loadingPlan, loadingConfigAlertas])
 
   // ─── Handlers
   const handleSavePerfil = async () => {
@@ -421,6 +474,27 @@ export default function ConfiguracionPage() {
       showToast('Número de WhatsApp guardado')
     } catch { showToast('Error al guardar', 'error') }
     finally { setSavingWhatsapp(false) }
+  }
+
+  const handleSaveConfigAlertas = async () => {
+    setSavingConfigAlertas(true)
+    try {
+      await Promise.all(
+        Object.values(configAlertas).map(cfg =>
+          cfg.id
+            ? api.patch(`/configuraciones-alerta/${cfg.id}/`, cfg)
+            : api.post(`/configuraciones-alerta/`, { ...cfg, clinica: clinicaId })
+        )
+      )
+      // Recargar para obtener IDs de los nuevos registros
+      const res = await api.get(`/configuraciones-alerta/?clinica=${clinicaId}`)
+      const data: ConfigAlerta[] = res.data.results || res.data
+      const map: Record<string, ConfigAlerta> = { ...configAlertas }
+      data.forEach(c => { map[c.tipo_kpi] = c })
+      setConfigAlertas(map)
+      showToast('Reglas de alertas guardadas')
+    } catch { showToast('Error al guardar', 'error') }
+    finally { setSavingConfigAlertas(false) }
   }
 
   // ─── Skeleton loader
@@ -1019,6 +1093,111 @@ export default function ConfiguracionPage() {
                   <SaveButton onClick={handleSaveMotorConfig} loading={savingMotor} label="Guardar automatización" />
                 </div>
               </>
+            )}
+          </motion.div>
+        )
+
+      // ═══════════════════════════════════════════════════════════
+      // REGLAS DE ALERTAS
+      // ═══════════════════════════════════════════════════════════
+      case 'alertas':
+        return (
+          <motion.div key="alertas" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+            <h2 className="font-display" style={sectionTitle}>Reglas de Alertas</h2>
+            <p style={sectionDesc}>
+              Configura qué KPIs generan alertas, la sensibilidad del umbral y el canal de notificación.
+              Un umbral bajo (10%) detecta desviaciones pequeñas; uno alto (50%) solo alerta anomalías graves.
+            </p>
+
+            {loadingConfigAlertas ? (
+              <Skeleton count={6} h={72} />
+            ) : (
+              <GlowingCard className="p-0 overflow-hidden">
+                {/* Encabezado de tabla */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 80px 160px 130px',
+                  gap: 12,
+                  padding: '12px 20px',
+                  background: 'rgba(155,142,196,0.08)',
+                  borderBottom: '1px solid var(--border)',
+                }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>KPI</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Activa</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Umbral (%)</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Canal</span>
+                </div>
+
+                {/* Filas */}
+                {KPI_TIPOS.map((kpi, idx) => {
+                  const cfg = configAlertas[kpi.key] || { tipo_kpi: kpi.key, canal: 'email' as const, umbral_sensibilidad: 20, activa: true, clinica: clinicaId }
+                  return (
+                    <div key={kpi.key} style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 80px 160px 130px',
+                      gap: 12,
+                      padding: '14px 20px',
+                      alignItems: 'center',
+                      borderBottom: idx < KPI_TIPOS.length - 1 ? '1px solid var(--border)' : 'none',
+                      opacity: cfg.activa ? 1 : 0.45,
+                      transition: 'opacity 0.2s',
+                    }}>
+                      {/* Nombre KPI */}
+                      <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{kpi.label}</span>
+
+                      {/* Toggle activa */}
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <ToggleSwitch
+                          checked={cfg.activa}
+                          onChange={v => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...prev[kpi.key], activa: v } }))}
+                        />
+                      </div>
+
+                      {/* Umbral */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input
+                          type="range"
+                          min={5}
+                          max={80}
+                          step={5}
+                          value={cfg.umbral_sensibilidad}
+                          disabled={!cfg.activa}
+                          onChange={e => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...prev[kpi.key], umbral_sensibilidad: Number(e.target.value) } }))}
+                          style={{ flex: 1, accentColor: 'var(--primary)', cursor: cfg.activa ? 'pointer' : 'not-allowed' }}
+                        />
+                        <span style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 700, minWidth: 36, textAlign: 'right' }}>
+                          {cfg.umbral_sensibilidad}%
+                        </span>
+                      </div>
+
+                      {/* Canal */}
+                      <select
+                        value={cfg.canal}
+                        disabled={!cfg.activa}
+                        onChange={e => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...prev[kpi.key], canal: e.target.value as 'email' | 'whatsapp' } }))}
+                        style={{
+                          padding: '6px 10px',
+                          borderRadius: 8,
+                          background: 'rgba(255,255,255,0.04)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text)',
+                          fontSize: 13,
+                          cursor: cfg.activa ? 'pointer' : 'not-allowed',
+                          width: '100%',
+                        }}
+                      >
+                        <option value="email">Email</option>
+                        <option value="whatsapp">WhatsApp</option>
+                      </select>
+                    </div>
+                  )
+                })}
+
+                {/* Footer con botón guardar */}
+                <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+                  <SaveButton onClick={handleSaveConfigAlertas} loading={savingConfigAlertas} label="Guardar reglas" />
+                </div>
+              </GlowingCard>
             )}
           </motion.div>
         )
