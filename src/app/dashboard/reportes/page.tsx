@@ -40,6 +40,13 @@ const PrintIcon = () => (
     <rect x="6" y="14" width="12" height="8"/>
   </svg>
 )
+const DownloadIcon = () => (
+  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+)
 
 export default function ReportesPage() {
   const { user } = useAuthStore()
@@ -121,6 +128,31 @@ export default function ReportesPage() {
 
   const maxAlertas = rankingMedicos.length > 0 ? Math.max(...rankingMedicos.map(m => m.alertas), 1) : 1
 
+  const exportarCSV = () => {
+    const filas = [
+      ['Fecha', 'KPI', 'Severidad', 'Estado', 'Valor detectado', 'Valor esperado', 'Desviación %', 'Método', 'Mensaje'],
+      ...alertas.map(a => [
+        new Date(a.creada_en).toLocaleString('es-CR'),
+        a.tipo_kpi.replace(/_/g, ' '),
+        a.severidad,
+        a.estado,
+        a.valor_detectado,
+        a.valor_esperado,
+        a.desviacion,
+        a.metodo_deteccion,
+        `"${(a.mensaje || '').replace(/"/g, '""')}"`,
+      ])
+    ]
+    const csv = filas.map(r => r.join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `vigia-alertas-${rango}d-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <>
       <style>{`
@@ -169,6 +201,19 @@ export default function ReportesPage() {
               </motion.button>
             ))}
           </div>
+          {/* Exportar CSV */}
+          <motion.button
+            onClick={exportarCSV}
+            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px',
+              borderRadius: 12, fontSize: 13, fontWeight: 600,
+              background: 'rgba(160,196,181,0.1)', backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(160,196,181,0.3)', color: '#A0C4B5', cursor: 'pointer',
+            }}
+          >
+            <DownloadIcon /> Exportar CSV
+          </motion.button>
           {/* Imprimir */}
           <motion.button
             onClick={() => window.print()}
