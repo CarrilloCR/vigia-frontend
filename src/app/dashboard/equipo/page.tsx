@@ -62,6 +62,7 @@ export default function EquipoPage() {
   const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
   const esAdmin = user?.rol === 'admin' || user?.rol === 'gerente'
+  const esSuperAdmin = user?.email === 'carrillo982k@gmail.com'
 
   const [usuarios, setUsuarios] = useState<any[]>([])
   const [solicitudes, setSolicitudes] = useState<any[]>([])
@@ -93,7 +94,11 @@ export default function EquipoPage() {
 
   const fetchSolicitudes = async () => {
     try {
-      const res = await api.get(`/solicitudes-rol/?clinica=${clinicaId}&estado=pendiente`)
+      // superadmin ve todas las clínicas, el resto solo la suya
+      const url = esSuperAdmin
+        ? `/solicitudes-rol/?estado=pendiente`
+        : `/solicitudes-rol/?clinica=${clinicaId}&estado=pendiente`
+      const res = await api.get(url)
       setSolicitudes(res.data.results || res.data)
     } catch { /* silent */ }
   }
@@ -268,6 +273,9 @@ export default function EquipoPage() {
                           {s.usuario_nombre || s.usuario_email}
                         </p>
                         <p style={{ fontSize: 12, color: 'var(--muted)' }}>{s.usuario_email}</p>
+                        {esSuperAdmin && s.clinica_nombre && (
+                          <p style={{ fontSize: 11, color: 'var(--primary)', marginTop: 2 }}>{s.clinica_nombre}</p>
+                        )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 12, color: 'var(--muted)' }}>Solicita →</span>
