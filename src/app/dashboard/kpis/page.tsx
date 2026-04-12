@@ -159,25 +159,28 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
   const subiendo = cambio >= 0
   const alertasActivas = alertas.filter(a => a.tipo_kpi === tipo && a.estado === 'activa').length
 
-  // Anomaly points for this KPI — match by closest ISO timestamp within 2h
-  const anomalyDataIndexes = new Set(
-    alertas.filter(a => a.tipo_kpi === tipo).map(a => {
-      const alertMs = new Date(a.creada_en).getTime()
-      let bestIdx = -1, bestDiff = Infinity
-      chartData.forEach((d: any, idx: number) => {
-        if (!d.fechaISO) return
-        const diff = Math.abs(new Date(d.fechaISO).getTime() - alertMs)
-        if (diff < bestDiff) { bestDiff = diff; bestIdx = idx }
-      })
-      return bestDiff < 2 * 60 * 60 * 1000 ? bestIdx : -1
-    }).filter(idx => idx >= 0)
-  )
+  // chartData must be declared BEFORE any computation that references it
+  const chartData = useMemo(() => datos.slice(-24), [datos])
 
-  const chartData = useMemo(() => {
-    // Future prophet extension
-    if (!overlays.prophet || !prophetData) return datos.slice(-16)
-    return datos.slice(-16)
-  }, [datos, overlays.prophet, prophetData])
+  // Match alert → closest data point (6h tolerance)
+  const matchMiniIdx = (iso: string) => {
+    const alertMs = new Date(iso).getTime()
+    let bestIdx = -1, bestDiff = Infinity
+    chartData.forEach((d: any, idx: number) => {
+      if (!d.fechaISO) return
+      const diff = Math.abs(new Date(d.fechaISO).getTime() - alertMs)
+      if (diff < bestDiff) { bestDiff = diff; bestIdx = idx }
+    })
+    return bestDiff < 6 * 60 * 60 * 1000 ? bestIdx : -1
+  }
+
+  const anomalyDataIndexes = useMemo(() =>
+    new Set(alertas.filter(a => a.tipo_kpi === tipo).map(a => matchMiniIdx(a.creada_en)).filter(i => i >= 0))
+  , [chartData, alertas, tipo])
+
+  const pyodDataIndexes = useMemo(() =>
+    new Set(alertas.filter(a => a.tipo_kpi === tipo && a.detalle_deteccion?.pyod?.es_anomalia === true).map(a => matchMiniIdx(a.creada_en)).filter(i => i >= 0))
+  , [chartData, alertas, tipo])
 
   if (!cfg) return null
 
@@ -267,10 +270,16 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
               fill={`url(#grad-${tipo})`} dot={false}
               activeDot={{ r: 4, fill: cfg.color, stroke: 'var(--void)', strokeWidth: 2 }}
             />
-            {/* Anomaly dots */}
+            {/* Anomaly dots (general) */}
             {overlays.anomalias && chartData.map((d, idx) =>
               anomalyDataIndexes.has(idx) && d.valor != null ? (
-                <ReferenceDot key={idx} x={d.fecha} y={d.valor} r={5} fill="#E8A0C4" stroke="var(--void)" strokeWidth={2} />
+                <ReferenceDot key={`a-${idx}`} x={d.fecha} y={d.valor} r={5} fill="#E8A0C4" stroke="var(--void)" strokeWidth={2} />
+              ) : null
+            )}
+            {/* PyOD outlier dots (orange, smaller — rendered on top) */}
+            {overlays.pyod && chartData.map((d, idx) =>
+              pyodDataIndexes.has(idx) && d.valor != null ? (
+                <ReferenceDot key={`p-${idx}`} x={d.fecha} y={d.valor} r={4} fill="#E8C4A0" stroke="var(--void)" strokeWidth={2} />
               ) : null
             )}
           </AreaChart>
@@ -300,7 +309,7 @@ export default function KPIsPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [kpiSeleccionado, setKpiSeleccionado] = useState('ingresos_dia')
   const [vista, setVista] = useState<Vista>('individual')
-  const [horas, setHoras] = useState(2)
+  const [horas, setHoras] = useState(24)
   const [chartSize, setChartSize] = useState<'normal' | 'grande' | 'completo'>('grande')
   const [alertasKpi, setAlertasKpi] = useState<Alerta[]>([])
   const [overlays, setOverlays] = useState<Overlays>({ prophet: true, pyod: true, umbral: true, anomalias: true })
@@ -502,7 +511,7 @@ export default function KPIsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             {/* Time range */}
             <div style={{ display: 'flex', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 14, padding: 4 }}>
-              {[1, 2, 6, 12].map(h => (
+              {[2, 6, 12, 24].map(h => (
                 <motion.button key={h} onClick={() => setHoras(h)} whileTap={{ scale: 0.97 }}
                   style={{ padding: '10px 16px', borderRadius: 11, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: horas === h ? 'white' : 'var(--muted)' }}>
                   {horas === h && (
