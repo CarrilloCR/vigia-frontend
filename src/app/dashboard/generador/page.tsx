@@ -6,6 +6,7 @@ import { useAuthStore } from '../../../store/auth'
 import { useToastStore } from '../../../store/toast'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import CountUp from '../../../components/reactbits/CountUp'
+import SedeSelector from '../../../components/ui/SedeSelector'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
   tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
@@ -89,6 +90,7 @@ export default function GeneradorPage() {
   const { user } = useAuthStore()
   const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
+  const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   const [registros, setRegistros] = useState<RegistroKPI[]>([])
   const [loading, setLoading] = useState(true)
@@ -101,7 +103,7 @@ export default function GeneradorPage() {
 
   const fetchRegistros = async () => {
     try {
-      const res = await api.get(`/kpis/?clinica=${clinicaId}&horas=${horas}`)
+      const res = await api.get(`/kpis/?clinica=${clinicaId}&horas=${horas}${selectedSede ? `&sede=${selectedSede}` : ''}`)
       const data: RegistroKPI[] = res.data.results || res.data
       const ordenado = [...data].sort((a, b) => new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime())
 
@@ -129,7 +131,7 @@ export default function GeneradorPage() {
 
   useEffect(() => {
     fetchRegistros()
-  }, [horas])
+  }, [horas, selectedSede])
 
   useEffect(() => {
     if (!live) return
@@ -177,6 +179,7 @@ export default function GeneradorPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
           <motion.button onClick={() => setLive(!live)}
             whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
             style={{

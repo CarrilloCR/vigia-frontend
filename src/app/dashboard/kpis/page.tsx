@@ -16,6 +16,7 @@ import GlowingCard from '../../../components/reactbits/GlowingCard'
 import CountUp from '../../../components/reactbits/CountUp'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import ShinyText from '../../../components/reactbits/ShinyText'
+import SedeSelector from '../../../components/ui/SedeSelector'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
   tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
@@ -327,6 +328,7 @@ export default function KPIsPage() {
   const toast = useToastStore()
   const pipStore = useKpiPipStore()
   const clinicaId = user?.clinica_id || 1
+  const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   const chartHeights: Record<string, number> = { normal: 320, grande: 460, completo: 620 }
   const chartHeight = chartHeights[chartSize]
@@ -338,11 +340,11 @@ export default function KPIsPage() {
     fetchAlertasKpi()
     const interval = setInterval(() => { fetchKPIs(); fetchAlertasKpi() }, 30000)
     return () => clearInterval(interval)
-  }, [clinicaId, horas])
+  }, [clinicaId, horas, selectedSede])
 
   const fetchAlertasKpi = async () => {
     try {
-      const res = await api.get(`/alertas/?clinica=${clinicaId}`)
+      const res = await api.get(`/alertas/?clinica=${clinicaId}${selectedSede ? `&sede=${selectedSede}` : ''}`)
       setAlertasKpi(res.data.results || res.data)
     } catch { /* silent */ }
   }
@@ -350,7 +352,7 @@ export default function KPIsPage() {
   const fetchKPIs = async (manual = false) => {
     if (manual) setRefreshing(true)
     try {
-      const res = await api.get(`/kpis/?clinica=${clinicaId}&horas=${horas}`)
+      const res = await api.get(`/kpis/?clinica=${clinicaId}&horas=${horas}${selectedSede ? `&sede=${selectedSede}` : ''}`)
       const data = res.data.results || res.data
 
       const agrupado: Record<string, KPIData[]> = {}
@@ -517,6 +519,7 @@ export default function KPIsPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
             {/* Time range */}
             <div style={{ display: 'flex', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 14, padding: 4 }}>
               {[2, 6, 12, 24].map(h => (

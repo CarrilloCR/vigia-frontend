@@ -11,6 +11,7 @@ import GlowingCard from '../../components/reactbits/GlowingCard'
 import CountUp from '../../components/reactbits/CountUp'
 import ThemeToggle from '../../components/ui/ThemeToggle'
 import VigiaLogo from '../../components/ui/VigiaLogo'
+import SedeSelector from '../../components/ui/SedeSelector'
 import { puedeOperar, ROL_LABELS, ROL_COLORS } from '../../lib/permisos'
 
 const kpiLabel: Record<string, string> = {
@@ -681,6 +682,7 @@ export default function DashboardPage() {
   const [ocultarTodas, setOcultarTodas] = useState(false)
   const [feedbackDado, setFeedbackDado] = useState<Record<number, 'util' | 'no_util'>>({})
   const [detalleExpandido, setDetalleExpandido] = useState<Record<number, boolean>>({})
+  const [selectedSede, setSelectedSede] = useState<number | null>(null)
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
   const toast = useToastStore()
@@ -691,11 +693,12 @@ export default function DashboardPage() {
     fetchAlertas()
     fetchHistorial()
     fetchNotifs()
-  }, [])
+  }, [selectedSede])
 
   const fetchAlertas = async () => {
     try {
-      const res = await api.get('/alertas/?estado=activa')
+      const params = `/alertas/?estado=activa${selectedSede ? `&sede=${selectedSede}` : ''}`
+      const res = await api.get(params)
       setAlertas(res.data.results || res.data)
     } catch {
       toast.error('Error al cargar alertas', 'No se pudieron obtener las alertas activas.')
@@ -704,7 +707,8 @@ export default function DashboardPage() {
 
   const fetchHistorial = async () => {
     try {
-      const res = await api.get('/alertas/')
+      const params = `/alertas/?${selectedSede ? `sede=${selectedSede}` : ''}`
+      const res = await api.get(params)
       setHistorial(res.data.results || res.data)
     } catch {
       toast.error('Error al cargar historial', 'No se pudo obtener el historial de alertas.')
@@ -859,6 +863,7 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} />
             {puedeEjecutar && (
             <motion.button onClick={ejecutarMotor} disabled={motorLoading}
               whileHover={{ scale: motorLoading ? 1 : 1.03 }} whileTap={{ scale: 0.97 }}

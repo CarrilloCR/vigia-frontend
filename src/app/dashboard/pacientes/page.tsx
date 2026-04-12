@@ -9,6 +9,7 @@ import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import CountUp from '../../../components/reactbits/CountUp'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
+import SedeSelector from '../../../components/ui/SedeSelector'
 
 interface Paciente {
   id: number
@@ -89,14 +90,16 @@ export default function PacientesPage() {
   const { user } = useAuthStore()
   const toast = useToastStore()
   const clinicaId = user?.clinica_id || 1
+  const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
-  useEffect(() => { fetchData() }, [clinicaId])
+  useEffect(() => { fetchData() }, [clinicaId, selectedSede])
 
   const fetchData = async () => {
     try {
+      const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
       const [pacRes, citRes] = await Promise.all([
-        api.get(`/pacientes/?clinica=${clinicaId}`),
-        api.get(`/citas/?clinica=${clinicaId}`),
+        api.get(`/pacientes/?clinica=${clinicaId}${sedeParam}`),
+        api.get(`/citas/?clinica=${clinicaId}${sedeParam}`),
       ])
       const pacs = pacRes.data.results || pacRes.data
       setPacientes(pacs)
@@ -181,10 +184,13 @@ export default function PacientesPage() {
               <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Pacientes</h1>
               <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>{pacientesFiltrados.length} registrados</p>
             </div>
-            <motion.button onClick={abrirCrear} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
-              <PlusIcon /> Agregar paciente
-            </motion.button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
+              <motion.button onClick={abrirCrear} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
+                <PlusIcon /> Agregar paciente
+              </motion.button>
+            </div>
           </div>
         </FadeContent>
 
