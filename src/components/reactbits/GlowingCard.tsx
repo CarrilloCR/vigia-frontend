@@ -29,17 +29,17 @@ export default function GlowingCard({ children, className = '' }: GlowingCardPro
       className={`relative overflow-hidden rounded-3xl ${className}`}
       style={{
         background: 'var(--glass)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
+        backdropFilter: 'blur(28px)',
+        WebkitBackdropFilter: 'blur(28px)',
         border: '1px solid var(--border)',
-        boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
+        boxShadow: 'var(--shadow-lg)',
       }}
     >
       {/* Glow effect */}
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-300"
         style={{
-          background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, rgba(155,142,196,0.12) 0%, transparent 60%)`,
+          background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, rgba(155,142,196,0.14) 0%, transparent 58%)`,
         }}
       />
       {children}

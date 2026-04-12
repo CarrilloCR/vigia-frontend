@@ -207,7 +207,7 @@ export default function DashboardHeader() {
               whileTap={{ scale: 0.97 }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500,
+                padding: '10px 18px', borderRadius: 14, fontSize: 13, fontWeight: 500,
                 cursor: 'pointer', border: 'none',
                 background: active ? 'rgba(155,142,196,0.15)' : 'var(--glass)',
                 backdropFilter: 'blur(20px)',
@@ -215,6 +215,7 @@ export default function DashboardHeader() {
                 borderColor: active ? 'rgba(155,142,196,0.4)' : 'var(--border)',
                 color: active ? 'var(--primary)' : 'var(--muted)',
                 transition: 'all 0.2s',
+                boxShadow: active ? 'var(--shadow-glow)' : 'var(--shadow-sm)',
               }}
             >
               {item.icon}
@@ -231,10 +232,11 @@ export default function DashboardHeader() {
           whileTap={{ scale: 0.97 }}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            padding: '10px 14px', borderRadius: 12,
+            padding: '10px 18px', borderRadius: 14,
             background: 'var(--glass)', backdropFilter: 'blur(20px)',
             border: '1px solid var(--border)',
             color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            boxShadow: 'var(--shadow-sm)',
           }}
         >
           <LogoutIcon /> Salir
