@@ -1106,98 +1106,96 @@ export default function ConfiguracionPage() {
             <h2 className="font-display" style={sectionTitle}>Reglas de Alertas</h2>
             <p style={sectionDesc}>
               Configura qué KPIs generan alertas, la sensibilidad del umbral y el canal de notificación.
-              Un umbral bajo (10%) detecta desviaciones pequeñas; uno alto (50%) solo alerta anomalías graves.
+              Umbral bajo (10–15%) = más sensible. Umbral alto (40–50%) = solo anomalías graves.
             </p>
 
+            {/* Botón configuración recomendada */}
+            <div style={{ marginBottom: 20 }}>
+              <motion.button
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  const recomendados: Record<string, number> = {
+                    tasa_cancelacion: 15, tasa_noshow: 15, ingresos_dia: 15,
+                    ocupacion_agenda: 20, ticket_promedio: 20, cancelaciones_medico: 20, citas_reagendadas: 20,
+                    tiempo_espera: 25, pacientes_nuevos: 25,
+                    retencion_90: 30, nps: 30,
+                  }
+                  setConfigAlertas(prev => {
+                    const next = { ...prev }
+                    KPI_TIPOS.forEach(k => {
+                      next[k.key] = { ...(next[k.key] || { tipo_kpi: k.key, canal: 'email' as const, clinica: clinicaId }), umbral_sensibilidad: recomendados[k.key] ?? 20, activa: true }
+                    })
+                    return next
+                  })
+                  showToast('Configuración recomendada aplicada — guarda para conservar los cambios')
+                }}
+                style={{
+                  padding: '10px 18px', borderRadius: 10, border: '1px solid rgba(155,142,196,0.4)',
+                  background: 'rgba(155,142,196,0.1)', color: 'var(--primary)', fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                }}
+              >
+                <SparklesIcon /> Aplicar configuración recomendada
+              </motion.button>
+            </div>
+
             {loadingConfigAlertas ? (
-              <Skeleton count={6} h={72} />
+              <Skeleton count={6} h={88} />
             ) : (
-              <GlowingCard className="p-0 overflow-hidden">
-                {/* Encabezado de tabla */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 80px 160px 130px',
-                  gap: 12,
-                  padding: '12px 20px',
-                  background: 'rgba(155,142,196,0.08)',
-                  borderBottom: '1px solid var(--border)',
-                }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>KPI</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Activa</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Umbral (%)</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Canal</span>
-                </div>
-
-                {/* Filas */}
-                {KPI_TIPOS.map((kpi, idx) => {
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {KPI_TIPOS.map(kpi => {
                   const cfg = configAlertas[kpi.key] || { tipo_kpi: kpi.key, canal: 'email' as const, umbral_sensibilidad: 20, activa: true, clinica: clinicaId }
+                  const umbral = cfg.umbral_sensibilidad
+                  const umbralColor = umbral <= 15 ? '#A0C4B5' : umbral <= 25 ? '#9B8EC4' : '#C4B5E8'
                   return (
-                    <div key={kpi.key} style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 80px 160px 130px',
-                      gap: 12,
-                      padding: '14px 20px',
-                      alignItems: 'center',
-                      borderBottom: idx < KPI_TIPOS.length - 1 ? '1px solid var(--border)' : 'none',
-                      opacity: cfg.activa ? 1 : 0.45,
-                      transition: 'opacity 0.2s',
-                    }}>
-                      {/* Nombre KPI */}
-                      <span style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{kpi.label}</span>
-
-                      {/* Toggle activa */}
-                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <GlowingCard key={kpi.key} className="p-0 overflow-hidden" style={{ opacity: cfg.activa ? 1 : 0.5, transition: 'opacity 0.2s' }}>
+                      {/* Fila principal: nombre + toggle */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{kpi.label}</span>
                         <ToggleSwitch
                           checked={cfg.activa}
-                          onChange={v => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...prev[kpi.key], activa: v } }))}
+                          onChange={v => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...(prev[kpi.key] || cfg), activa: v } }))}
                         />
                       </div>
-
-                      {/* Umbral */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <input
-                          type="range"
-                          min={5}
-                          max={80}
-                          step={5}
-                          value={cfg.umbral_sensibilidad}
+                      {/* Fila secundaria: slider + canal */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 18px' }}>
+                        {/* Slider umbral */}
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>Umbral</span>
+                          <input
+                            type="range" min={5} max={80} step={5}
+                            value={umbral}
+                            disabled={!cfg.activa}
+                            onChange={e => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...(prev[kpi.key] || cfg), umbral_sensibilidad: Number(e.target.value) } }))}
+                            style={{ flex: 1, accentColor: 'var(--primary)', cursor: cfg.activa ? 'pointer' : 'not-allowed' }}
+                          />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: umbralColor, minWidth: 38, textAlign: 'right' }}>{umbral}%</span>
+                        </div>
+                        {/* Canal */}
+                        <select
+                          value={cfg.canal}
                           disabled={!cfg.activa}
-                          onChange={e => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...prev[kpi.key], umbral_sensibilidad: Number(e.target.value) } }))}
-                          style={{ flex: 1, accentColor: 'var(--primary)', cursor: cfg.activa ? 'pointer' : 'not-allowed' }}
-                        />
-                        <span style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 700, minWidth: 36, textAlign: 'right' }}>
-                          {cfg.umbral_sensibilidad}%
-                        </span>
+                          onChange={e => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...(prev[kpi.key] || cfg), canal: e.target.value as 'email' | 'whatsapp' } }))}
+                          style={{
+                            padding: '7px 10px', borderRadius: 8,
+                            background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)',
+                            color: 'var(--text)', fontSize: 13, cursor: cfg.activa ? 'pointer' : 'not-allowed',
+                            minWidth: 120,
+                          }}
+                        >
+                          <option value="email">Email</option>
+                          <option value="whatsapp">WhatsApp</option>
+                        </select>
                       </div>
-
-                      {/* Canal */}
-                      <select
-                        value={cfg.canal}
-                        disabled={!cfg.activa}
-                        onChange={e => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...prev[kpi.key], canal: e.target.value as 'email' | 'whatsapp' } }))}
-                        style={{
-                          padding: '6px 10px',
-                          borderRadius: 8,
-                          background: 'rgba(255,255,255,0.04)',
-                          border: '1px solid var(--border)',
-                          color: 'var(--text)',
-                          fontSize: 13,
-                          cursor: cfg.activa ? 'pointer' : 'not-allowed',
-                          width: '100%',
-                        }}
-                      >
-                        <option value="email">Email</option>
-                        <option value="whatsapp">WhatsApp</option>
-                      </select>
-                    </div>
+                    </GlowingCard>
                   )
                 })}
 
-                {/* Footer con botón guardar */}
-                <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+                {/* Guardar */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
                   <SaveButton onClick={handleSaveConfigAlertas} loading={savingConfigAlertas} label="Guardar reglas" />
                 </div>
-              </GlowingCard>
+              </div>
             )}
           </motion.div>
         )
