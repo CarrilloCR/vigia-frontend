@@ -273,13 +273,20 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
             {/* Anomaly dots (general) */}
             {overlays.anomalias && chartData.map((d, idx) =>
               anomalyDataIndexes.has(idx) && d.valor != null ? (
-                <ReferenceDot key={`a-${idx}`} x={d.fecha} y={d.valor} r={5} fill="#E8A0C4" stroke="var(--void)" strokeWidth={2} />
+                <ReferenceDot key={`a-${idx}`} x={d.fecha} y={d.valor} r={6} fill="#E8A0C4" stroke="var(--void)" strokeWidth={2} />
               ) : null
             )}
-            {/* PyOD outlier dots (orange, smaller — rendered on top) */}
+            {/* PyOD outlier dots — larger, distinct orange with ring */}
             {overlays.pyod && chartData.map((d, idx) =>
               pyodDataIndexes.has(idx) && d.valor != null ? (
-                <ReferenceDot key={`p-${idx}`} x={d.fecha} y={d.valor} r={4} fill="#E8C4A0" stroke="var(--void)" strokeWidth={2} />
+                <ReferenceDot key={`p-${idx}`} x={d.fecha} y={d.valor} r={8}
+                  shape={(p: any) => (
+                    <g>
+                      <circle cx={p.cx} cy={p.cy} r={12} fill="#E8C4A0" fillOpacity={0.15} stroke="#E8C4A0" strokeOpacity={0.4} strokeWidth={1} />
+                      <circle cx={p.cx} cy={p.cy} r={5} fill="#E8C4A0" stroke="#0d0a1e" strokeWidth={1.5} />
+                    </g>
+                  )}
+                />
               ) : null
             )}
           </AreaChart>
@@ -314,6 +321,7 @@ export default function KPIsPage() {
   const [alertasKpi, setAlertasKpi] = useState<Alerta[]>([])
   const [overlays, setOverlays] = useState<Overlays>({ prophet: true, pyod: true, umbral: true, anomalias: true })
   const [alertaDetalleId, setAlertaDetalleId] = useState<number | null>(null)
+  const [hoveredPyod, setHoveredPyod] = useState<Alerta | null>(null)
   const router = useRouter()
   const { user } = useAuthStore()
   const toast = useToastStore()
@@ -800,21 +808,68 @@ export default function KPIsPage() {
                       )
                     })}
 
-                    {/* PyOD dots — fill controlled by overlay */}
-                    {pyodPoints.map(ap => {
+                    {/* PyOD dots — custom shape with hover */}
+                    {overlays.pyod && pyodPoints.map(ap => {
                       const d = chartData[ap.dataIdx]
                       if (!d || d.valor == null) return null
                       return (
-                        <ReferenceDot key={`pyod-${ap.id}`} x={d.fecha} y={d.valor} r={5}
-                          fill={overlays.pyod ? '#E8C4A0' : 'transparent'}
-                          stroke={overlays.pyod ? 'var(--void)' : 'transparent'}
-                          strokeWidth={2}
+                        <ReferenceDot key={`pyod-${ap.id}`} x={d.fecha} y={d.valor} r={10}
+                          shape={(p: any) => (
+                            <g
+                              onMouseEnter={() => setHoveredPyod(ap)}
+                              onMouseLeave={() => setHoveredPyod(null)}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              {/* Pulse ring */}
+                              <circle cx={p.cx} cy={p.cy} r={14} fill="#E8C4A0" fillOpacity={0.12} stroke="#E8C4A0" strokeOpacity={0.35} strokeWidth={1.5} />
+                              {/* Core dot */}
+                              <circle cx={p.cx} cy={p.cy} r={6} fill="#E8C4A0" stroke="#0d0a1e" strokeWidth={2} />
+                              {/* Label above */}
+                              <text x={p.cx} y={p.cy - 20} textAnchor="middle" fontSize={9} fontWeight="700" fill="#E8C4A0" letterSpacing="0.5">PYOD</text>
+                            </g>
+                          )}
                         />
                       )
                     })}
                   </AreaChart>
                 </ResponsiveContainer>
               )}
+
+              {/* PyOD hover info panel */}
+              <AnimatePresence>
+                {hoveredPyod && hoveredPyod.detalle_deteccion?.pyod && (() => {
+                  const p = hoveredPyod.detalle_deteccion.pyod
+                  return (
+                    <motion.div
+                      key="pyod-panel"
+                      initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.15 }}
+                      style={{ marginTop: 10, padding: '12px 16px', borderRadius: 14, background: 'rgba(232,196,160,0.07)', border: '1px solid rgba(232,196,160,0.25)', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#E8C4A0', display: 'inline-block', flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#E8C4A0' }}>Outlier PyOD · {new Date(hoveredPyod.creada_en).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                        Score: <strong style={{ color: p.anomaly_score < 0 ? '#E8A0C4' : '#E8C4A0' }}>{p.anomaly_score}</strong>
+                        <span style={{ fontSize: 10, marginLeft: 4, color: 'var(--muted)' }}>(umbral {p.threshold})</span>
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                        Media histórica: <strong style={{ color: 'var(--text)' }}>{cfg?.unit}{p.media_historica}</strong>
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                        Desviación: <strong style={{ color: '#E8C4A0' }}>{hoveredPyod.desviacion}%</strong>
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                        Std: <strong style={{ color: 'var(--text)' }}>{p.std_historica}</strong>
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--muted)', opacity: 0.7 }}>
+                        Entrenado con {p.datos_entrenamiento} registros · contamination {p.contamination}
+                      </span>
+                    </motion.div>
+                  )
+                })()}
+              </AnimatePresence>
 
               {/* Prophet future info */}
               {overlays.prophet && hayFuturos && prophetBand && (
