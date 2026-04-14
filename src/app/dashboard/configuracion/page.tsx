@@ -467,7 +467,7 @@ export default function ConfiguracionPage() {
         .finally(() => setLoadingIntegraciones(false))
     }
     if (activeSection === 'facturacion' && loadingPlan) {
-      api.get(`/planes-facturacion/?clinica=${clinicaId}`)
+      api.get(`/planes/?clinica=${clinicaId}`)
         .then(res => {
           const data = res.data.results || res.data
           if (Array.isArray(data) && data.length > 0) setPlan(data[0])
