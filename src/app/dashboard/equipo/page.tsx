@@ -5,6 +5,10 @@ import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
 import { useToastStore } from '../../../store/toast'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
+import SpotlightCard from '../../../components/reactbits/SpotlightCard'
+import ScrollReveal from '../../../components/reactbits/ScrollReveal'
+import GradientText from '../../../components/reactbits/GradientText'
+import Magnet from '../../../components/reactbits/Magnet'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
 
 type Rol = 'admin' | 'gerente' | 'medico' | 'viewer'
@@ -187,7 +191,7 @@ export default function EquipoPage() {
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}
       >
         <div>
-          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Equipo</h1>
+          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}><GradientText text="Equipo" className="font-display" /></h1>
           <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>Gestiona los usuarios con acceso a la plataforma</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -205,18 +209,20 @@ export default function EquipoPage() {
             </motion.button>
           )}
           {esAdmin && (
-            <motion.button
-              onClick={() => setShowInvitar(v => !v)}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px',
-                borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
-                boxShadow: '0 4px 20px rgba(155,142,196,0.3)',
-              }}
-            >
-              <PlusIcon /> Invitar miembro
-            </motion.button>
+            <Magnet strength={0.3}>
+              <motion.button
+                onClick={() => setShowInvitar(v => !v)}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px',
+                  borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                  color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
+                  boxShadow: '0 4px 20px rgba(155,142,196,0.3)',
+                }}
+              >
+                <PlusIcon /> Invitar miembro
+              </motion.button>
+            </Magnet>
           )}
         </div>
       </motion.div>
@@ -449,8 +455,8 @@ export default function EquipoPage() {
       </AnimatePresence>
 
       {/* Users list */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <GlowingCard className="p-6 sm:p-8 lg:p-10">
+      <ScrollReveal delay={0.2} direction="up">
+        <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
             <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Miembros del equipo</h2>
             <span style={{ fontSize: 14, fontWeight: 500, padding: '6px 16px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
@@ -557,8 +563,8 @@ export default function EquipoPage() {
               </AnimatePresence>
             </div>
           )}
-        </GlowingCard>
-      </motion.div>
+        </SpotlightCard>
+      </ScrollReveal>
 
       {/* Confirm deactivate modal */}
       <ConfirmModal

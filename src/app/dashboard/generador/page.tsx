@@ -6,6 +6,10 @@ import { useAuthStore } from '../../../store/auth'
 import { useToastStore } from '../../../store/toast'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import CountUp from '../../../components/reactbits/CountUp'
+import SpotlightCard from '../../../components/reactbits/SpotlightCard'
+import ScrollReveal from '../../../components/reactbits/ScrollReveal'
+import GradientText from '../../../components/reactbits/GradientText'
+import TiltedCard from '../../../components/reactbits/TiltedCard'
 import SedeSelector from '../../../components/ui/SedeSelector'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
@@ -187,8 +191,8 @@ export default function GeneradorPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
             <PulseDot color={generadorActivo ? '#A0C4B5' : '#E8A0C4'} />
-            <h1 className="font-display" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)' }}>
-              Generador en Vivo
+            <h1 className="font-display" style={{ fontSize: 32, fontWeight: 800 }}>
+              <GradientText text="Generador en Vivo" className="font-display" />
             </h1>
           </div>
           <p style={{ fontSize: 14, color: 'var(--muted)' }}>
@@ -257,20 +261,23 @@ export default function GeneradorPage() {
           { label: 'Último registro', text: ultimoRegistro ? relativeTime(ultimoRegistro.fecha_hora) : '—', color: '#A0C4B5', icon: <ClockIcon /> },
           { label: 'Actualizado', text: ultimaActualizacion ? ultimaActualizacion.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—', color: '#E8A0C4', icon: <RefreshIcon /> },
         ].map((s, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-            style={{
-              padding: 20, borderRadius: 20,
-              background: 'var(--glass)', backdropFilter: 'blur(20px)',
-              border: '1px solid var(--border)',
-            }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, color: s.color }}>
-              {s.icon}
-              <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</span>
-            </div>
-            <p className="font-display" style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1 }}>
-              {s.value !== undefined ? <CountUp to={s.value} duration={0.8} /> : s.text}
-            </p>
-          </motion.div>
+          <ScrollReveal key={i} delay={i * 0.07} direction="up">
+            <TiltedCard tiltAmount={6} scaleOnHover={1.03}>
+              <div style={{
+                padding: 20, borderRadius: 20,
+                background: 'var(--glass)', backdropFilter: 'blur(20px)',
+                border: '1px solid var(--border)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, color: s.color }}>
+                  {s.icon}
+                  <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</span>
+                </div>
+                <p className="font-display" style={{ fontSize: 28, fontWeight: 800, color: s.color, lineHeight: 1 }}>
+                  {s.value !== undefined ? <CountUp to={s.value} duration={0.8} /> : s.text}
+                </p>
+              </div>
+            </TiltedCard>
+          </ScrollReveal>
         ))}
       </div>
 
@@ -331,7 +338,8 @@ export default function GeneradorPage() {
       </div>
 
       {/* Lista de registros */}
-      <GlowingCard className="p-4 sm:p-6">
+      <ScrollReveal delay={0.2} direction="up">
+      <SpotlightCard className="p-4 sm:p-6" spotlightColor="rgba(155,142,196,0.12)" from="top">
         {loading ? (
           <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--muted)' }}>
             Cargando registros...
@@ -420,7 +428,8 @@ export default function GeneradorPage() {
             </AnimatePresence>
           </div>
         )}
-      </GlowingCard>
+      </SpotlightCard>
+      </ScrollReveal>
     </div>
   )
 }

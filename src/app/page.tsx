@@ -8,6 +8,9 @@ import { useToastStore } from '../store/toast'
 import Aurora from '../components/reactbits/Aurora'
 import GlowingCard from '../components/reactbits/GlowingCard'
 import AnimatedInput from '../components/reactbits/AnimatedInput'
+import SpotlightCard from '../components/reactbits/SpotlightCard'
+import GradientText from '../components/reactbits/GradientText'
+import ScrollReveal from '../components/reactbits/ScrollReveal'
 import PasswordRequirements, { validatePassword } from '../components/ui/PasswordRequirements'
 import ThemeToggle from '../components/ui/ThemeToggle'
 import VigiaLogo from '../components/ui/VigiaLogo'
@@ -191,9 +194,9 @@ export default function AuthPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="font-display"
-          style={{ fontSize: 86, fontWeight: 800, color: 'var(--text)', lineHeight: 1, letterSpacing: -4, marginBottom: 24 }}
+          style={{ fontSize: 86, fontWeight: 800, lineHeight: 1, letterSpacing: -4, marginBottom: 24 }}
         >
-          Vigía
+          <GradientText text="Vigía" className="font-display" />
         </motion.h1>
 
         <motion.p
@@ -208,26 +211,24 @@ export default function AuthPage() {
         {/* Features */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
           {features.map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -24 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.55 + i * 0.1 }}
-              style={{ display: 'flex', alignItems: 'center', gap: 20 }}
-            >
-              <div style={{
-                width: 54, height: 54, borderRadius: 16, flexShrink: 0,
-                background: 'rgba(155,142,196,0.1)',
-                border: '1px solid rgba(155,142,196,0.22)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {f.icon}
+            <ScrollReveal key={i} delay={0.55 + i * 0.1} direction="left" distance={24}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  style={{
+                    width: 54, height: 54, borderRadius: 16, flexShrink: 0,
+                    background: 'rgba(155,142,196,0.1)',
+                    border: '1px solid rgba(155,142,196,0.22)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                  {f.icon}
+                </motion.div>
+                <div>
+                  <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{f.title}</p>
+                  <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.5 }}>{f.desc}</p>
+                </div>
               </div>
-              <div>
-                <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{f.title}</p>
-                <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.5 }}>{f.desc}</p>
-              </div>
-            </motion.div>
+            </ScrollReveal>
           ))}
         </div>
       </motion.div>
@@ -244,7 +245,7 @@ export default function AuthPage() {
         }}
       >
         <div style={{ width: '100%', maxWidth: 520 }}>
-          <GlowingCard className="p-8 sm:p-10 lg:p-12">
+          <SpotlightCard className="p-8 sm:p-10 lg:p-12" spotlightColor="rgba(155,142,196,0.15)" from="top">
 
             {/* Mobile logo */}
             <div className="lg:!hidden" style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 40 }}>
@@ -477,7 +478,7 @@ export default function AuthPage() {
                 {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
               </motion.button>
             </p>
-          </GlowingCard>
+          </SpotlightCard>
         </div>
       </div>
     </div>

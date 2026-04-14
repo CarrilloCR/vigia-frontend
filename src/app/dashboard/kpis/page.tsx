@@ -16,6 +16,10 @@ import GlowingCard from '../../../components/reactbits/GlowingCard'
 import CountUp from '../../../components/reactbits/CountUp'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import ShinyText from '../../../components/reactbits/ShinyText'
+import SpotlightCard from '../../../components/reactbits/SpotlightCard'
+import ScrollReveal from '../../../components/reactbits/ScrollReveal'
+import GradientText from '../../../components/reactbits/GradientText'
+import TiltedCard from '../../../components/reactbits/TiltedCard'
 import SedeSelector from '../../../components/ui/SedeSelector'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
@@ -605,8 +609,8 @@ export default function KPIsPage() {
           </FadeContent>
 
           {/* Main chart */}
-          <FadeContent direction="up" delay={0.2} duration={0.4}>
-            <GlowingCard className="p-6 sm:p-8 lg:p-10">
+          <ScrollReveal delay={0.2} direction="up">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="top">
               {/* Chart header */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
                 <div>
@@ -894,13 +898,13 @@ export default function KPIsPage() {
                   </span>
                 </div>
               )}
-            </GlowingCard>
-          </FadeContent>
+            </SpotlightCard>
+          </ScrollReveal>
 
           {/* Detection alerts for this KPI */}
           {overlays.anomalias && alertasDelKpi.length > 0 && (
-            <FadeContent direction="up" delay={0.25} duration={0.4}>
-              <GlowingCard className="p-5 sm:p-6">
+            <ScrollReveal delay={0.15} direction="up">
+              <SpotlightCard className="p-5 sm:p-6" spotlightColor="rgba(232,160,196,0.1)" from="bottom">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -993,13 +997,13 @@ export default function KPIsPage() {
                     )
                   })}
                 </div>
-              </GlowingCard>
-            </FadeContent>
+              </SpotlightCard>
+            </ScrollReveal>
           )}
 
           {/* Stats grid */}
           {chartSize !== 'completo' && (
-            <FadeContent direction="up" delay={0.3} duration={0.4}>
+            <ScrollReveal delay={0.1} direction="up">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
                 {Object.entries(kpiConfig).map(([tipo, c], i) => {
                   const datos = kpiData[tipo] || []
@@ -1024,7 +1028,7 @@ export default function KPIsPage() {
                   )
                 })}
               </div>
-            </FadeContent>
+            </ScrollReveal>
           )}
         </div>
       )}
@@ -1068,8 +1072,8 @@ export default function KPIsPage() {
       {/* ── TODAS VIEW (normalized) ── */}
       {vista === 'todas' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <FadeContent direction="up" delay={0.1} duration={0.4}>
-            <GlowingCard className="p-6 sm:p-8 lg:p-10">
+          <ScrollReveal delay={0.1} direction="up">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
                 <div>
                   <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
@@ -1125,8 +1129,8 @@ export default function KPIsPage() {
                   La escala es <strong style={{ color: 'var(--text)' }}>porcentaje sobre/bajo la media de cada KPI</strong> — no son valores absolutos.
                 </span>
               </div>
-            </GlowingCard>
-          </FadeContent>
+            </SpotlightCard>
+          </ScrollReveal>
 
           {/* KPI summary row */}
           <FadeContent direction="up" delay={0.15} duration={0.4}>

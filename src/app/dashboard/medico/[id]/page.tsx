@@ -8,6 +8,10 @@ import { useToastStore } from '../../../../store/toast'
 import GlowingCard from '../../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../../components/reactbits/FadeContent'
 import CountUp from '../../../../components/reactbits/CountUp'
+import SpotlightCard from '../../../../components/reactbits/SpotlightCard'
+import ScrollReveal from '../../../../components/reactbits/ScrollReveal'
+import GradientText from '../../../../components/reactbits/GradientText'
+import TiltedCard from '../../../../components/reactbits/TiltedCard'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
   tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
@@ -170,8 +174,8 @@ const fetchData = async () => {
               )}
 
               <div>
-                <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
-                  Dr. {medico.nombre} {medico.apellido}
+                <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
+                  <GradientText text={`Dr. ${medico.nombre} ${medico.apellido}`} className="font-display" />
                 </h1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13, fontWeight: 500, padding: '3px 12px', borderRadius: 20, background: 'rgba(155,142,196,0.15)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
@@ -206,19 +210,20 @@ const fetchData = async () => {
         </FadeContent>
 
         {/* STATS */}
-        <FadeContent direction="up" delay={0.1} duration={0.5}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
-            {statsCards.map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-                style={{ padding: '24px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
-                <p className="font-display" style={{ fontSize: 40, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 8 }}>
-                  <CountUp to={s.value} duration={1} />
-                </p>
-                <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </FadeContent>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
+          {statsCards.map((s, i) => (
+            <ScrollReveal key={i} delay={i * 0.08} direction="up">
+              <TiltedCard tiltAmount={7} scaleOnHover={1.03}>
+                <div style={{ padding: '24px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
+                  <p className="font-display" style={{ fontSize: 40, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 8 }}>
+                    <CountUp to={s.value} duration={1} />
+                  </p>
+                  <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
+                </div>
+              </TiltedCard>
+            </ScrollReveal>
+          ))}
+        </div>
 
         {/* KPIs RÁPIDOS */}
         <FadeContent direction="up" delay={0.15} duration={0.4}>
@@ -261,7 +266,7 @@ const fetchData = async () => {
         {tab === 'estadisticas' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
             <FadeContent direction="up" delay={0.25} duration={0.4}>
-              <GlowingCard className="p-6 sm:p-8 lg:p-10">
+              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="top">
                 {/* Selector KPI */}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
                   {Object.entries(kpiConfig).map(([tipo, cfg]) => (
@@ -315,12 +320,12 @@ const fetchData = async () => {
                     </AreaChart>
                   </ResponsiveContainer>
                 )}
-              </GlowingCard>
+              </SpotlightCard>
             </FadeContent>
 
             {/* Distribución de estados */}
             <FadeContent direction="right" delay={0.3} duration={0.4}>
-              <GlowingCard className="p-6 sm:p-8 lg:p-10">
+              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="top">
                 <h2 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
                   Distribución de citas
                 </h2>
@@ -359,14 +364,14 @@ const fetchData = async () => {
                     </div>
                   </>
                 )}
-              </GlowingCard>
+              </SpotlightCard>
             </FadeContent>
           </div>
         )}
 
         {tab === 'citas' && (
           <FadeContent direction="up" delay={0.25} duration={0.4}>
-            <GlowingCard className="p-6 sm:p-8 lg:p-10">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                   Historial de citas
@@ -409,13 +414,13 @@ const fetchData = async () => {
                   })}
                 </div>
               )}
-            </GlowingCard>
+            </SpotlightCard>
           </FadeContent>
         )}
 
         {tab === 'alertas' && (
           <FadeContent direction="up" delay={0.25} duration={0.4}>
-            <GlowingCard className="p-6 sm:p-8 lg:p-10">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                   Historial de alertas
@@ -469,7 +474,7 @@ const fetchData = async () => {
                   })}
                 </div>
               )}
-            </GlowingCard>
+            </SpotlightCard>
           </FadeContent>
         )}
     </>

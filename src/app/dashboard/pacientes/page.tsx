@@ -10,6 +10,11 @@ import FadeContent from '../../../components/reactbits/FadeContent'
 import CountUp from '../../../components/reactbits/CountUp'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
 import SedeSelector from '../../../components/ui/SedeSelector'
+import SpotlightCard from '../../../components/reactbits/SpotlightCard'
+import ScrollReveal from '../../../components/reactbits/ScrollReveal'
+import GradientText from '../../../components/reactbits/GradientText'
+import TiltedCard from '../../../components/reactbits/TiltedCard'
+import Magnet from '../../../components/reactbits/Magnet'
 
 interface Paciente {
   id: number
@@ -194,7 +199,7 @@ export default function PacientesPage() {
         <FadeContent direction="down" duration={0.5}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
             <div>
-              <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Pacientes</h1>
+              <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}><GradientText text="Pacientes" className="font-display" /></h1>
               <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>{pacientesFiltrados.length} registrados</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -207,28 +212,31 @@ export default function PacientesPage() {
                   color: mostrarInactivos ? '#E8A0C4' : 'var(--muted)' }}>
                 {mostrarInactivos ? 'Ocultar inactivos' : 'Mostrar inactivos'}
               </motion.button>
-              <motion.button onClick={abrirCrear} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
-                <PlusIcon /> Agregar paciente
-              </motion.button>
+              <Magnet strength={0.3}>
+                <motion.button onClick={abrirCrear} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
+                  <PlusIcon /> Agregar paciente
+                </motion.button>
+              </Magnet>
             </div>
           </div>
         </FadeContent>
 
         {/* STATS */}
-        <FadeContent direction="up" delay={0.1} duration={0.5}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
-            {stats.map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-                style={{ padding: '24px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
-                <p className="font-display" style={{ fontSize: 40, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 8 }}>
-                  <CountUp to={s.value} duration={1} />
-                </p>
-                <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </FadeContent>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
+          {stats.map((s, i) => (
+            <ScrollReveal key={i} delay={i * 0.09} direction="up">
+              <TiltedCard tiltAmount={7} scaleOnHover={1.03}>
+                <div style={{ padding: '24px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
+                  <p className="font-display" style={{ fontSize: 40, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 8 }}>
+                    <CountUp to={s.value} duration={1} />
+                  </p>
+                  <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
+                </div>
+              </TiltedCard>
+            </ScrollReveal>
+          ))}
+        </div>
 
         {/* BUSQUEDA */}
         <FadeContent direction="up" delay={0.2} duration={0.4}>

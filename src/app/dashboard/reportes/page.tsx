@@ -11,6 +11,11 @@ import { useToastStore } from '../../../store/toast'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import CountUp from '../../../components/reactbits/CountUp'
 import FadeContent from '../../../components/reactbits/FadeContent'
+import SpotlightCard from '../../../components/reactbits/SpotlightCard'
+import ScrollReveal from '../../../components/reactbits/ScrollReveal'
+import GradientText from '../../../components/reactbits/GradientText'
+import TiltedCard from '../../../components/reactbits/TiltedCard'
+import Magnet from '../../../components/reactbits/Magnet'
 import SedeSelector from '../../../components/ui/SedeSelector'
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -265,8 +270,8 @@ export default function ReportesPage() {
         data-no-print
       >
         <div>
-          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
-            Reportes
+          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
+            <GradientText text="Reportes" className="font-display" />
           </h1>
           <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>
             Análisis de alertas y rendimiento clínico
@@ -357,50 +362,34 @@ export default function ReportesPage() {
             ))}
           </div>
         ) : (
-          <FadeContent>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
-              {/* Total */}
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}
-                style={{ padding: '28px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
-                <p className="font-display" style={{ fontSize: 48, fontWeight: 800, color: '#9B8EC4', lineHeight: 1, marginBottom: 10 }}>
-                  <CountUp to={stats.total} />
-                </p>
-                <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>Total alertas</p>
-              </motion.div>
-              {/* % Resueltas */}
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-                style={{ padding: '28px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
-                <p className="font-display" style={{ fontSize: 48, fontWeight: 800, color: '#A0C4B5', lineHeight: 1, marginBottom: 10 }}>
-                  <CountUp to={stats.porcentajeResueltas} />%
-                </p>
-                <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>Resueltas</p>
-              </motion.div>
-              {/* Críticas */}
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}
-                style={{ padding: '28px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
-                <p className="font-display" style={{ fontSize: 48, fontWeight: 800, color: '#E8A0C4', lineHeight: 1, marginBottom: 10 }}>
-                  <CountUp to={stats.criticas} />
-                </p>
-                <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>Críticas</p>
-              </motion.div>
-              {/* KPI más problemático */}
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}
-                style={{ padding: '28px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
-                <p className="font-display" style={{ fontSize: 22, fontWeight: 800, color: '#C4B5E8', lineHeight: 1.2, marginBottom: 10, textTransform: 'capitalize' }}>
-                  {stats.kpiMasProblematico?.kpi || '—'}
-                </p>
-                <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>KPI crítico</p>
-                {stats.kpiMasProblematico && (
-                  <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{stats.kpiMasProblematico.count} alertas</p>
-                )}
-              </motion.div>
-            </div>
-          </FadeContent>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
+            {[
+              { value: stats.total, label: 'Total alertas', color: '#9B8EC4', display: <CountUp to={stats.total} /> },
+              { value: stats.porcentajeResueltas, label: 'Resueltas', color: '#A0C4B5', display: <><CountUp to={stats.porcentajeResueltas} />%</> },
+              { value: stats.criticas, label: 'Críticas', color: '#E8A0C4', display: <CountUp to={stats.criticas} /> },
+              { value: 0, label: 'KPI crítico', color: '#C4B5E8', display: <span style={{ fontSize: 22 }}>{stats.kpiMasProblematico?.kpi || '—'}</span> },
+            ].map((s, i) => (
+              <ScrollReveal key={i} delay={i * 0.08} direction="up">
+                <TiltedCard tiltAmount={6} scaleOnHover={1.03}>
+                  <div style={{ padding: '28px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
+                    <p className="font-display" style={{ fontSize: 48, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 10, textTransform: 'capitalize' }}>
+                      {s.display}
+                    </p>
+                    <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
+                    {i === 3 && stats.kpiMasProblematico && (
+                      <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{stats.kpiMasProblematico.count} alertas</p>
+                    )}
+                  </div>
+                </TiltedCard>
+              </ScrollReveal>
+            ))}
+          </div>
         )}
 
         {/* BAR CHART: Alertas por día */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} style={{ marginBottom: 36 }}>
-          <GlowingCard className="p-6 sm:p-8 lg:p-10">
+        <ScrollReveal delay={0.2} direction="up">
+        <div style={{ marginBottom: 36 }}>
+          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
             <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
               Alertas por día
             </h2>
@@ -423,16 +412,16 @@ export default function ReportesPage() {
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </GlowingCard>
-        </motion.div>
+          </SpotlightCard>
+        </div>
+        </ScrollReveal>
 
         {/* GRID: Ranking médicos + KPIs tabla */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 36 }}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 36 }}
         >
           {/* Ranking médicos */}
-          <GlowingCard className="p-6 sm:p-8 lg:p-10">
+          <ScrollReveal delay={0.1} direction="up">
+          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(160,196,181,0.12)" from="left">
             <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
               Top médicos por alertas
             </h2>
@@ -471,10 +460,12 @@ export default function ReportesPage() {
                 ))}
               </div>
             )}
-          </GlowingCard>
+          </SpotlightCard>
+          </ScrollReveal>
 
           {/* KPIs tabla */}
-          <GlowingCard className="p-6 sm:p-8 lg:p-10">
+          <ScrollReveal delay={0.2} direction="up">
+          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(196,181,232,0.12)" from="right">
             <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
               KPIs — resumen
             </h2>
@@ -523,8 +514,9 @@ export default function ReportesPage() {
                 })}
               </div>
             )}
-          </GlowingCard>
-        </motion.div>
+          </SpotlightCard>
+          </ScrollReveal>
+        </div>
       </div>
     </>
   )

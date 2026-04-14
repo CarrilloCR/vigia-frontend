@@ -9,6 +9,10 @@ import { useToastStore } from '../../store/toast'
 import Aurora from '../../components/reactbits/Aurora'
 import GlowingCard from '../../components/reactbits/GlowingCard'
 import CountUp from '../../components/reactbits/CountUp'
+import SpotlightCard from '../../components/reactbits/SpotlightCard'
+import ScrollReveal from '../../components/reactbits/ScrollReveal'
+import GradientText from '../../components/reactbits/GradientText'
+import TiltedCard from '../../components/reactbits/TiltedCard'
 import ThemeToggle from '../../components/ui/ThemeToggle'
 import VigiaLogo from '../../components/ui/VigiaLogo'
 import SedeSelector from '../../components/ui/SedeSelector'
@@ -879,7 +883,7 @@ export default function DashboardPage() {
               )}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
+                  <p className="font-display" style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}><GradientText text="Vigía" className="font-display" /></p>
                   {user?.rol && (() => {
                     const rc = ROL_COLORS[user.rol] ?? ROL_COLORS.viewer
                     return (
@@ -1002,32 +1006,36 @@ export default function DashboardPage() {
         {/* STATS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 48 }}>
           {stats.map((s, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-              onClick={() => { setFiltroSev(s.filtro); setVistaAlertas('activas'); setOcultarTodas(false) }}
-              whileHover={{ scale: 1.02, y: -3 }} whileTap={{ scale: 0.98 }}
-              style={{
-                padding: '32px 28px 28px', borderRadius: 28, cursor: 'pointer',
-                background: filtroSev === s.filtro ? `${s.color}14` : 'var(--glass)',
-                backdropFilter: 'blur(24px)',
-                border: `1px solid ${filtroSev === s.filtro ? s.color + '55' : 'var(--border)'}`,
-                boxShadow: filtroSev === s.filtro ? `0 8px 32px ${s.color}20` : 'var(--shadow-md)',
-                transition: 'all 0.25s',
-              }}>
-              <p className="font-display" style={{ fontSize: 52, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 12 }}>
-                <CountUp to={s.value} duration={1} />
-              </p>
-              <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500, letterSpacing: '0.01em' }}>{s.label}</p>
-              {i === 0 && ensembleCount > 0 && (
-                <p style={{ fontSize: 11, color: '#C4B5E8', marginTop: 6, fontWeight: 500 }}>
-                  {ensembleCount} por ensemble
-                </p>
-              )}
-              <div style={{ marginTop: 20, height: 3, borderRadius: 4, background: `${s.color}18` }}>
-                <motion.div initial={{ width: 0 }} animate={{ width: s.value > 0 ? '100%' : '0%' }}
-                  transition={{ duration: 1.2, delay: i * 0.1, ease: 'easeOut' }}
-                  style={{ height: '100%', borderRadius: 4, background: s.color, boxShadow: `0 0 8px ${s.color}60` }} />
-              </div>
-            </motion.div>
+            <ScrollReveal key={i} delay={i * 0.08} direction="up">
+              <TiltedCard tiltAmount={8} scaleOnHover={1.03}>
+                <motion.div
+                  onClick={() => { setFiltroSev(s.filtro); setVistaAlertas('activas'); setOcultarTodas(false) }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{
+                    padding: '32px 28px 28px', borderRadius: 28, cursor: 'pointer',
+                    background: filtroSev === s.filtro ? `${s.color}14` : 'var(--glass)',
+                    backdropFilter: 'blur(24px)',
+                    border: `1px solid ${filtroSev === s.filtro ? s.color + '55' : 'var(--border)'}`,
+                    boxShadow: filtroSev === s.filtro ? `0 8px 32px ${s.color}20` : 'var(--shadow-md)',
+                    transition: 'all 0.25s',
+                  }}>
+                  <p className="font-display" style={{ fontSize: 52, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 12 }}>
+                    <CountUp to={s.value} duration={1} />
+                  </p>
+                  <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500, letterSpacing: '0.01em' }}>{s.label}</p>
+                  {i === 0 && ensembleCount > 0 && (
+                    <p style={{ fontSize: 11, color: '#C4B5E8', marginTop: 6, fontWeight: 500 }}>
+                      {ensembleCount} por ensemble
+                    </p>
+                  )}
+                  <div style={{ marginTop: 20, height: 3, borderRadius: 4, background: `${s.color}18` }}>
+                    <motion.div initial={{ width: 0 }} animate={{ width: s.value > 0 ? '100%' : '0%' }}
+                      transition={{ duration: 1.2, delay: i * 0.1, ease: 'easeOut' }}
+                      style={{ height: '100%', borderRadius: 4, background: s.color, boxShadow: `0 0 8px ${s.color}60` }} />
+                  </div>
+                </motion.div>
+              </TiltedCard>
+            </ScrollReveal>
           ))}
         </div>
 
@@ -1035,8 +1043,8 @@ export default function DashboardPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) min(420px,38%)', gap: 32 }}>
 
           {/* ALERTAS */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}>
-            <GlowingCard className="p-6 sm:p-8 lg:p-10">
+          <ScrollReveal delay={0.15} direction="up">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
 
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -1319,8 +1327,8 @@ export default function DashboardPage() {
                   </AnimatePresence>
                 </div>
               )}
-            </GlowingCard>
-          </motion.div>
+            </SpotlightCard>
+          </ScrollReveal>
 
           {/* SIDEBAR */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1352,8 +1360,8 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Médicos */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-              <GlowingCard className="p-6 sm:p-8 lg:p-10">
+            <ScrollReveal delay={0.2} direction="up">
+              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(160,196,181,0.1)" from="right">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                   <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Médicos</h2>
                   <motion.button onClick={() => router.push('/dashboard/medicos')}
@@ -1363,8 +1371,8 @@ export default function DashboardPage() {
                   </motion.button>
                 </div>
                 <MedicosList clinicaId={clinicaId} />
-              </GlowingCard>
-            </motion.div>
+              </SpotlightCard>
+            </ScrollReveal>
 
             {/* Generador en Vivo — mini */}
             <GeneradorLiveWidget clinicaId={clinicaId} />
