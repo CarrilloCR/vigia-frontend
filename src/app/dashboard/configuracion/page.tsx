@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
@@ -124,10 +124,40 @@ const SlidersIcon = () => (
     <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
   </svg>
 )
+const TeamIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+)
+const XIcon = () => (
+  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+)
+const UserMinusIcon = () => (
+  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/>
+  </svg>
+)
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Section = 'perfil' | 'seguridad' | 'clinica' | 'notificaciones' | 'automatizacion' | 'alertas' | 'apariencia' | 'integraciones' | 'facturacion' | 'superadmin'
+type Section = 'perfil' | 'seguridad' | 'clinica' | 'notificaciones' | 'automatizacion' | 'alertas' | 'apariencia' | 'integraciones' | 'facturacion' | 'superadmin' | 'equipo'
+
+type EquipoRol = 'admin' | 'gerente' | 'medico' | 'viewer'
+const EQUIPO_ROLES: { key: EquipoRol; label: string; desc: string }[] = [
+  { key: 'admin',   label: 'Administrador', desc: 'Acceso completo, gestiona usuarios y configuración' },
+  { key: 'gerente', label: 'Gerente',        desc: 'Reportes, equipo y alertas. Sin cambios de sistema' },
+  { key: 'medico',  label: 'Personal Médico',desc: 'Ve sus alertas y KPIs asociados' },
+  { key: 'viewer',  label: 'Visualizador',   desc: 'Solo lectura del dashboard' },
+]
+const EQUIPO_ROL_STYLE: Record<EquipoRol, { bg: string; color: string; border: string }> = {
+  admin:   { bg: 'rgba(155,142,196,0.15)', color: '#9B8EC4', border: 'rgba(155,142,196,0.3)' },
+  gerente: { bg: 'rgba(124,181,232,0.12)', color: '#7CB5E8', border: 'rgba(124,181,232,0.25)' },
+  medico:  { bg: 'rgba(160,196,181,0.12)', color: '#A0C4B5', border: 'rgba(160,196,181,0.25)' },
+  viewer:  { bg: 'rgba(139,137,160,0.1)',  color: '#8B89A0', border: 'rgba(139,137,160,0.2)' },
+}
 
 interface EmailNotificacion {
   id: number
@@ -170,6 +200,7 @@ const SECTIONS: { key: Section; label: string; icon: React.ReactNode; desc: stri
   { key: 'apariencia', label: 'Apariencia', icon: <PaletteIcon />, desc: 'Tema y visualización' },
   { key: 'integraciones', label: 'Integraciones', icon: <LinkIcon />, desc: 'Conexiones externas' },
   { key: 'facturacion', label: 'Facturación', icon: <CreditCardIcon />, desc: 'Plan y pagos' },
+  { key: 'equipo', label: 'Equipo', icon: <TeamIcon />, desc: 'Usuarios y roles de acceso' },
   { key: 'superadmin', label: 'Super Admin', icon: <BuildingIcon />, desc: 'Gestión global de clínicas', superadminOnly: true },
 ]
 
@@ -211,6 +242,68 @@ const sectionDesc: React.CSSProperties = {
   lineHeight: 1.5,
 }
 
+// ─── Sub-components (defined outside to prevent remount on parent re-render) ──
+
+function Skeleton({ h = 52, count = 3 }: { h?: number; count?: number }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div key={i} animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
+          style={{ height: h, borderRadius: 14, background: 'rgba(255,255,255,0.04)' }} />
+      ))}
+    </div>
+  )
+}
+
+function SaveButton({ onClick, loading, label = 'Guardar cambios' }: { onClick: () => void; loading: boolean; label?: string }) {
+  return (
+    <motion.button onClick={onClick} disabled={loading}
+      whileHover={{ scale: loading ? 1 : 1.02 }} whileTap={{ scale: loading ? 1 : 0.98 }}
+      style={{
+        padding: '13px 32px', borderRadius: 14,
+        background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+        color: 'white', fontSize: 14, fontWeight: 600, border: 'none',
+        cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
+        display: 'flex', alignItems: 'center', gap: 8,
+        boxShadow: '0 4px 20px rgba(155,142,196,0.3)',
+      }}>
+      {loading
+        ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }} />
+        : <CheckIcon />}
+      {loading ? 'Guardando...' : label}
+    </motion.button>
+  )
+}
+
+function SettingRow({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+      <div>
+        <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{label}</p>
+        {desc && <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{desc}</p>}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function PasswordField({ label, value, onChange, show, onToggle }: { label: string; value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void }) {
+  return (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        <input type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)}
+          style={{ ...inputStyle, paddingRight: 48 }} />
+        <button type="button" onClick={onToggle}
+          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: 4 }}>
+          {show ? <EyeOffIcon /> : <EyeIcon />}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function ConfiguracionPage() {
@@ -224,6 +317,8 @@ export default function ConfiguracionPage() {
   // ─── Perfil state
   const [perfil, setPerfil] = useState({ nombre: user?.nombre || '', email: user?.email || '' })
   const [savingPerfil, setSavingPerfil] = useState(false)
+  const [avatarBase64, setAvatarBase64] = useState<string>('')
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   // ─── Seguridad state
   const [passwords, setPasswords] = useState({ current: '', nueva: '', confirmar: '' })
@@ -304,8 +399,23 @@ export default function ConfiguracionPage() {
   // ─── CSV state
   const [csvTipo, setCsvTipo] = useState<'kpi' | 'citas'>('kpi')
   const [csvFile, setCsvFile] = useState<File | null>(null)
+  const [csvSedeId, setCsvSedeId] = useState<string>('')
   const [csvLoading, setCsvLoading] = useState(false)
   const [csvResult, setCsvResult] = useState<{ creados: number; errores: string[]; total_filas: number } | null>(null)
+
+  // ─── Equipo state
+  const esAdmin = user?.rol === 'admin' || user?.rol === 'gerente' || user?.rol === 'superadmin'
+  const [equipoUsuarios, setEquipoUsuarios] = useState<any[]>([])
+  const [equipoSolicitudes, setEquipoSolicitudes] = useState<any[]>([])
+  const [loadingEquipo, setLoadingEquipo] = useState(true)
+  const [showInvitar, setShowInvitar] = useState(false)
+  const [inviteForm, setInviteForm] = useState({ email: '', nombre: '', rol: 'viewer' as EquipoRol })
+  const [savingInvite, setSavingInvite] = useState(false)
+  const [tempPassword, setTempPassword] = useState<string | null>(null)
+  const [confirmDesactivar, setConfirmDesactivar] = useState<{ open: boolean; id: number; nombre: string }>({ open: false, id: 0, nombre: '' })
+  const [showSolicitud, setShowSolicitud] = useState(false)
+  const [solicitudForm, setSolicitudForm] = useState({ rol_solicitado: 'gerente' as EquipoRol, motivo: '' })
+  const [savingSolicitud, setSavingSolicitud] = useState(false)
 
   // ─── Facturación state
   const [plan, setPlan] = useState<PlanFacturacion | null>(null)
@@ -364,8 +474,23 @@ export default function ConfiguracionPage() {
       setLoadingTodasClinicas(true)
       api.get('/clinicas/').then(res => setTodasClinicas(res.data.results || res.data)).catch(() => {}).finally(() => setLoadingTodasClinicas(false))
     }
+    if (activeSection === 'equipo' && loadingEquipo) {
+      Promise.all([
+        api.get(`/usuarios/?clinica=${clinicaId}`).catch(() => null),
+        api.get(user?.rol === 'admin' || user?.rol === 'superadmin'
+          ? `/solicitudes-rol/?estado=pendiente`
+          : `/solicitudes-rol/?clinica=${clinicaId}&estado=pendiente`
+        ).catch(() => null),
+      ]).then(([uRes, sRes]) => {
+        if (uRes?.data) {
+          const data = uRes.data.results || uRes.data
+          setEquipoUsuarios(data.filter((u: any) => !String(u.email || '').startsWith('INACTIVO')))
+        }
+        if (sRes?.data) setEquipoSolicitudes(sRes.data.results || sRes.data)
+      }).finally(() => setLoadingEquipo(false))
+    }
     if (activeSection === 'alertas' && loadingConfigAlertas) {
-      api.get(`/configuraciones-alerta/?clinica=${clinicaId}`)
+      api.get(`/configuraciones/?clinica=${clinicaId}`)
         .then(res => {
           const data: ConfigAlerta[] = res.data.results || res.data
           const map: Record<string, ConfigAlerta> = {}
@@ -380,14 +505,40 @@ export default function ConfiguracionPage() {
         .catch(() => {})
         .finally(() => setLoadingConfigAlertas(false))
     }
+    if (activeSection === 'perfil' && user?.id && !avatarBase64) {
+      api.get(`/usuarios/${user.id}/`).then(res => {
+        if (res.data.avatar) {
+          setAvatarBase64(res.data.avatar)
+          // Sync into store so header updates everywhere
+          useAuthStore.setState(s => ({ user: s.user ? { ...s.user, avatar: res.data.avatar } : null }))
+        }
+      }).catch(() => {})
+    }
   }, [activeSection, clinicaId, clinica, loadingEmails, loadingIntegraciones, loadingPlan, loadingConfigAlertas, loadingTodasClinicas, todasClinicas.length])
 
   // ─── Handlers
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) return showToast('La imagen no puede superar 2 MB', 'error')
+    const reader = new FileReader()
+    reader.onload = () => setAvatarBase64(reader.result as string)
+    reader.readAsDataURL(file)
+  }
+
   const handleSavePerfil = async () => {
     if (!perfil.nombre.trim()) return showToast('El nombre es requerido', 'error')
     setSavingPerfil(true)
     try {
-      await api.patch(`/usuarios/${user?.id}/`, { nombre: perfil.nombre, email: perfil.email })
+      await api.patch(`/usuarios/${user?.id}/`, {
+        nombre: perfil.nombre,
+        email: perfil.email,
+        ...(avatarBase64 ? { avatar: avatarBase64 } : {}),
+      })
+      // Sync avatar into auth store so header/sidebar update immediately
+      if (avatarBase64) {
+        useAuthStore.setState(s => ({ user: s.user ? { ...s.user, avatar: avatarBase64 } : null }))
+      }
       showToast('Perfil actualizado correctamente')
     } catch {
       showToast('Error al actualizar el perfil', 'error')
@@ -400,9 +551,9 @@ export default function ConfiguracionPage() {
     if (passwords.nueva !== passwords.confirmar) return showToast('Las contraseñas no coinciden', 'error')
     setSavingPassword(true)
     try {
-      await api.post('/auth/change-password/', {
-        old_password: passwords.current,
-        new_password: passwords.nueva,
+      await api.put('/auth/cambiar-password/', {
+        password_actual: passwords.current,
+        password_nuevo: passwords.nueva,
       })
       setPasswords({ current: '', nueva: '', confirmar: '' })
       showToast('Contraseña actualizada correctamente')
@@ -526,6 +677,7 @@ export default function ConfiguracionPage() {
     setCsvLoading(true)
     const form = new FormData()
     form.append('clinica_id', String(clinicaId))
+    if (csvSedeId) form.append('sede_id', csvSedeId)
     form.append('tipo', csvTipo)
     form.append('file', csvFile)
     try {
@@ -554,12 +706,12 @@ export default function ConfiguracionPage() {
       await Promise.all(
         Object.values(configAlertas).map(cfg =>
           cfg.id
-            ? api.patch(`/configuraciones-alerta/${cfg.id}/`, cfg)
-            : api.post(`/configuraciones-alerta/`, { ...cfg, clinica: clinicaId })
+            ? api.patch(`/configuraciones/${cfg.id}/`, cfg)
+            : api.post(`/configuraciones/`, { ...cfg, clinica: clinicaId })
         )
       )
       // Recargar para obtener IDs de los nuevos registros
-      const res = await api.get(`/configuraciones-alerta/?clinica=${clinicaId}`)
+      const res = await api.get(`/configuraciones/?clinica=${clinicaId}`)
       const data: ConfigAlerta[] = res.data.results || res.data
       const map: Record<string, ConfigAlerta> = { ...configAlertas }
       data.forEach(c => { map[c.tipo_kpi] = c })
@@ -569,61 +721,87 @@ export default function ConfiguracionPage() {
     finally { setSavingConfigAlertas(false) }
   }
 
-  // ─── Skeleton loader
-  const Skeleton = ({ h = 52, count = 3 }: { h?: number; count?: number }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {Array.from({ length: count }).map((_, i) => (
-        <motion.div key={i} animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-          style={{ height: h, borderRadius: 14, background: 'rgba(255,255,255,0.04)' }} />
-      ))}
-    </div>
-  )
+  // ─── Equipo handlers
+  const fetchEquipo = async () => {
+    try {
+      const [uRes, sRes] = await Promise.all([
+        api.get(`/usuarios/?clinica=${clinicaId}`),
+        api.get(user?.rol === 'admin' || user?.rol === 'superadmin'
+          ? `/solicitudes-rol/?estado=pendiente`
+          : `/solicitudes-rol/?clinica=${clinicaId}&estado=pendiente`
+        ),
+      ])
+      const data = uRes.data.results || uRes.data
+      setEquipoUsuarios(data.filter((u: any) => !String(u.email || '').startsWith('INACTIVO')))
+      setEquipoSolicitudes(sRes.data.results || sRes.data)
+    } catch { /* silent */ }
+  }
 
-  // ─── Save button
-  const SaveButton = ({ onClick, loading, label = 'Guardar cambios' }: { onClick: () => void; loading: boolean; label?: string }) => (
-    <motion.button onClick={onClick} disabled={loading}
-      whileHover={{ scale: loading ? 1 : 1.02 }} whileTap={{ scale: loading ? 1 : 0.98 }}
-      style={{
-        padding: '13px 32px', borderRadius: 14,
-        background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-        color: 'white', fontSize: 14, fontWeight: 600, border: 'none',
-        cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
-        display: 'flex', alignItems: 'center', gap: 8,
-        boxShadow: '0 4px 20px rgba(155,142,196,0.3)',
-      }}>
-      {loading ? (
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }} />
-      ) : <CheckIcon />}
-      {loading ? 'Guardando...' : label}
-    </motion.button>
-  )
+  const handleInvitar = async () => {
+    if (!inviteForm.email) return toast.error('El email es requerido')
+    setSavingInvite(true)
+    try {
+      const res = await api.post('/usuarios/invitar/', {
+        email: inviteForm.email, nombre: inviteForm.nombre,
+        rol: inviteForm.rol, clinica_id: clinicaId,
+      })
+      setTempPassword(res.data.temp_password || null)
+      setInviteForm({ email: '', nombre: '', rol: 'viewer' })
+      setShowInvitar(false)
+      await fetchEquipo()
+      toast.success('Usuario invitado correctamente')
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Error al invitar usuario')
+    } finally { setSavingInvite(false) }
+  }
 
-  // ─── Setting row helper
-  const SettingRow = ({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) => (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-      <div>
-        <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{label}</p>
-        {desc && <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{desc}</p>}
-      </div>
-      {children}
-    </div>
-  )
+  const handleCambiarRol = async (id: number, rol: EquipoRol) => {
+    try {
+      await api.post(`/usuarios/${id}/cambiar_rol/`, { rol })
+      setEquipoUsuarios(prev => prev.map(u => u.id === id ? { ...u, rol } : u))
+      toast.success('Rol actualizado')
+    } catch { toast.error('Error al cambiar el rol') }
+  }
 
-  // ─── Password field
-  const PasswordField = ({ label, value, onChange, show, onToggle }: { label: string; value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void }) => (
-    <div>
-      <label style={labelStyle}>{label}</label>
-      <div style={{ position: 'relative' }}>
-        <input type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)}
-          style={{ ...inputStyle, paddingRight: 48 }} />
-        <button type="button" onClick={onToggle}
-          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: 4 }}>
-          {show ? <EyeOffIcon /> : <EyeIcon />}
-        </button>
-      </div>
-    </div>
-  )
+  const handleDesactivar = async (id: number) => {
+    try {
+      await api.post(`/usuarios/${id}/desactivar/`)
+      setEquipoUsuarios(prev => prev.filter(u => u.id !== id))
+      toast.success('Usuario desactivado')
+    } catch { toast.error('Error al desactivar el usuario') }
+    setConfirmDesactivar({ open: false, id: 0, nombre: '' })
+  }
+
+  const handleAprobarSolicitud = async (solicitudId: number) => {
+    try {
+      await api.post(`/solicitudes-rol/${solicitudId}/aprobar/`, { revisor_id: user?.id })
+      setEquipoSolicitudes(prev => prev.filter(s => s.id !== solicitudId))
+      await fetchEquipo()
+      toast.success('Solicitud aprobada — rol actualizado')
+    } catch { toast.error('Error al aprobar la solicitud') }
+  }
+
+  const handleRechazarSolicitud = async (solicitudId: number) => {
+    try {
+      await api.post(`/solicitudes-rol/${solicitudId}/rechazar/`, { revisor_id: user?.id })
+      setEquipoSolicitudes(prev => prev.filter(s => s.id !== solicitudId))
+      toast.success('Solicitud rechazada')
+    } catch { toast.error('Error al rechazar la solicitud') }
+  }
+
+  const handleSolicitarRol = async () => {
+    if (!solicitudForm.motivo.trim()) return toast.error('El motivo es requerido')
+    setSavingSolicitud(true)
+    try {
+      await api.post('/solicitudes-rol/', {
+        usuario: user?.id, rol_solicitado: solicitudForm.rol_solicitado, motivo: solicitudForm.motivo,
+      })
+      setShowSolicitud(false)
+      setSolicitudForm({ rol_solicitado: 'gerente', motivo: '' })
+      toast.success('Solicitud enviada — un administrador la revisará')
+    } catch { toast.error('Error al enviar la solicitud') }
+    finally { setSavingSolicitud(false) }
+  }
 
   // ─── Render sections
   const renderSection = () => {
@@ -640,25 +818,79 @@ export default function ConfiguracionPage() {
             <GlowingCard className="p-6 sm:p-8 lg:p-10">
               {/* Avatar */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}>
-                <div style={{
-                  width: 80, height: 80, borderRadius: 24,
-                  background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontSize: 32, fontWeight: 700, flexShrink: 0,
-                }}>
-                  {(user?.nombre || 'A')[0].toUpperCase()}
-                </div>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  style={{ display: 'none' }}
+                />
+                <motion.div
+                  onClick={() => avatarInputRef.current?.click()}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    width: 80, height: 80, borderRadius: 24, flexShrink: 0,
+                    background: avatarBase64
+                      ? 'transparent'
+                      : 'linear-gradient(135deg, var(--primary), var(--accent))',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontSize: 32, fontWeight: 700,
+                    cursor: 'pointer', overflow: 'hidden', position: 'relative',
+                    border: '2px solid rgba(155,142,196,0.3)',
+                  }}
+                  title="Cambiar foto"
+                >
+                  {avatarBase64 ? (
+                    <img src={avatarBase64} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    (user?.nombre || 'A')[0].toUpperCase()
+                  )}
+                  {/* Hover overlay */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    style={{
+                      position: 'absolute', inset: 0,
+                      background: 'rgba(0,0,0,0.45)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                  </motion.div>
+                </motion.div>
                 <div>
                   <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>{user?.nombre}</p>
                   <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>{user?.email}</p>
-                  <span style={{
-                    display: 'inline-block', marginTop: 8,
-                    fontSize: 12, padding: '4px 14px', borderRadius: 20,
-                    background: 'rgba(155,142,196,0.12)', color: 'var(--primary)',
-                    border: '1px solid rgba(155,142,196,0.2)', fontWeight: 600, textTransform: 'capitalize',
-                  }}>
-                    {user?.rol || 'Administrador'}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                    <span style={{
+                      fontSize: 12, padding: '4px 14px', borderRadius: 20,
+                      background: 'rgba(155,142,196,0.12)', color: 'var(--primary)',
+                      border: '1px solid rgba(155,142,196,0.2)', fontWeight: 600, textTransform: 'capitalize',
+                    }}>
+                      {user?.rol || 'Administrador'}
+                    </span>
+                    <motion.button
+                      onClick={() => avatarInputRef.current?.click()}
+                      whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                      style={{ fontSize: 12, padding: '4px 14px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--muted)', cursor: 'pointer' }}
+                    >
+                      {avatarBase64 ? 'Cambiar foto' : 'Subir foto'}
+                    </motion.button>
+                    {avatarBase64 && (
+                      <motion.button
+                        onClick={() => setAvatarBase64('')}
+                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                        style={{ fontSize: 12, padding: '4px 14px', borderRadius: 20, background: 'rgba(232,160,196,0.08)', border: '1px solid rgba(232,160,196,0.2)', color: 'var(--danger)', cursor: 'pointer' }}
+                      >
+                        Quitar
+                      </motion.button>
+                    )}
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>JPG, PNG o GIF · máx. 2 MB</p>
                 </div>
               </div>
 
@@ -1572,6 +1804,21 @@ export default function ConfiguracionPage() {
                     : 'Columnas esperadas: medico_id, paciente_nombre, fecha_hora, tipo, estado'}
                 </p>
 
+                {/* Sede selector */}
+                {sedes.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={labelStyle}>Sede (opcional)</label>
+                    <select
+                      value={csvSedeId}
+                      onChange={e => setCsvSedeId(e.target.value)}
+                      style={{ ...inputStyle }}
+                    >
+                      <option value="">Todas las sedes / sin sede específica</option>
+                      {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                    </select>
+                  </div>
+                )}
+
                 {/* File input */}
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ display: 'block', cursor: 'pointer' }}>
@@ -1947,6 +2194,254 @@ export default function ConfiguracionPage() {
                 finally { setDeletingClinica(false); setConfirmDeleteClinica({ open: false, id: 0, nombre: '' }) }
               }}
               onCancel={() => setConfirmDeleteClinica({ open: false, id: 0, nombre: '' })}
+            />
+          </motion.div>
+        )
+
+      // ═══════════════════════════════════════════════════════════
+      // EQUIPO
+      // ═══════════════════════════════════════════════════════════
+      case 'equipo':
+        return (
+          <motion.div key="equipo" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 12 }}>
+              <div>
+                <h2 className="font-display" style={sectionTitle}>Equipo</h2>
+                <p style={sectionDesc}>Gestiona los usuarios con acceso a la plataforma.</p>
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                {!esAdmin && (
+                  <motion.button onClick={() => setShowSolicitud(v => !v)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 14, background: 'rgba(124,181,232,0.1)', border: '1px solid rgba(124,181,232,0.3)', color: '#7CB5E8', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                    Solicitar cambio de rol
+                  </motion.button>
+                )}
+                {esAdmin && (
+                  <motion.button onClick={() => setShowInvitar(v => !v)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
+                    <PlusIcon /> Invitar miembro
+                  </motion.button>
+                )}
+              </div>
+            </div>
+
+            {/* Temp password */}
+            <AnimatePresence>
+              {tempPassword && (
+                <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+                  style={{ marginBottom: 20, padding: '20px 24px', borderRadius: 20, background: 'rgba(160,196,181,0.1)', border: '1px solid rgba(160,196,181,0.3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                    <div>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--success)', marginBottom: 6 }}>Usuario creado. Contraseña temporal:</p>
+                      <p style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', fontFamily: 'monospace', letterSpacing: '0.1em', marginBottom: 8 }}>{tempPassword}</p>
+                      <p style={{ fontSize: 13, color: 'var(--muted)' }}>Comparte esto con el usuario — solo se muestra una vez.</p>
+                    </div>
+                    <motion.button onClick={() => setTempPassword(null)} whileHover={{ scale: 1.1 }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 20, padding: 4 }}>×</motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Solicitudes pendientes */}
+            <AnimatePresence>
+              {esAdmin && equipoSolicitudes.length > 0 && (
+                <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} style={{ marginBottom: 20 }}>
+                  <GlowingCard className="p-6 sm:p-8">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#E8C4A0', display: 'inline-block' }} />
+                      <h3 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>Solicitudes pendientes</h3>
+                      <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(232,196,160,0.15)', color: '#E8C4A0', border: '1px solid rgba(232,196,160,0.3)' }}>
+                        {equipoSolicitudes.length}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {equipoSolicitudes.map(s => {
+                        const rs = EQUIPO_ROL_STYLE[s.rol_solicitado as EquipoRol] || EQUIPO_ROL_STYLE.viewer
+                        return (
+                          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', padding: '14px 18px', borderRadius: 14, background: 'rgba(232,196,160,0.05)', border: '1px solid rgba(232,196,160,0.15)' }}>
+                            <div style={{ flex: 1, minWidth: 160 }}>
+                              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{s.usuario_nombre || s.usuario_email}</p>
+                              <p style={{ fontSize: 12, color: 'var(--muted)' }}>{s.usuario_email}</p>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 12, color: 'var(--muted)' }}>Solicita →</span>
+                              <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 12px', borderRadius: 20, background: rs.bg, color: rs.color, border: `1px solid ${rs.border}` }}>
+                                {EQUIPO_ROLES.find(r => r.key === s.rol_solicitado)?.label || s.rol_solicitado}
+                              </span>
+                            </div>
+                            {s.motivo && <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', flex: '1 1 200px' }}>"{s.motivo}"</p>}
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <motion.button onClick={() => handleAprobarSolicitud(s.id)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(160,196,181,0.15)', border: '1px solid rgba(160,196,181,0.3)', color: '#A0C4B5', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                                <CheckIcon /> Aprobar
+                              </motion.button>
+                              <motion.button onClick={() => handleRechazarSolicitud(s.id)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', color: '#E8A0C4', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                                <XIcon /> Rechazar
+                              </motion.button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </GlowingCard>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Solicitar rol form */}
+            <AnimatePresence>
+              {showSolicitud && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden', marginBottom: 20 }}>
+                  <GlowingCard className="p-6 sm:p-8">
+                    <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>Solicitar cambio de rol</h3>
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={labelStyle}>Rol solicitado</label>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        {EQUIPO_ROLES.filter(r => r.key !== user?.rol).map(r => {
+                          const rs = EQUIPO_ROL_STYLE[r.key]
+                          return (
+                            <motion.button key={r.key} onClick={() => setSolicitudForm({ ...solicitudForm, rol_solicitado: r.key })}
+                              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                              style={{ padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '2px solid', background: solicitudForm.rol_solicitado === r.key ? rs.bg : 'rgba(255,255,255,0.04)', borderColor: solicitudForm.rol_solicitado === r.key ? rs.color : 'var(--border)', color: solicitudForm.rol_solicitado === r.key ? rs.color : 'var(--muted)', transition: 'all 0.2s' }}>
+                              {r.label}
+                            </motion.button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={labelStyle}>Motivo *</label>
+                      <textarea value={solicitudForm.motivo} onChange={e => setSolicitudForm({ ...solicitudForm, motivo: e.target.value })}
+                        placeholder="Explica brevemente por qué necesitas este rol..." rows={3}
+                        style={{ ...inputStyle, resize: 'vertical', minHeight: 90 } as React.CSSProperties} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <motion.button onClick={() => setShowSolicitud(false)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        style={{ padding: '11px 22px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, cursor: 'pointer' }}>
+                        Cancelar
+                      </motion.button>
+                      <motion.button onClick={handleSolicitarRol} disabled={savingSolicitud} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        style={{ padding: '11px 28px', borderRadius: 12, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: savingSolicitud ? 'not-allowed' : 'pointer', opacity: savingSolicitud ? 0.7 : 1 }}>
+                        {savingSolicitud ? 'Enviando...' : 'Enviar solicitud'}
+                      </motion.button>
+                    </div>
+                  </GlowingCard>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Invite form */}
+            <AnimatePresence>
+              {showInvitar && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} style={{ overflow: 'hidden', marginBottom: 20 }}>
+                  <GlowingCard className="p-6 sm:p-8">
+                    <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>Invitar nuevo miembro</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+                      <div>
+                        <label style={labelStyle}>Correo electrónico *</label>
+                        <input type="email" value={inviteForm.email} onChange={e => setInviteForm({ ...inviteForm, email: e.target.value })}
+                          placeholder="usuario@clinica.com" onKeyDown={e => e.key === 'Enter' && handleInvitar()} style={inputStyle} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Nombre (opcional)</label>
+                        <input value={inviteForm.nombre} onChange={e => setInviteForm({ ...inviteForm, nombre: e.target.value })}
+                          placeholder="Dr. Nombre Apellido" onKeyDown={e => e.key === 'Enter' && handleInvitar()} style={inputStyle} />
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 24 }}>
+                      <label style={labelStyle}>Rol inicial</label>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {EQUIPO_ROLES.map(r => {
+                          const rs = EQUIPO_ROL_STYLE[r.key]
+                          return (
+                            <motion.button key={r.key} onClick={() => setInviteForm({ ...inviteForm, rol: r.key })}
+                              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                              style={{ padding: '9px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '2px solid', background: inviteForm.rol === r.key ? rs.bg : 'rgba(255,255,255,0.04)', borderColor: inviteForm.rol === r.key ? rs.color : 'var(--border)', color: inviteForm.rol === r.key ? rs.color : 'var(--muted)', transition: 'all 0.2s' }}>
+                              {r.label}
+                            </motion.button>
+                          )
+                        })}
+                      </div>
+                      <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>{EQUIPO_ROLES.find(r => r.key === inviteForm.rol)?.desc}</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <motion.button onClick={() => setShowInvitar(false)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        style={{ padding: '11px 22px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, cursor: 'pointer' }}>
+                        Cancelar
+                      </motion.button>
+                      <motion.button onClick={handleInvitar} disabled={savingInvite} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        style={{ padding: '11px 28px', borderRadius: 12, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: savingInvite ? 'not-allowed' : 'pointer', opacity: savingInvite ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                        {savingInvite ? (
+                          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }} />
+                        ) : <PlusIcon />}
+                        {savingInvite ? 'Enviando...' : 'Invitar'}
+                      </motion.button>
+                    </div>
+                  </GlowingCard>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Lista usuarios */}
+            <GlowingCard className="p-6 sm:p-8">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Miembros del equipo</h3>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                  {equipoUsuarios.length} usuarios
+                </span>
+              </div>
+              {loadingEquipo ? (
+                <Skeleton count={4} h={64} />
+              ) : equipoUsuarios.length === 0 ? (
+                <p style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)', fontSize: 14 }}>Sin usuarios en esta clínica.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <AnimatePresence>
+                    {equipoUsuarios.map((u, i) => {
+                      const rs = EQUIPO_ROL_STYLE[u.rol as EquipoRol] || EQUIPO_ROL_STYLE.viewer
+                      return (
+                        <motion.div key={u.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12, height: 0 }} transition={{ delay: i * 0.04 }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${rs.color}40, ${rs.color}20)`, border: `1px solid ${rs.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: rs.color, flexShrink: 0 }}>
+                            {(u.nombre || u.email || 'U')[0].toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 140 }}>
+                            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{u.nombre || '—'}</p>
+                            <p style={{ fontSize: 12, color: 'var(--muted)' }}>{u.email}</p>
+                          </div>
+                          {esAdmin && u.id !== user?.id ? (
+                            <select value={u.rol} onChange={e => handleCambiarRol(u.id, e.target.value as EquipoRol)}
+                              style={{ padding: '7px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: rs.bg, border: `1px solid ${rs.border}`, color: rs.color, cursor: 'pointer', outline: 'none' }}>
+                              {EQUIPO_ROLES.map(r => <option key={r.key} value={r.key}>{r.label}</option>)}
+                            </select>
+                          ) : (
+                            <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 20, background: rs.bg, color: rs.color, border: `1px solid ${rs.border}` }}>
+                              {EQUIPO_ROLES.find(r => r.key === u.rol)?.label || u.rol}
+                            </span>
+                          )}
+                          {esAdmin && u.id !== user?.id && (
+                            <motion.button onClick={() => setConfirmDesactivar({ open: true, id: u.id, nombre: u.nombre || u.email })}
+                              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
+                              <UserMinusIcon />
+                            </motion.button>
+                          )}
+                        </motion.div>
+                      )
+                    })}
+                  </AnimatePresence>
+                </div>
+              )}
+            </GlowingCard>
+
+            <ConfirmModal
+              open={confirmDesactivar.open}
+              title="Desactivar usuario"
+              message={`¿Desactivar a ${confirmDesactivar.nombre}? Perderá el acceso a la plataforma.`}
+              confirmLabel="Desactivar"
+              onConfirm={() => handleDesactivar(confirmDesactivar.id)}
+              onCancel={() => setConfirmDesactivar({ open: false, id: 0, nombre: '' })}
             />
           </motion.div>
         )

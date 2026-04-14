@@ -60,6 +60,7 @@ export default function ReportesPage() {
   const [medicos, setMedicos] = useState<any[]>([])
   const [kpiData, setKpiData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [exportandoGenerador, setExportandoGenerador] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -132,28 +133,118 @@ export default function ReportesPage() {
   const maxAlertas = rankingMedicos.length > 0 ? Math.max(...rankingMedicos.map(m => m.alertas), 1) : 1
 
   const exportarCSV = () => {
+    // Build medico lookup map
+    const medicoMap: Record<number, string> = {}
+    medicos.forEach((m: any) => {
+      medicoMap[m.id] = `${m.nombre} ${m.apellido}`.trim() || `Dr. #${m.id}`
+    })
+
+    const clinicaNombre = useAuthStore.getState().activeClinicaNombre || user?.clinica_nombre || ''
+    const sedeNombre = selectedSede
+      ? (medicos.find((m: any) => m.sede === selectedSede)?.sede_nombre || `Sede ${selectedSede}`)
+      : 'Todas las sedes'
+
     const filas = [
-      ['Fecha', 'KPI', 'Severidad', 'Estado', 'Valor detectado', 'Valor esperado', 'Desviación %', 'Método', 'Mensaje'],
-      ...alertas.map(a => [
-        new Date(a.creada_en).toLocaleString('es-CR'),
-        a.tipo_kpi.replace(/_/g, ' '),
-        a.severidad,
-        a.estado,
-        a.valor_detectado,
-        a.valor_esperado,
-        a.desviacion,
-        a.metodo_deteccion,
-        `"${(a.mensaje || '').replace(/"/g, '""')}"`,
-      ])
+      [
+        'Fecha', 'Clínica', 'Sede', 'KPI', 'Médico',
+        'Severidad', 'Estado',
+        'Valor detectado', 'Valor esperado', 'Desviación %',
+        'Método detección', 'Mensaje', 'Recomendación',
+      ],
+      ...alertas.map(a => {
+        const sedeName = a.sede_nombre || (a.sede ? `Sede ${a.sede}` : 'General')
+        const medicoName = a.medico ? (medicoMap[a.medico] || `Dr. #${a.medico}`) : '—'
+        return [
+          new Date(a.creada_en).toLocaleString('es-CR'),
+          clinicaNombre,
+          sedeName,
+          a.tipo_kpi.replace(/_/g, ' '),
+          medicoName,
+          a.severidad,
+          a.estado,
+          a.valor_detectado,
+          a.valor_esperado,
+          a.desviacion,
+          a.metodo_deteccion,
+          `"${(a.mensaje || '').replace(/"/g, '""')}"`,
+          `"${(a.recomendacion || '').replace(/"/g, '""')}"`,
+        ]
+      })
     ]
     const csv = filas.map(r => r.join(',')).join('\n')
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `vigia-alertas-${rango}d-${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
+    const link = document.createElement('a')
+    link.href = url
+    const sedeSuffix = selectedSede ? `-sede${selectedSede}` : ''
+    link.download = `vigia-alertas-${rango}d${sedeSuffix}-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
     URL.revokeObjectURL(url)
+  }
+
+  const exportarGenerador = async () => {
+    setExportandoGenerador(true)
+    try {
+      const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
+      const res = await api.get(`/kpis/exportar/?clinica=${clinicaId}&horas=${rango * 24}${sedeParam}`)
+      const datos: any[] = res.data
+
+      if (!datos.length) {
+        toast.error('Sin datos', 'No hay registros del generador para ese período.')
+        return
+      }
+
+      const filas = [
+        [
+          'Fecha', 'Tipo KPI', 'Sede', 'Valor', 'Período',
+          // Estadístico
+          'Estadístico — ¿Anomalía?', 'Estadístico — Valor esperado', 'Estadístico — Desviación %',
+          // Prophet
+          'Prophet — ¿Anomalía?', 'Prophet — Valor esperado', 'Prophet — Desviación %',
+          'Prophet — yhat_lower', 'Prophet — yhat_upper',
+          // PyOD
+          'PyOD — ¿Anomalía?', 'PyOD — Valor esperado', 'PyOD — Desviación %', 'PyOD — Score',
+        ],
+        ...datos.map(d => {
+          const stat = d.deteccion?.estadistico || {}
+          const prop = d.deteccion?.prophet || {}
+          const pyod = d.deteccion?.pyod || {}
+          return [
+            new Date(d.fecha_hora).toLocaleString('es-CR'),
+            d.tipo_kpi.replace(/_/g, ' '),
+            d.sede_nombre,
+            d.valor,
+            d.periodo,
+            stat.es_anomalia ? 'Sí' : 'No',
+            stat.valor_esperado ?? '',
+            stat.desviacion_pct ?? '',
+            prop.es_anomalia != null ? (prop.es_anomalia ? 'Sí' : 'No') : 'N/D',
+            prop.valor_esperado ?? '',
+            prop.desviacion ?? '',
+            prop.yhat_lower ?? '',
+            prop.yhat_upper ?? '',
+            pyod.es_anomalia != null ? (pyod.es_anomalia ? 'Sí' : 'No') : 'N/D',
+            pyod.valor_esperado ?? '',
+            pyod.desviacion ?? '',
+            pyod.score ?? '',
+          ]
+        })
+      ]
+
+      const csv = filas.map(r => r.join(',')).join('\n')
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      const sedeSuffix = selectedSede ? `-sede${selectedSede}` : ''
+      link.download = `vigia-generador-${rango}d${sedeSuffix}-${new Date().toISOString().slice(0, 10)}.csv`
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error('Error al exportar', 'No se pudieron obtener los datos del generador.')
+    } finally {
+      setExportandoGenerador(false)
+    }
   }
 
   return (
@@ -205,7 +296,7 @@ export default function ReportesPage() {
               </motion.button>
             ))}
           </div>
-          {/* Exportar CSV */}
+          {/* Exportar alertas CSV */}
           <motion.button
             onClick={exportarCSV}
             whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -216,7 +307,29 @@ export default function ReportesPage() {
               border: '1px solid rgba(160,196,181,0.3)', color: '#A0C4B5', cursor: 'pointer',
             }}
           >
-            <DownloadIcon /> Exportar CSV
+            <DownloadIcon /> Alertas CSV
+          </motion.button>
+          {/* Exportar datos del generador con scores */}
+          <motion.button
+            onClick={exportarGenerador}
+            disabled={exportandoGenerador}
+            whileHover={{ scale: exportandoGenerador ? 1 : 1.03 }}
+            whileTap={{ scale: exportandoGenerador ? 1 : 0.97 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px',
+              borderRadius: 12, fontSize: 13, fontWeight: 600,
+              background: 'rgba(155,142,196,0.1)', backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(155,142,196,0.3)', color: 'var(--primary)',
+              cursor: exportandoGenerador ? 'not-allowed' : 'pointer',
+              opacity: exportandoGenerador ? 0.6 : 1,
+            }}
+          >
+            {exportandoGenerador
+              ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  style={{ width: 14, height: 14, border: '2px solid rgba(155,142,196,0.3)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
+              : <DownloadIcon />
+            }
+            {exportandoGenerador ? 'Calculando...' : 'Generador + IA'}
           </motion.button>
           {/* Imprimir */}
           <motion.button

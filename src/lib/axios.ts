@@ -47,11 +47,17 @@ api.interceptors.response.use(
 
     const status = error.response.status
 
-    // 401 - Token refresh
+    // 401 - Token refresh (only when authenticated — skip if already logged out)
     if (status === 401 && !original._retry) {
+      const { refreshToken, isAuthenticated } = useAuthStore.getState()
+
+      // If not authenticated or no refresh token, bail silently — don't loop
+      if (!isAuthenticated || !refreshToken) {
+        return Promise.reject(error)
+      }
+
       original._retry = true
       try {
-        const refreshToken = useAuthStore.getState().refreshToken
         const res = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh/`,
           { refresh: refreshToken }
@@ -60,7 +66,7 @@ api.interceptors.response.use(
         useAuthStore.getState().setAuth(
           useAuthStore.getState().user!,
           newAccess,
-          refreshToken!
+          refreshToken
         )
         original.headers.Authorization = `Bearer ${newAccess}`
         return api(original)

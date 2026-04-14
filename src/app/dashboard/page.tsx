@@ -12,6 +12,7 @@ import CountUp from '../../components/reactbits/CountUp'
 import ThemeToggle from '../../components/ui/ThemeToggle'
 import VigiaLogo from '../../components/ui/VigiaLogo'
 import SedeSelector from '../../components/ui/SedeSelector'
+import ClinicaSwitcher from '../../components/ui/ClinicaSwitcher'
 import { puedeOperar, ROL_LABELS, ROL_COLORS } from '../../lib/permisos'
 
 const kpiLabel: Record<string, string> = {
@@ -606,6 +607,8 @@ interface Medico {
   nombre: string
   apellido: string
   especialidad: string
+  foto_url: string
+  sede_nombre: string | null
 }
 
 function MedicosList({ clinicaId }: { clinicaId: number }) {
@@ -643,20 +646,28 @@ function MedicosList({ clinicaId }: { clinicaId: number }) {
           }}
           whileHover={{ background: 'rgba(155,142,196,0.08)' } as any}
         >
-          <div style={{
-            width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-            background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontSize: 14, fontWeight: 700,
-          }}>
-            {m.nombre[0]}{m.apellido[0]}
-          </div>
+          {m.foto_url ? (
+            <img
+              src={m.foto_url}
+              alt={`${m.nombre} ${m.apellido}`}
+              style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, objectFit: 'cover', border: '2px solid rgba(155,142,196,0.25)' }}
+            />
+          ) : (
+            <div style={{
+              width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+              background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontSize: 14, fontWeight: 700,
+            }}>
+              {m.nombre[0]}{m.apellido[0]}
+            </div>
+          )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               Dr. {m.nombre} {m.apellido}
             </p>
             <p style={{ fontSize: 13, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {m.especialidad}
+              {m.especialidad}{m.sede_nombre ? ` · ${m.sede_nombre}` : ''}
             </p>
           </div>
           <span style={{ color: 'var(--muted)', flexShrink: 0 }}><ArrowRightIcon /></span>
@@ -688,17 +699,29 @@ export default function DashboardPage() {
   const toast = useToastStore()
   const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const puedeEjecutar = puedeOperar(user?.rol)
+  const isSuperadmin = user?.rol === 'superadmin'
 
   useEffect(() => {
     fetchAlertas()
     fetchHistorial()
     fetchNotifs()
-  }, [selectedSede])
+  }, [selectedSede, clinicaId])
+
+  useEffect(() => {
+    if (!user?.avatar) {
+      api.get('/auth/me/').then(res => {
+        if (res.data.avatar) {
+          useAuthStore.setState(s => ({ user: s.user ? { ...s.user, avatar: res.data.avatar } : null }))
+        }
+      }).catch(() => {})
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const fetchAlertas = async () => {
     try {
-      const params = `/alertas/?estado=activa${selectedSede ? `&sede=${selectedSede}` : ''}`
-      const res = await api.get(params)
+      const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
+      const res = await api.get(`/alertas/?clinica=${clinicaId}&estado=activa${sedeParam}`)
       setAlertas(res.data.results || res.data)
     } catch {
       toast.error('Error al cargar alertas', 'No se pudieron obtener las alertas activas.')
@@ -707,8 +730,8 @@ export default function DashboardPage() {
 
   const fetchHistorial = async () => {
     try {
-      const params = `/alertas/?${selectedSede ? `sede=${selectedSede}` : ''}`
-      const res = await api.get(params)
+      const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
+      const res = await api.get(`/alertas/?clinica=${clinicaId}${sedeParam}`)
       setHistorial(res.data.results || res.data)
     } catch {
       toast.error('Error al cargar historial', 'No se pudo obtener el historial de alertas.')
@@ -717,7 +740,7 @@ export default function DashboardPage() {
 
   const fetchNotifs = async () => {
     try {
-      const res = await api.get('/notificaciones/?estado=pendiente')
+      const res = await api.get(`/notificaciones/?clinica=${clinicaId}&estado=pendiente`)
       setNotifPendientes((res.data.results || res.data).length)
     } catch {
       toast.warning('Notificaciones no disponibles', 'No se pudo verificar notificaciones pendientes.')
@@ -846,23 +869,33 @@ export default function DashboardPage() {
             >
               <VigiaLogo size={68} />
             </motion.div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
-                {user?.rol && (() => {
-                  const rc = ROL_COLORS[user.rol] ?? ROL_COLORS.viewer
-                  return (
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}>
-                      {ROL_LABELS[user.rol] ?? user.rol}
-                    </span>
-                  )
-                })()}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.nombre} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(155,142,196,0.4)', flexShrink: 0 }} />
+              ) : (
+                <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: 'rgba(155,142,196,0.18)', border: '2px solid rgba(155,142,196,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: 'var(--primary)' }}>
+                  {user?.nombre?.charAt(0)?.toUpperCase() ?? '?'}
+                </div>
+              )}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
+                  {user?.rol && (() => {
+                    const rc = ROL_COLORS[user.rol] ?? ROL_COLORS.viewer
+                    return (
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: rc.bg, color: rc.text, border: `1px solid ${rc.border}` }}>
+                        {ROL_LABELS[user.rol] ?? user.rol}
+                      </span>
+                    )
+                  })()}
+                </div>
+                <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>{user?.nombre} · {(useAuthStore.getState().activeClinicaNombre || user?.clinica_nombre) || 'Panel de control'}</p>
               </div>
-              <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>{user?.nombre} · {user?.clinica_nombre || 'Panel de control'}</p>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {isSuperadmin && <ClinicaSwitcher />}
             <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} />
             {puedeEjecutar && (
             <motion.button onClick={ejecutarMotor} disabled={motorLoading}
@@ -899,14 +932,13 @@ export default function DashboardPage() {
               KPIs
             </motion.button>
 
-            <motion.button onClick={() => router.push('/dashboard/correos')}
+            <motion.button onClick={() => router.push('/dashboard/reportes')}
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 15, fontWeight: 500, cursor: 'pointer' }}>
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><polyline points="2 10 6 6 10 10 14 6 18 10"/>
               </svg>
-              Correos
+              Reportes
             </motion.button>
 
             <motion.button onClick={() => router.push('/dashboard/pacientes')}
@@ -946,6 +978,26 @@ export default function DashboardPage() {
             </div>
           </div>
         </motion.div>
+
+        {/* MEDICO SCOPE BANNER */}
+        {user?.rol === 'medico' && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              marginBottom: 28, padding: '14px 22px', borderRadius: 16,
+              background: 'rgba(155,142,196,0.1)', border: '1px solid rgba(155,142,196,0.3)',
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}
+          >
+            <svg width="16" height="16" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 500 }}>
+              Vista médico — alertas y KPIs de{user.sede_nombre ? ` Sede ${user.sede_nombre}` : ' tu clínica'} · citas y pacientes solo los tuyos
+            </span>
+          </motion.div>
+        )}
 
         {/* STATS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 48 }}>
@@ -1279,9 +1331,13 @@ export default function DashboardPage() {
               whileTap={{ scale: 0.98 }}
               style={{ padding: '24px', borderRadius: 24, background: 'linear-gradient(135deg, rgba(155,142,196,0.15), rgba(124,111,191,0.08))', border: '1px solid rgba(155,142,196,0.25)', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-                <div style={{ width: 52, height: 52, borderRadius: 16, flexShrink: 0, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 18, fontWeight: 700 }}>
-                  {user?.nombre?.[0] || 'U'}
-                </div>
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.nombre} style={{ width: 52, height: 52, borderRadius: 16, flexShrink: 0, objectFit: 'cover', border: '2px solid rgba(155,142,196,0.35)' }} />
+                ) : (
+                  <div style={{ width: 52, height: 52, borderRadius: 16, flexShrink: 0, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 18, fontWeight: 700 }}>
+                    {user?.nombre?.[0] || 'U'}
+                  </div>
+                )}
                 <div style={{ minWidth: 0 }}>
                   <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.nombre || 'Usuario'}</p>
                   <p style={{ fontSize: 13, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</p>

@@ -59,6 +59,12 @@ const TrashIcon = () => (
     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
   </svg>
 )
+const EditIcon = () => (
+  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+)
 
 export default function CitasPage() {
   const [citas, setCitas] = useState<Cita[]>([])
@@ -72,6 +78,9 @@ export default function CitasPage() {
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [filtroMedico, setFiltroMedico] = useState('todos')
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number }>({ open: false, id: 0 })
+  const [editModal, setEditModal] = useState<{ open: boolean; cita: Cita | null }>({ open: false, cita: null })
+  const [editEstado, setEditEstado] = useState('')
+  const [mostrarCanceladas, setMostrarCanceladas] = useState(false)
   const [form, setForm] = useState({
     paciente: '', medico: '', fecha_hora_agendada: '', estado: 'agendada',
   })
@@ -124,13 +133,30 @@ export default function CitasPage() {
 
   const handleEliminar = async () => {
     try {
-      await api.delete(`/citas/${confirmDelete.id}/`)
+      await api.patch(`/citas/${confirmDelete.id}/`, { estado: 'cancelada' })
       await fetchData()
-      toast.success('Cita eliminada', 'La cita fue eliminada correctamente.')
+      toast.success('Cita cancelada', 'La cita fue cancelada correctamente.')
     } catch {
-      toast.error('Error al eliminar', 'No se pudo eliminar la cita.')
+      toast.error('Error al cancelar', 'No se pudo cancelar la cita.')
     }
     setConfirmDelete({ open: false, id: 0 })
+  }
+
+  const abrirEditarCita = (c: Cita) => {
+    setEditModal({ open: true, cita: c })
+    setEditEstado(c.estado)
+  }
+
+  const handleGuardarEstado = async () => {
+    if (!editModal.cita) return
+    try {
+      await api.patch(`/citas/${editModal.cita.id}/`, { estado: editEstado })
+      await fetchData()
+      setEditModal({ open: false, cita: null })
+      toast.success('Estado actualizado', 'El estado de la cita fue actualizado.')
+    } catch {
+      toast.error('Error', 'No se pudo actualizar el estado.')
+    }
   }
 
   const citasFiltradas = citas.filter(c => {
@@ -138,7 +164,8 @@ export default function CitasPage() {
     const coincide = `${c.paciente_nombre} ${c.medico_nombre}`.toLowerCase().includes(q)
     const estado = filtroEstado === 'todos' || c.estado === filtroEstado
     const medico = filtroMedico === 'todos' || String(c.medico) === filtroMedico
-    return coincide && estado && medico
+    const canceladaOk = mostrarCanceladas || c.estado !== 'cancelada'
+    return coincide && estado && medico && canceladaOk
   })
 
   const stats = [
@@ -230,6 +257,19 @@ export default function CitasPage() {
                   })}
                 </div>
 
+                {/* Toggle canceladas */}
+                <motion.button onClick={() => setMostrarCanceladas(v => !v)}
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  style={{
+                    padding: '9px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: 'none',
+                    background: mostrarCanceladas ? 'rgba(232,160,196,0.15)' : 'rgba(255,255,255,0.03)',
+                    color: mostrarCanceladas ? '#E8A0C4' : 'var(--muted)',
+                    borderWidth: 1, borderStyle: 'solid',
+                    borderColor: mostrarCanceladas ? 'rgba(232,160,196,0.4)' : 'var(--border)',
+                  }}>
+                  {mostrarCanceladas ? 'Ocultar canceladas' : 'Mostrar canceladas'}
+                </motion.button>
+
                 {/* Filtro médico */}
                 <select value={filtroMedico} onChange={e => setFiltroMedico(e.target.value)}
                   style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 13, outline: 'none', cursor: 'pointer' }}>
@@ -310,12 +350,21 @@ export default function CitasPage() {
                               {cfg.label}
                             </span>
 
-                            {/* Eliminar */}
-                            <motion.button onClick={() => setConfirmDelete({ open: true, id: c.id })}
+                            {/* Editar estado */}
+                            <motion.button onClick={() => abrirEditarCita(c)}
                               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(232,160,196,0.08)', border: '1px solid rgba(232,160,196,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
-                              <TrashIcon />
+                              style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(155,142,196,0.08)', border: '1px solid rgba(155,142,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', flexShrink: 0 }}>
+                              <EditIcon />
                             </motion.button>
+
+                            {/* Cancelar cita */}
+                            {c.estado !== 'cancelada' && (
+                              <motion.button onClick={() => setConfirmDelete({ open: true, id: c.id })}
+                                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                                style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(232,160,196,0.08)', border: '1px solid rgba(232,160,196,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
+                                <TrashIcon />
+                              </motion.button>
+                            )}
                           </motion.div>
                         )
                       })}
@@ -470,11 +519,47 @@ export default function CitasPage() {
         )}
       </AnimatePresence>
 
+      {/* MODAL EDITAR ESTADO */}
+      <AnimatePresence>
+        {editModal.open && editModal.cita && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(13,11,20,0.85)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+            onClick={e => { if (e.target === e.currentTarget) setEditModal({ open: false, cita: null }) }}>
+            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              style={{ width: '100%', maxWidth: 400, background: 'var(--card)', backdropFilter: 'blur(24px)', border: '1px solid var(--border)', borderRadius: 24, padding: 32, boxShadow: '0 30px 60px rgba(0,0,0,0.5)' }}>
+              <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Editar cita</h2>
+              <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>
+                {editModal.cita.paciente_nombre} → {editModal.cita.medico_nombre}
+              </p>
+              <div>
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Estado</p>
+                <select value={editEstado} onChange={e => setEditEstado(e.target.value)}
+                  style={{ width: '100%', padding: '12px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, outline: 'none' }}>
+                  {Object.entries(estadoConfig).map(([key, cfg]) => (
+                    <option key={key} value={key}>{cfg.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                <motion.button onClick={() => setEditModal({ open: false, cita: null })} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  style={{ flex: 1, padding: '13px 0', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                  Cancelar
+                </motion.button>
+                <motion.button onClick={handleGuardarEstado} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  style={{ flex: 2, padding: '13px 0', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+                  Guardar cambios
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <ConfirmModal
         open={confirmDelete.open}
-        title="Eliminar cita"
-        message="¿Estás seguro de que deseas eliminar esta cita? Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
+        title="Cancelar cita"
+        message="¿Estás seguro de que deseas cancelar esta cita? Se marcará como cancelada."
+        confirmLabel="Cancelar cita"
         variant="danger"
         onConfirm={handleEliminar}
         onCancel={() => setConfirmDelete({ open: false, id: 0 })}

@@ -10,6 +10,8 @@ interface User {
   clinica_nombre: string | null
   sede_id: number | null
   sede_nombre: string | null
+  avatar?: string
+  medico_id?: number | null
 }
 
 interface AuthState {

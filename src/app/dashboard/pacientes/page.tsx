@@ -22,6 +22,7 @@ interface Paciente {
   clinica: number
   sede: number | null
   sede_nombre: string | null
+  activo: boolean
 }
 
 interface Sede { id: number; nombre: string }
@@ -87,6 +88,7 @@ export default function PacientesPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number; name: string }>({ open: false, id: 0, name: '' })
+  const [mostrarInactivos, setMostrarInactivos] = useState(false)
   const [form, setForm] = useState({
     nombre: '', apellido: '', telefono: '', email: '', fecha_nacimiento: '',
     sede: '' as string | number,
@@ -98,7 +100,7 @@ export default function PacientesPage() {
   const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
-  useEffect(() => { fetchData() }, [clinicaId, selectedSede])
+  useEffect(() => { fetchData() }, [clinicaId, selectedSede, mostrarInactivos])
   useEffect(() => {
     api.get(`/sedes/?clinica=${clinicaId}`).then(res => setSedes(res.data.results || res.data)).catch(() => {})
   }, [clinicaId])
@@ -106,8 +108,9 @@ export default function PacientesPage() {
   const fetchData = async () => {
     try {
       const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
+      const inactivosParam = mostrarInactivos ? '&inactivos=true' : ''
       const [pacRes, citRes] = await Promise.all([
-        api.get(`/pacientes/?clinica=${clinicaId}${sedeParam}`),
+        api.get(`/pacientes/?clinica=${clinicaId}${sedeParam}${inactivosParam}`),
         api.get(`/citas/?clinica=${clinicaId}${sedeParam}`),
       ])
       const pacs = pacRes.data.results || pacRes.data
@@ -146,7 +149,7 @@ export default function PacientesPage() {
     try {
       const payload = { ...form, clinica: clinicaId, sede: form.sede || null }
       if (editando) {
-        await api.put(`/pacientes/${editando.id}/`, payload)
+        await api.patch(`/pacientes/${editando.id}/`, payload)
       } else {
         await api.post('/pacientes/', payload)
       }
@@ -161,11 +164,11 @@ export default function PacientesPage() {
 
   const handleEliminar = async () => {
     try {
-      await api.delete(`/pacientes/${confirmDelete.id}/`)
+      await api.patch(`/pacientes/${confirmDelete.id}/`, { activo: false })
       await fetchData()
-      toast.success('Paciente eliminado', 'El paciente fue eliminado correctamente.')
+      toast.success('Paciente ocultado', 'El paciente fue desactivado del sistema.')
     } catch {
-      toast.error('Error al eliminar', 'No se pudo eliminar el paciente.')
+      toast.error('Error al desactivar', 'No se pudo desactivar el paciente.')
     }
     setConfirmDelete({ open: false, id: 0, name: '' })
   }
@@ -196,6 +199,14 @@ export default function PacientesPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
+              <motion.button onClick={() => setMostrarInactivos(v => !v)}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none',
+                  background: mostrarInactivos ? 'rgba(232,160,196,0.12)' : 'var(--glass)', backdropFilter: 'blur(20px)',
+                  borderWidth: 1, borderStyle: 'solid', borderColor: mostrarInactivos ? 'rgba(232,160,196,0.4)' : 'var(--border)',
+                  color: mostrarInactivos ? '#E8A0C4' : 'var(--muted)' }}>
+                {mostrarInactivos ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+              </motion.button>
               <motion.button onClick={abrirCrear} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
                 <PlusIcon /> Agregar paciente
@@ -317,17 +328,28 @@ export default function PacientesPage() {
                         </div>
 
                         {/* Acciones */}
-                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                        <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                          {!p.activo && (
+                            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'rgba(232,160,196,0.12)', color: '#E8A0C4', border: '1px solid rgba(232,160,196,0.3)' }}>Inactivo</span>
+                          )}
                           <motion.button onClick={() => abrirEditar(p)}
                             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                             style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(155,142,196,0.12)', border: '1px solid rgba(155,142,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
                             <EditIcon />
                           </motion.button>
-                          <motion.button onClick={() => setConfirmDelete({ open: true, id: p.id, name: `${p.nombre} ${p.apellido}` })}
-                            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                            style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)' }}>
-                            <TrashIcon />
-                          </motion.button>
+                          {p.activo ? (
+                            <motion.button onClick={() => setConfirmDelete({ open: true, id: p.id, name: `${p.nombre} ${p.apellido}` })}
+                              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)' }}>
+                              <TrashIcon />
+                            </motion.button>
+                          ) : (
+                            <motion.button onClick={async () => { await api.patch(`/pacientes/${p.id}/`, { activo: true }); fetchData() }}
+                              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(160,196,181,0.12)', border: '1px solid rgba(160,196,181,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#A0C4B5', fontSize: 16, fontWeight: 700 }}>
+                              ↩
+                            </motion.button>
+                          )}
                         </div>
                       </motion.div>
                     )
@@ -418,10 +440,10 @@ export default function PacientesPage() {
 
       <ConfirmModal
         open={confirmDelete.open}
-        title="Eliminar paciente"
-        message={`¿Estás seguro de que deseas eliminar a ${confirmDelete.name}? Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar"
-        variant="danger"
+        title="Desactivar paciente"
+        message={`¿Deseas desactivar a ${confirmDelete.name}? El paciente dejará de aparecer en el sistema (puedes reactivarlo después).`}
+        confirmLabel="Desactivar"
+        variant="warning"
         onConfirm={handleEliminar}
         onCancel={() => setConfirmDelete({ open: false, id: 0, name: '' })}
       />

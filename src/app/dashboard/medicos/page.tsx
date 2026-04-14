@@ -38,11 +38,6 @@ const especialidades = [
 
 const colores = ['#9B8EC4','#E8A0C4','#A0C4B5','#C4B5E8','#7C6FBF','#BBA8E8','#A8C4A0','#E8C4A0']
 
-const PlusIcon = () => (
-  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-)
 const EditIcon = () => (
   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -121,9 +116,7 @@ export default function MedicosPage() {
     setFotoPreview('')
   }
 
-  const abrirCrear = () => { resetForm(); setEditando(null); setError(''); setShowModal(true) }
-
-  const abrirEditar = (m: Medico) => {
+const abrirEditar = (m: Medico) => {
     setEditando(m)
     setForm({
       nombre: m.nombre, apellido: m.apellido, especialidad: m.especialidad,
@@ -152,18 +145,27 @@ export default function MedicosPage() {
     if (!form.nombre || !form.apellido) return setError('Nombre y apellido son requeridos.')
     setSaving(true); setError('')
     try {
-      const payload = { ...form, clinica: clinicaId, activo: true, sede: form.sede || null }
+      const payload = {
+        ...form,
+        clinica: clinicaId,
+        activo: true,
+        sede: form.sede || null,
+        fecha_ingreso: form.fecha_ingreso || null,
+        email: form.email || '',
+      }
       if (editando) {
-        await api.put(`/medicos/${editando.id}/`, payload)
+        await api.patch(`/medicos/${editando.id}/`, payload)
       } else {
         await api.post('/medicos/', payload)
       }
       await fetchMedicos()
       setShowModal(false); resetForm(); setEditando(null)
       toast.success(editando ? 'Médico actualizado' : 'Médico creado', editando ? 'Los datos del médico fueron actualizados.' : 'El médico fue registrado exitosamente.')
-    } catch {
-      setError('Error al guardar. Verifica los datos.')
-      toast.error('Error al guardar', 'No se pudo guardar el médico. Verifica los datos ingresados.')
+    } catch (err: any) {
+      const data = err?.response?.data
+      const msg = data ? Object.values(data).flat().join(' ') : 'Error al guardar. Verifica los datos.'
+      setError(msg)
+      toast.error('Error al guardar', msg)
     } finally { setSaving(false) }
   }
 
@@ -205,10 +207,6 @@ export default function MedicosPage() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
-              <motion.button onClick={abrirCrear} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
-                <PlusIcon /> Agregar médico
-              </motion.button>
             </div>
           </div>
         </FadeContent>
@@ -268,11 +266,7 @@ export default function MedicosPage() {
         ) : medicosFiltrados.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <p className="font-display" style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>Sin médicos</p>
-            <p style={{ fontSize: 15, color: 'var(--muted)', marginBottom: 24 }}>Agrega el primer médico a tu clínica</p>
-            <motion.button onClick={abrirCrear} whileHover={{ scale: 1.03 }}
-              style={{ padding: '12px 28px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', border: 'none', cursor: 'pointer', fontSize: 15, fontWeight: 600 }}>
-              Agregar médico
-            </motion.button>
+            <p style={{ fontSize: 15, color: 'var(--muted)' }}>Los médicos aparecen aquí una vez que su solicitud de acceso es aprobada.</p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>

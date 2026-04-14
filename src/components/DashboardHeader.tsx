@@ -1,120 +1,14 @@
 'use client'
 import { useRouter, usePathname } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 import { useAuthStore } from '../store/auth'
 import { useToastStore } from '../store/toast'
 import api from '../lib/axios'
 import VigiaLogo from './ui/VigiaLogo'
 import ThemeToggle from './ui/ThemeToggle'
+import ClinicaSwitcher from './ui/ClinicaSwitcher'
 import { NAV_PERMISOS, ROL_LABELS, ROL_COLORS } from '../lib/permisos'
-
-interface ClinicaOption { id: number; nombre: string }
-
-function ClinicaSwitcher() {
-  const { activeClinicaId, activeClinicaNombre, setActiveClinica } = useAuthStore()
-  const [clinicas, setClinicas] = useState<ClinicaOption[]>([])
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    api.get('/clinicas/').then(r => {
-      const data = r.data.results ?? r.data
-      setClinicas(data.map((c: any) => ({ id: c.id, nombre: c.nombre })))
-    }).catch(() => {})
-  }, [])
-
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const ChevronIcon = () => (
-    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-      <polyline points={open ? '18 15 12 9 6 15' : '6 9 12 15 18 9'} />
-    </svg>
-  )
-
-  return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <motion.button
-        onClick={() => setOpen(o => !o)}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '8px 14px', borderRadius: 12, fontSize: 13, fontWeight: 600,
-          cursor: 'pointer',
-          background: 'rgba(232,160,100,0.12)',
-          borderWidth: 1, borderStyle: 'solid', borderColor: 'rgba(232,160,100,0.35)',
-          color: '#E8A064',
-        }}
-      >
-        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-        {activeClinicaNombre ?? 'Seleccionar clínica'}
-        <ChevronIcon />
-      </motion.button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-              minWidth: 220, borderRadius: 16, zIndex: 999,
-              background: 'var(--glass)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(232,160,100,0.25)',
-              boxShadow: '0 16px 48px rgba(0,0,0,0.3)',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ padding: '8px 12px 6px', borderBottom: '1px solid var(--border)' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Cambiar clínica
-              </p>
-            </div>
-            <div style={{ padding: 6, maxHeight: 280, overflowY: 'auto' }}>
-              {clinicas.length === 0 ? (
-                <p style={{ padding: '10px 12px', fontSize: 13, color: 'var(--muted)' }}>Cargando...</p>
-              ) : clinicas.map(c => (
-                <motion.button
-                  key={c.id}
-                  onClick={() => { setActiveClinica(c.id, c.nombre); setOpen(false) }}
-                  whileHover={{ background: 'rgba(232,160,100,0.1)' }}
-                  style={{
-                    width: '100%', textAlign: 'left', padding: '10px 14px', borderRadius: 10,
-                    fontSize: 13, fontWeight: c.id === activeClinicaId ? 700 : 500,
-                    cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: 10,
-                    background: c.id === activeClinicaId ? 'rgba(232,160,100,0.12)' : 'transparent',
-                    color: c.id === activeClinicaId ? '#E8A064' : 'var(--text)',
-                  }}
-                >
-                  {c.id === activeClinicaId && (
-                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
-                      <polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                  {c.id !== activeClinicaId && <span style={{ width: 12 }} />}
-                  {c.nombre}
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
 
 const LogoutIcon = () => (
   <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -205,25 +99,6 @@ const navItems = [
     ),
   },
   {
-    path: '/dashboard/equipo',
-    label: 'Equipo',
-    icon: (
-      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    ),
-  },
-  {
-    path: '/dashboard/correos',
-    label: 'Correos',
-    icon: (
-      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-        <polyline points="22,6 12,13 2,6"/>
-      </svg>
-    ),
-  },
-  {
     path: '/dashboard/configuracion',
     label: 'Config',
     icon: (
@@ -240,6 +115,18 @@ export default function DashboardHeader() {
   const pathname = usePathname()
   const { user, clearAuth, activeClinicaNombre } = useAuthStore()
   const toast = useToastStore()
+
+  // Refresh user data (including avatar) from server on mount
+  useEffect(() => {
+    if (!user?.avatar) {
+      api.get('/auth/me/').then(res => {
+        if (res.data.avatar) {
+          useAuthStore.setState(s => ({ user: s.user ? { ...s.user, avatar: res.data.avatar } : null }))
+        }
+      }).catch(() => {})
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -289,20 +176,38 @@ export default function DashboardHeader() {
           animate={{ filter: ['drop-shadow(0 0 8px rgba(155,142,196,0.3))', 'drop-shadow(0 0 20px rgba(155,142,196,0.6))', 'drop-shadow(0 0 8px rgba(155,142,196,0.3))'] }}
           transition={{ duration: 3, repeat: Infinity }}
         >
-          <VigiaLogo size={48} />
+          <VigiaLogo size={56} />
         </motion.div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <p className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
-            <span style={{
-              fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
-              background: rolColor.bg, color: rolColor.text, border: `1px solid ${rolColor.border}`,
-              letterSpacing: '0.02em',
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {user?.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user.nombre}
+              style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(155,142,196,0.4)', flexShrink: 0 }}
+            />
+          ) : (
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(155,142,196,0.18)', border: '2px solid rgba(155,142,196,0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 15, fontWeight: 700, color: 'var(--primary)',
             }}>
-              {rolLabel}
-            </span>
+              {user?.nombre?.charAt(0)?.toUpperCase() ?? '?'}
+            </div>
+          )}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <p className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>Vigía</p>
+              <span style={{
+                fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+                background: rolColor.bg, color: rolColor.text, border: `1px solid ${rolColor.border}`,
+                letterSpacing: '0.02em',
+              }}>
+                {rolLabel}
+              </span>
+            </div>
+            <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 2 }}>{user?.nombre} · {activeClinicaNombre || user?.clinica_nombre || 'Panel de control'}</p>
           </div>
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 1 }}>{user?.nombre} · {activeClinicaNombre || user?.clinica_nombre || 'Panel de control'}</p>
         </div>
       </motion.div>
 
@@ -318,7 +223,7 @@ export default function DashboardHeader() {
               whileTap={{ scale: 0.97 }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                padding: '10px 18px', borderRadius: 14, fontSize: 13, fontWeight: 500,
+                padding: '12px 20px', borderRadius: 14, fontSize: 14, fontWeight: 500,
                 cursor: 'pointer', border: 'none',
                 background: active ? 'rgba(155,142,196,0.15)' : 'var(--glass)',
                 backdropFilter: 'blur(20px)',
@@ -345,10 +250,10 @@ export default function DashboardHeader() {
           whileTap={{ scale: 0.97 }}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            padding: '10px 18px', borderRadius: 14,
+            padding: '12px 20px', borderRadius: 14,
             background: 'var(--glass)', backdropFilter: 'blur(20px)',
             border: '1px solid var(--border)',
-            color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+            color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer',
             boxShadow: 'var(--shadow-sm)',
           }}
         >
