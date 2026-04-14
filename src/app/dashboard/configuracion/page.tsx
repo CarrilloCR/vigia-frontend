@@ -12,6 +12,7 @@ import BlurText from '../../../components/reactbits/BlurText'
 import ToggleSwitch from '../../../components/reactbits/ToggleSwitch'
 import PasswordRequirements, { validatePassword } from '../../../components/ui/PasswordRequirements'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
+import CreditCard3D, { type CardData } from '../../../components/ui/CreditCard3D'
 import type { Clinica, Sede, IntegracionExterna, PlanFacturacion } from '../../../types'
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -420,6 +421,11 @@ export default function ConfiguracionPage() {
   // ─── Facturación state
   const [plan, setPlan] = useState<PlanFacturacion | null>(null)
   const [loadingPlan, setLoadingPlan] = useState(true)
+  const [pagoModal, setPagoModal] = useState(false)
+  const [planElegido, setPlanElegido] = useState<string | null>(null)
+  const [cardData, setCardData] = useState<CardData>({ numero: '', nombre: '', expiry: '', cvv: '' })
+  const [cardFocused, setCardFocused] = useState<string | null>(null)
+  const [procesandoPago, setProcesandoPago] = useState(false)
 
   // ─── Toast helper
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -1908,124 +1914,309 @@ export default function ConfiguracionPage() {
       // ═══════════════════════════════════════════════════════════
       // FACTURACIÓN
       // ═══════════════════════════════════════════════════════════
-      case 'facturacion':
+      case 'facturacion': {
+        const PLANES_DEF = [
+          {
+            key: 'basico', nombre: 'Básico', precio: 49,
+            color: '#7CB5E8', colorAlpha: 'rgba(124,181,232,0.18)',
+            border: 'rgba(124,181,232,0.28)',
+            features: ['1 sede', 'Hasta 5 médicos', 'Alertas críticas (IA)', 'Historial 30 días', 'Soporte por email'],
+          },
+          {
+            key: 'profesional', nombre: 'Profesional', precio: 149, popular: true,
+            color: '#9B8EC4', colorAlpha: 'rgba(155,142,196,0.2)',
+            border: 'rgba(155,142,196,0.42)',
+            features: ['Hasta 3 sedes', 'Hasta 20 médicos', 'IA: alertas alta + crítica', 'Historial 90 días', '1 integración externa', 'Soporte prioritario'],
+          },
+          {
+            key: 'enterprise', nombre: 'Enterprise', precio: 399,
+            color: '#E8C490', colorAlpha: 'rgba(232,196,144,0.13)',
+            border: 'rgba(232,196,144,0.28)',
+            features: ['Sedes ilimitadas', 'Médicos ilimitados', 'IA en todas las alertas', 'Historial 1 año', 'Integraciones ilimitadas', 'Soporte 24/7 dedicado', 'SLA garantizado'],
+          },
+        ]
+
+        const planActualKey = plan?.plan ?? null
+        const estadoBadge = plan
+          ? { activo: { bg: 'rgba(160,196,181,0.12)', color: 'var(--success)', border: 'rgba(160,196,181,0.25)', label: 'Activo' },
+              prueba:  { bg: 'rgba(232,196,144,0.12)', color: '#E8C490',        border: 'rgba(232,196,144,0.25)', label: 'Prueba' },
+              vencido: { bg: 'rgba(232,160,160,0.1)',  color: 'var(--danger)',   border: 'rgba(232,160,160,0.2)',  label: 'Vencido' },
+              cancelado: { bg: 'rgba(160,160,160,0.1)', color: 'var(--muted)',   border: 'rgba(160,160,160,0.15)', label: 'Cancelado' },
+            }[plan.estado as string] ?? { bg: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: 'rgba(155,142,196,0.25)', label: plan.estado }
+          : null
+
+        const formatCard = (val: string) =>
+          val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
+
+        const formatExpiry = (val: string) => {
+          const d = val.replace(/\D/g, '').slice(0, 4)
+          return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d
+        }
+
+        const handlePagar = async () => {
+          if (!planElegido) return
+          setProcesandoPago(true)
+          try {
+            const res = await api.post('/facturacion/crear-sesion/', { plan: planElegido })
+            window.location.href = res.data.checkout_url
+          } catch {
+            toast.error('Error al iniciar el pago', 'Verifica tus datos e inténtalo de nuevo.')
+            setProcesandoPago(false)
+          }
+        }
+
         return (
           <motion.div key="facturacion" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
             <h2 className="font-display" style={sectionTitle}>Facturación</h2>
-            <p style={sectionDesc}>Consulta tu plan actual, historial de facturación y métodos de pago.</p>
+            <p style={sectionDesc}>Elige el plan perfecto para tu clínica. Cancela cuando quieras.</p>
 
-            {loadingPlan ? <Skeleton count={2} h={80} /> : (
+            {loadingPlan ? <Skeleton count={3} h={220} /> : (
               <>
-                {/* Current plan */}
-                <GlowingCard className="p-6 sm:p-8 lg:p-10">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-                    <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
-                      Plan actual
-                    </h3>
-                    {plan && (
-                      <span style={{
-                        fontSize: 12, padding: '5px 16px', borderRadius: 20, fontWeight: 600,
-                        background: plan.estado === 'activo' ? 'rgba(160,196,181,0.12)' : 'rgba(232,160,196,0.1)',
-                        color: plan.estado === 'activo' ? 'var(--success)' : 'var(--danger)',
-                        border: plan.estado === 'activo' ? '1px solid rgba(160,196,181,0.2)' : '1px solid rgba(232,160,196,0.2)',
-                      }}>
-                        {plan.estado === 'activo' ? 'Activo' : plan.estado}
-                      </span>
-                    )}
-                  </div>
-
-                  {plan ? (
-                    <>
-                      <div style={{
-                        padding: '28px', borderRadius: 20, marginBottom: 24,
-                        background: 'linear-gradient(135deg, rgba(155,142,196,0.15), rgba(124,111,191,0.08))',
-                        border: '1px solid rgba(155,142,196,0.3)',
-                      }}>
-                        <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 500 }}>
-                          Tu plan
-                        </p>
-                        <p className="font-display" style={{ fontSize: 32, fontWeight: 800, color: 'var(--text)', marginBottom: 8 }}>
-                          {plan.plan}
-                        </p>
-                        <p style={{ fontSize: 24, fontWeight: 700, color: 'var(--primary)' }}>
-                          {plan.moneda} {plan.monto.toLocaleString()}<span style={{ fontSize: 14, fontWeight: 400, color: 'var(--muted)' }}>/mes</span>
+                {/* ── Plan actual banner ────────────────────── */}
+                {plan && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    style={{ marginBottom: 32, padding: '18px 24px', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary), var(--accent))', flexShrink: 0 }}>
+                        <CreditCardIcon />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <p className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', textTransform: 'capitalize' }}>{plan.plan}</p>
+                          {estadoBadge && (
+                            <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 600, background: estadoBadge.bg, color: estadoBadge.color, border: `1px solid ${estadoBadge.border}` }}>
+                              {estadoBadge.label}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>
+                          {plan.moneda} {Number(plan.monto).toLocaleString()}/mes · Renueva {new Date(plan.fecha_renovacion).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
                       </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                        <div style={{ padding: '16px 20px', borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
-                          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fecha de inicio</p>
-                          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-                            {new Date(plan.fecha_inicio).toLocaleDateString('es', { year: 'numeric', month: 'long', day: 'numeric' })}
-                          </p>
-                        </div>
-                        <div style={{ padding: '16px 20px', borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
-                          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Próxima renovación</p>
-                          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-                            {new Date(plan.fecha_renovacion).toLocaleDateString('es', { year: 'numeric', month: 'long', day: 'numeric' })}
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                      <CreditCardIcon />
-                      <p className="font-display" style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)', marginTop: 16, marginBottom: 8 }}>
-                        Plan gratuito
-                      </p>
-                      <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
-                        Actualmente estás utilizando el plan gratuito. Actualiza para acceder a más funcionalidades.
-                      </p>
-                      <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                        style={{
-                          padding: '13px 32px', borderRadius: 14,
-                          background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                          color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
-                          boxShadow: '0 4px 20px rgba(155,142,196,0.3)',
-                        }}>
-                        Ver planes disponibles
-                      </motion.button>
                     </div>
-                  )}
-                </GlowingCard>
+                    <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                      onClick={() => { setPlanElegido(plan.plan); setPagoModal(true) }}
+                      style={{ padding: '9px 20px', borderRadius: 11, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.25)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                      Cambiar método de pago
+                    </motion.button>
+                  </motion.div>
+                )}
 
-                {/* Usage info */}
-                <div style={{ marginTop: 24 }}>
-                  <GlowingCard className="p-6 sm:p-8 lg:p-10">
-                    <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
-                      Uso del plan
-                    </h3>
-                    {[
-                      { label: 'Análisis ejecutados', used: 45, total: 100 },
-                      { label: 'Correos de notificación', used: emails.length, total: 10 },
-                      { label: 'Integraciones activas', used: integraciones.filter(i => i.estado === 'activa').length, total: 3 },
-                    ].map((item, i) => (
-                      <div key={i} style={{ marginBottom: i < 2 ? 20 : 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <p style={{ fontSize: 14, color: 'var(--text)', fontWeight: 500 }}>{item.label}</p>
-                          <p style={{ fontSize: 13, color: 'var(--muted)' }}>{item.used} / {item.total}</p>
+                {/* ── Plan cards ───────────────────────────── */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, marginBottom: 32 }}>
+                  {PLANES_DEF.map((p, i) => {
+                    const isCurrent = planActualKey === p.key
+                    return (
+                      <motion.div key={p.key}
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+                        style={{ position: 'relative', borderRadius: 22, padding: '28px 24px', background: isCurrent ? p.colorAlpha : 'var(--glass)', backdropFilter: 'blur(20px)', border: `1.5px solid ${isCurrent ? p.border : 'var(--border)'}`, display: 'flex', flexDirection: 'column', gap: 20, overflow: 'hidden', boxShadow: isCurrent ? `0 8px 32px ${p.colorAlpha}` : 'none' }}>
+
+                        {p.popular && (
+                          <div style={{ position: 'absolute', top: 16, right: 16, padding: '4px 12px', borderRadius: 20, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 11, fontWeight: 700, letterSpacing: '0.05em' }}>
+                            MÁS POPULAR
+                          </div>
+                        )}
+                        {isCurrent && (
+                          <div style={{ position: 'absolute', top: 16, right: 16, padding: '4px 12px', borderRadius: 20, background: p.colorAlpha, color: p.color, border: `1px solid ${p.border}`, fontSize: 11, fontWeight: 700 }}>
+                            PLAN ACTUAL
+                          </div>
+                        )}
+
+                        {/* Header */}
+                        <div>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: p.color, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>{p.nombre}</p>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                            <span className="font-display" style={{ fontSize: 42, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>${p.precio}</span>
+                            <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 400 }}>/mes</span>
+                          </div>
                         </div>
-                        <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min((item.used / item.total) * 100, 100)}%` }}
-                            transition={{ duration: 0.8, delay: i * 0.1, ease: 'easeOut' }}
-                            style={{
-                              height: '100%', borderRadius: 3,
-                              background: (item.used / item.total) > 0.8
-                                ? 'linear-gradient(90deg, var(--danger), #e88a8a)'
-                                : 'linear-gradient(90deg, var(--primary), var(--accent))',
-                            }}
-                          />
+
+                        {/* Features */}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          {p.features.map((f, fi) => (
+                            <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{ width: 18, height: 18, borderRadius: '50%', background: `${p.colorAlpha}`, border: `1px solid ${p.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><polyline points="2 8 6 12 14 4" stroke={p.color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                              </div>
+                              <span style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.3 }}>{f}</span>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
-                  </GlowingCard>
+
+                        {/* CTA */}
+                        {p.key === 'enterprise' ? (
+                          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                            style={{ width: '100%', padding: '13px', borderRadius: 13, background: p.colorAlpha, color: p.color, border: `1px solid ${p.border}`, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                            Contactar ventas
+                          </motion.button>
+                        ) : (
+                          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                            onClick={() => { setPlanElegido(p.key); setCardData({ numero: '', nombre: '', expiry: '', cvv: '' }); setPagoModal(true) }}
+                            style={{ width: '100%', padding: '13px', borderRadius: 13, fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none', color: 'white', background: isCurrent ? `linear-gradient(135deg, ${p.color}bb, ${p.color}88)` : p.popular ? 'linear-gradient(135deg, var(--primary), var(--accent))' : `linear-gradient(135deg, ${p.color}99, ${p.color}66)`, boxShadow: p.popular && !isCurrent ? '0 4px 20px rgba(155,142,196,0.35)' : 'none' }}>
+                            {isCurrent ? 'Plan actual' : 'Suscribirse'}
+                          </motion.button>
+                        )}
+                      </motion.div>
+                    )
+                  })}
                 </div>
+
+                {/* ── Usage bars ────────────────────────────── */}
+                <GlowingCard className="p-6">
+                  <h3 className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>Uso del plan</h3>
+                  {[
+                    { label: 'Correos de notificación', used: emails.length, total: plan?.plan === 'basico' ? 3 : plan?.plan === 'profesional' ? 10 : 50 },
+                    { label: 'Integraciones activas', used: integraciones.filter(i => i.estado === 'activa').length, total: plan?.plan === 'basico' ? 0 : plan?.plan === 'profesional' ? 1 : 99 },
+                  ].map((item, i) => (
+                    <div key={i} style={{ marginBottom: i === 0 ? 16 : 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
+                        <p style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{item.label}</p>
+                        <p style={{ fontSize: 12, color: 'var(--muted)' }}>{item.used} / {item.total}</p>
+                      </div>
+                      <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${item.total > 0 ? Math.min((item.used / item.total) * 100, 100) : 0}%` }} transition={{ duration: 0.8, delay: i * 0.1 }}
+                          style={{ height: '100%', borderRadius: 3, background: (item.used / Math.max(item.total,1)) > 0.8 ? 'linear-gradient(90deg, var(--danger), #e88a8a)' : 'linear-gradient(90deg, var(--primary), var(--accent))' }} />
+                      </div>
+                    </div>
+                  ))}
+                </GlowingCard>
               </>
             )}
+
+            {/* ══ PAYMENT MODAL ══════════════════════════════════════ */}
+            <AnimatePresence>
+              {pagoModal && planElegido && (() => {
+                const pd = PLANES_DEF.find(p => p.key === planElegido)!
+                return (
+                  <motion.div key="pago-overlay"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    onClick={(e) => { if (e.target === e.currentTarget) { setPagoModal(false) } }}
+                    style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(6,4,18,0.82)', backdropFilter: 'blur(12px)', padding: '20px' }}>
+
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.93, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 16 }}
+                      transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                      style={{ width: '100%', maxWidth: 880, borderRadius: 28, background: 'var(--bg)', border: '1px solid var(--border)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+
+                      {/* Modal header */}
+                      <div style={{ padding: '22px 28px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${pd.color}55, ${pd.color}33)`, border: `1px solid ${pd.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <CreditCardIcon />
+                          </div>
+                          <div>
+                            <p className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Plan {pd.nombre}</p>
+                            <p style={{ fontSize: 13, color: 'var(--muted)' }}>${pd.precio} USD / mes · se cobra hoy</p>
+                          </div>
+                        </div>
+                        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setPagoModal(false)}
+                          style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)' }}>
+                          <XIcon />
+                        </motion.button>
+                      </div>
+
+                      {/* Modal body */}
+                      <div style={{ padding: '36px 28px', display: 'flex', gap: 48, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+
+                        {/* Left — 3D card */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, flex: '0 0 auto' }}>
+                          <CreditCard3D data={cardData} flipped={cardFocused === 'cvv'} />
+                          <p style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', maxWidth: 300 }}>
+                            Tu información de pago está protegida con cifrado de 256 bits vía Stripe.
+                          </p>
+                        </div>
+
+                        {/* Right — form */}
+                        <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+                          {/* Card number */}
+                          <div>
+                            <label style={labelStyle}>Número de tarjeta</label>
+                            <div style={{ position: 'relative' }}>
+                              <input
+                                placeholder="4532 1234 5678 9012"
+                                value={cardData.numero}
+                                onChange={e => setCardData(d => ({ ...d, numero: formatCard(e.target.value) }))}
+                                onFocus={() => setCardFocused('numero')}
+                                onBlur={() => setCardFocused(null)}
+                                style={{ ...inputStyle, paddingRight: 48, fontFamily: '"Courier New", monospace', letterSpacing: '0.1em' }}
+                              />
+                              <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }}>
+                                <CreditCardIcon />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Titular */}
+                          <div>
+                            <label style={labelStyle}>Nombre del titular</label>
+                            <input
+                              placeholder="JUAN GARCÍA"
+                              value={cardData.nombre}
+                              onChange={e => setCardData(d => ({ ...d, nombre: e.target.value.toUpperCase() }))}
+                              onFocus={() => setCardFocused('nombre')}
+                              onBlur={() => setCardFocused(null)}
+                              style={{ ...inputStyle, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                            />
+                          </div>
+
+                          {/* Expiry + CVV */}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                            <div>
+                              <label style={labelStyle}>Vencimiento</label>
+                              <input
+                                placeholder="MM/AA"
+                                value={cardData.expiry}
+                                onChange={e => setCardData(d => ({ ...d, expiry: formatExpiry(e.target.value) }))}
+                                onFocus={() => setCardFocused('expiry')}
+                                onBlur={() => setCardFocused(null)}
+                                style={{ ...inputStyle, fontFamily: '"Courier New", monospace', letterSpacing: '0.1em' }}
+                              />
+                            </div>
+                            <div>
+                              <label style={labelStyle}>CVV</label>
+                              <input
+                                placeholder="•••"
+                                value={cardData.cvv}
+                                maxLength={4}
+                                onChange={e => setCardData(d => ({ ...d, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
+                                onFocus={() => setCardFocused('cvv')}
+                                onBlur={() => setCardFocused(null)}
+                                style={{ ...inputStyle, fontFamily: '"Courier New", monospace', letterSpacing: '0.18em' }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Pay button */}
+                          <motion.button
+                            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                            onClick={handlePagar}
+                            disabled={procesandoPago}
+                            style={{ marginTop: 8, width: '100%', padding: '16px', borderRadius: 14, background: procesandoPago ? 'rgba(155,142,196,0.4)' : 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 700, border: 'none', cursor: procesandoPago ? 'not-allowed' : 'pointer', boxShadow: procesandoPago ? 'none' : '0 6px 24px rgba(155,142,196,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                            {procesandoPago ? (
+                              <>
+                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                                  style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%' }} />
+                                Procesando…
+                              </>
+                            ) : (
+                              <>Suscribirse por ${pd.precio}/mes →</>
+                            )}
+                          </motion.button>
+
+                          <p style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
+                            Al continuar aceptas los Términos de Servicio. Puedes cancelar en cualquier momento desde esta sección.
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )
+              })()}
+            </AnimatePresence>
           </motion.div>
         )
+      }
 
       // ═══════════════════════════════════════════════════════════
       // SUPER ADMIN
