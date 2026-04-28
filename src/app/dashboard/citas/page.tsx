@@ -15,6 +15,8 @@ import ScrollReveal from '../../../components/reactbits/ScrollReveal'
 import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import Magnet from '../../../components/reactbits/Magnet'
+import StarBorder from '../../../components/reactbits/StarBorder'
+import GlareHover from '../../../components/reactbits/GlareHover'
 
 interface Cita {
   id: number
@@ -32,11 +34,11 @@ interface Medico { id: number; nombre: string; apellido: string; especialidad: s
 interface Paciente { id: number; nombre: string; apellido: string }
 
 const estadoConfig: Record<string, { label: string; color: string }> = {
-  agendada:   { label: 'Agendada',   color: '#9B8EC4' },
-  completada: { label: 'Completada', color: '#A0C4B5' },
-  cancelada:  { label: 'Cancelada',  color: '#E8A0C4' },
-  no_show:    { label: 'No Show',    color: '#C4B5E8' },
-  reagendada: { label: 'Reagendada', color: '#E8C4A0' },
+  agendada:   { label: 'Agendada',   color: '#00C9A7' },
+  completada: { label: 'Completada', color: '#00C9A7' },
+  cancelada:  { label: 'Cancelada',  color: '#FF6B6B' },
+  no_show:    { label: 'No Show',    color: '#4A9EF0' },
+  reagendada: { label: 'Reagendada', color: '#FFD166' },
 }
 
 const ArrowLeftIcon = () => (
@@ -174,10 +176,10 @@ export default function CitasPage() {
   })
 
   const stats = [
-    { label: 'Total citas', value: citas.length, color: '#9B8EC4' },
-    { label: 'Completadas', value: citas.filter(c => c.estado === 'completada').length, color: '#A0C4B5' },
-    { label: 'Agendadas', value: citas.filter(c => c.estado === 'agendada').length, color: '#C4B5E8' },
-    { label: 'Canceladas', value: citas.filter(c => c.estado === 'cancelada').length, color: '#E8A0C4' },
+    { label: 'Total citas', value: citas.length, color: '#00C9A7' },
+    { label: 'Completadas', value: citas.filter(c => c.estado === 'completada').length, color: '#00C9A7' },
+    { label: 'Agendadas', value: citas.filter(c => c.estado === 'agendada').length, color: '#4A9EF0' },
+    { label: 'Canceladas', value: citas.filter(c => c.estado === 'cancelada').length, color: '#FF6B6B' },
   ]
 
   // Relación médico-paciente — basado en citas filtradas
@@ -204,7 +206,7 @@ export default function CitasPage() {
               <Magnet strength={0.3}>
                 <motion.button onClick={() => { setShowModal(true); setError('') }}
                   whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,201,167,0.3)' }}>
                   <PlusIcon /> Agendar cita
                 </motion.button>
               </Magnet>
@@ -270,10 +272,10 @@ export default function CitasPage() {
                   whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   style={{
                     padding: '9px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: 'none',
-                    background: mostrarCanceladas ? 'rgba(232,160,196,0.15)' : 'rgba(255,255,255,0.03)',
-                    color: mostrarCanceladas ? '#E8A0C4' : 'var(--muted)',
+                    background: mostrarCanceladas ? 'rgba(255,107,107,0.15)' : 'rgba(255,255,255,0.03)',
+                    color: mostrarCanceladas ? '#FF6B6B' : 'var(--muted)',
                     borderWidth: 1, borderStyle: 'solid',
-                    borderColor: mostrarCanceladas ? 'rgba(232,160,196,0.4)' : 'var(--border)',
+                    borderColor: mostrarCanceladas ? 'rgba(255,107,107,0.4)' : 'var(--border)',
                   }}>
                   {mostrarCanceladas ? 'Ocultar canceladas' : 'Mostrar canceladas'}
                 </motion.button>
@@ -293,7 +295,7 @@ export default function CitasPage() {
               <GlowingCard className="p-6 sm:p-8 lg:p-10">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                   <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Historial de citas</h2>
-                  <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
                     {citasFiltradas.length} citas
                   </span>
                 </div>
@@ -348,7 +350,7 @@ export default function CitasPage() {
 
                             {/* Ingreso */}
                             {ingreso > 0 && (
-                              <span style={{ fontSize: 13, fontWeight: 600, color: '#A0C4B5', flexShrink: 0 }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: '#00C9A7', flexShrink: 0 }}>
                                 ${ingreso.toFixed(2)}
                               </span>
                             )}
@@ -361,7 +363,7 @@ export default function CitasPage() {
                             {/* Editar estado */}
                             <motion.button onClick={() => abrirEditarCita(c)}
                               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(155,142,196,0.08)', border: '1px solid rgba(155,142,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', flexShrink: 0 }}>
+                              style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(0,201,167,0.08)', border: '1px solid rgba(0,201,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', flexShrink: 0 }}>
                               <EditIcon />
                             </motion.button>
 
@@ -369,7 +371,7 @@ export default function CitasPage() {
                             {c.estado !== 'cancelada' && (
                               <motion.button onClick={() => setConfirmDelete({ open: true, id: c.id })}
                                 whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                                style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(232,160,196,0.08)', border: '1px solid rgba(232,160,196,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
+                                style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
                                 <TrashIcon />
                               </motion.button>
                             )}
@@ -400,7 +402,7 @@ export default function CitasPage() {
                       transition={{ delay: 0.3 + i * 0.06 }}
                       onClick={() => router.push(`/dashboard/medico/${m.medico.id}`)}
                       style={{ cursor: 'pointer', padding: '16px 18px', borderRadius: 18, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', transition: 'all 0.2s' }}
-                      whileHover={{ background: 'rgba(155,142,196,0.08)' } as any}
+                      whileHover={{ background: 'rgba(0,201,167,0.08)' } as any}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                         <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 700 }}>
@@ -419,7 +421,7 @@ export default function CitasPage() {
                       </div>
 
                       {/* Barra progreso */}
-                      <div style={{ height: 4, borderRadius: 2, background: 'rgba(155,142,196,0.12)', overflow: 'hidden' }}>
+                      <div style={{ height: 4, borderRadius: 2, background: 'rgba(0,201,167,0.12)', overflow: 'hidden' }}>
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
@@ -430,8 +432,8 @@ export default function CitasPage() {
 
                       {/* Stats rápidos */}
                       <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
-                        <span style={{ fontSize: 11, color: '#A0C4B5' }}>✓ {m.completadas} completadas</span>
-                        <span style={{ fontSize: 11, color: '#A0C4B5' }}>$ {m.ingresos.toFixed(0)}</span>
+                        <span style={{ fontSize: 11, color: '#00C9A7' }}>✓ {m.completadas} completadas</span>
+                        <span style={{ fontSize: 11, color: '#00C9A7' }}>$ {m.ingresos.toFixed(0)}</span>
                       </div>
                     </motion.div>
                   )
@@ -506,7 +508,7 @@ export default function CitasPage() {
               </div>
 
               {error && (
-                <p style={{ marginTop: 16, fontSize: 13, color: 'var(--danger)', padding: '10px 14px', borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.3)' }}>
+                <p style={{ marginTop: 16, fontSize: 13, color: 'var(--danger)', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)' }}>
                   {error}
                 </p>
               )}

@@ -173,7 +173,7 @@ export default function DashboardHeader() {
         whileHover={{ scale: 1.02 }}
       >
         <motion.div
-          animate={{ filter: ['drop-shadow(0 0 8px rgba(155,142,196,0.3))', 'drop-shadow(0 0 20px rgba(155,142,196,0.6))', 'drop-shadow(0 0 8px rgba(155,142,196,0.3))'] }}
+          animate={{ filter: ['drop-shadow(0 0 8px rgba(0,201,167,0.3))', 'drop-shadow(0 0 20px rgba(0,201,167,0.6))', 'drop-shadow(0 0 8px rgba(0,201,167,0.3))'] }}
           transition={{ duration: 3, repeat: Infinity }}
         >
           <VigiaLogo size={56} />
@@ -183,12 +183,12 @@ export default function DashboardHeader() {
             <img
               src={user.avatar}
               alt={user.nombre}
-              style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(155,142,196,0.4)', flexShrink: 0 }}
+              style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,201,167,0.4)', flexShrink: 0 }}
             />
           ) : (
             <div style={{
               width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-              background: 'rgba(155,142,196,0.18)', border: '2px solid rgba(155,142,196,0.4)',
+              background: 'rgba(0,201,167,0.18)', border: '2px solid rgba(0,201,167,0.4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 15, fontWeight: 700, color: 'var(--primary)',
             }}>
@@ -225,10 +225,10 @@ export default function DashboardHeader() {
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '12px 20px', borderRadius: 14, fontSize: 14, fontWeight: 500,
                 cursor: 'pointer', border: 'none',
-                background: active ? 'rgba(155,142,196,0.15)' : 'var(--glass)',
+                background: active ? 'rgba(0,201,167,0.15)' : 'var(--glass)',
                 backdropFilter: 'blur(20px)',
                 borderWidth: 1, borderStyle: 'solid',
-                borderColor: active ? 'rgba(155,142,196,0.4)' : 'var(--border)',
+                borderColor: active ? 'rgba(0,201,167,0.4)' : 'var(--border)',
                 color: active ? 'var(--primary)' : 'var(--muted)',
                 transition: 'all 0.2s',
                 boxShadow: active ? 'var(--shadow-glow)' : 'var(--shadow-sm)',

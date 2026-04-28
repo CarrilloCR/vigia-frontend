@@ -101,7 +101,7 @@ export default function KpiMiniChart() {
                   style={{
                     width: 20, height: 20, borderRadius: 6, border: 'none', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600,
-                    background: size === s ? 'rgba(155,142,196,0.25)' : 'rgba(255,255,255,0.05)',
+                    background: size === s ? 'rgba(0,201,167,0.25)' : 'rgba(255,255,255,0.05)',
                     color: size === s ? 'var(--primary)' : 'var(--muted)',
                   }}>
                   {s === 'mini' ? 'S' : s === 'normal' ? 'M' : 'L'}
@@ -111,12 +111,12 @@ export default function KpiMiniChart() {
               <motion.button
                 onClick={() => { hide(); router.push('/dashboard/kpis') }}
                 whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
-                style={{ width: 20, height: 20, borderRadius: 6, border: 'none', background: 'rgba(155,142,196,0.15)', color: 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ width: 20, height: 20, borderRadius: 6, border: 'none', background: 'rgba(0,201,167,0.15)', color: 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <ExpandIcon />
               </motion.button>
               {/* Close */}
               <motion.button onClick={hide} whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
-                style={{ width: 20, height: 20, borderRadius: 6, border: 'none', background: 'rgba(232,160,196,0.15)', color: '#E8A0C4', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ width: 20, height: 20, borderRadius: 6, border: 'none', background: 'rgba(255,107,107,0.15)', color: '#FF6B6B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CloseIcon />
               </motion.button>
             </div>
@@ -142,7 +142,7 @@ export default function KpiMiniChart() {
                     </defs>
                     {cfg.showAxis && (
                       <>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(155,142,196,0.06)" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,201,167,0.06)" />
                         <XAxis dataKey="fecha" tick={{ fontSize: 9, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 9, fill: 'var(--muted)' }} axisLine={false} tickLine={false} width={35} />
                       </>

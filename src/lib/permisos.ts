@@ -45,7 +45,7 @@ export const ROL_LABELS: Record<string, string> = {
 
 export const ROL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   superadmin: { bg: 'rgba(232,160,100,0.15)', text: '#E8A064', border: 'rgba(232,160,100,0.35)' },
-  admin: { bg: 'rgba(155,142,196,0.15)', text: '#9B8EC4', border: 'rgba(155,142,196,0.35)' },
+  admin: { bg: 'rgba(0,201,167,0.15)', text: '#00C9A7', border: 'rgba(0,201,167,0.35)' },
   gerente: { bg: 'rgba(100,150,220,0.12)', text: '#6496DC', border: 'rgba(100,150,220,0.3)' },
   medico: { bg: 'rgba(100,196,160,0.12)', text: '#64C4A0', border: 'rgba(100,196,160,0.3)' },
   viewer: { bg: 'rgba(150,150,150,0.1)', text: '#999999', border: 'rgba(150,150,150,0.25)' },

@@ -56,10 +56,10 @@ export default function PasswordRequirements({ password }: PasswordRequirementsP
               <motion.div
                 animate={{
                   background: passed
-                    ? 'rgba(160,196,181,0.2)'
+                    ? 'rgba(0,201,167,0.2)'
                     : 'rgba(255,255,255,0.06)',
                   borderColor: passed
-                    ? 'rgba(160,196,181,0.4)'
+                    ? 'rgba(0,201,167,0.4)'
                     : 'var(--border)',
                 }}
                 style={{

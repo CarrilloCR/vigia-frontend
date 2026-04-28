@@ -14,6 +14,8 @@ import PasswordRequirements, { validatePassword } from '../../../components/ui/P
 import ConfirmModal from '../../../components/ui/ConfirmModal'
 import CreditCard3D, { type CardData } from '../../../components/ui/CreditCard3D'
 import type { Clinica, Sede, IntegracionExterna, PlanFacturacion } from '../../../types'
+import StarBorder from '../../../components/reactbits/StarBorder'
+import GlareHover from '../../../components/reactbits/GlareHover'
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -154,9 +156,9 @@ const EQUIPO_ROLES: { key: EquipoRol; label: string; desc: string }[] = [
   { key: 'viewer',  label: 'Visualizador',   desc: 'Solo lectura del dashboard' },
 ]
 const EQUIPO_ROL_STYLE: Record<EquipoRol, { bg: string; color: string; border: string }> = {
-  admin:   { bg: 'rgba(155,142,196,0.15)', color: '#9B8EC4', border: 'rgba(155,142,196,0.3)' },
-  gerente: { bg: 'rgba(124,181,232,0.12)', color: '#7CB5E8', border: 'rgba(124,181,232,0.25)' },
-  medico:  { bg: 'rgba(160,196,181,0.12)', color: '#A0C4B5', border: 'rgba(160,196,181,0.25)' },
+  admin:   { bg: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: 'rgba(0,201,167,0.3)' },
+  gerente: { bg: 'rgba(74,158,240,0.12)', color: '#4A9EF0', border: 'rgba(74,158,240,0.25)' },
+  medico:  { bg: 'rgba(0,201,167,0.12)', color: '#00C9A7', border: 'rgba(0,201,167,0.25)' },
   viewer:  { bg: 'rgba(139,137,160,0.1)',  color: '#8B89A0', border: 'rgba(139,137,160,0.2)' },
 }
 
@@ -266,7 +268,7 @@ function SaveButton({ onClick, loading, label = 'Guardar cambios' }: { onClick: 
         color: 'white', fontSize: 14, fontWeight: 600, border: 'none',
         cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
         display: 'flex', alignItems: 'center', gap: 8,
-        boxShadow: '0 4px 20px rgba(155,142,196,0.3)',
+        boxShadow: '0 4px 20px rgba(0,201,167,0.3)',
       }}>
       {loading
         ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
@@ -843,7 +845,7 @@ export default function ConfiguracionPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: 'white', fontSize: 32, fontWeight: 700,
                     cursor: 'pointer', overflow: 'hidden', position: 'relative',
-                    border: '2px solid rgba(155,142,196,0.3)',
+                    border: '2px solid rgba(0,201,167,0.3)',
                   }}
                   title="Cambiar foto"
                 >
@@ -874,8 +876,8 @@ export default function ConfiguracionPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
                     <span style={{
                       fontSize: 12, padding: '4px 14px', borderRadius: 20,
-                      background: 'rgba(155,142,196,0.12)', color: 'var(--primary)',
-                      border: '1px solid rgba(155,142,196,0.2)', fontWeight: 600, textTransform: 'capitalize',
+                      background: 'rgba(0,201,167,0.12)', color: 'var(--primary)',
+                      border: '1px solid rgba(0,201,167,0.2)', fontWeight: 600, textTransform: 'capitalize',
                     }}>
                       {user?.rol || 'Administrador'}
                     </span>
@@ -890,7 +892,7 @@ export default function ConfiguracionPage() {
                       <motion.button
                         onClick={() => setAvatarBase64('')}
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                        style={{ fontSize: 12, padding: '4px 14px', borderRadius: 20, background: 'rgba(232,160,196,0.08)', border: '1px solid rgba(232,160,196,0.2)', color: 'var(--danger)', cursor: 'pointer' }}
+                        style={{ fontSize: 12, padding: '4px 14px', borderRadius: 20, background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.2)', color: 'var(--danger)', cursor: 'pointer' }}
                       >
                         Quitar
                       </motion.button>
@@ -971,14 +973,14 @@ export default function ConfiguracionPage() {
                   Sesión actual
                 </h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(160,196,181,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,201,167,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>
                     <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                   </div>
                   <div style={{ flex: 1 }}>
                     <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>Navegador actual</p>
                     <p style={{ fontSize: 13, color: 'var(--muted)' }}>Sesión activa ahora</p>
                   </div>
-                  <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'rgba(160,196,181,0.12)', color: 'var(--success)', border: '1px solid rgba(160,196,181,0.2)' }}>
+                  <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--success)', border: '1px solid rgba(0,201,167,0.2)' }}>
                     Activa
                   </span>
                 </div>
@@ -988,7 +990,7 @@ export default function ConfiguracionPage() {
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                   style={{
                     marginTop: 20, padding: '12px 24px', borderRadius: 12,
-                    background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)',
+                    background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)',
                     color: 'var(--danger)', fontSize: 14, fontWeight: 500, cursor: 'pointer',
                   }}>
                   Cerrar todas las sesiones
@@ -1050,7 +1052,7 @@ export default function ConfiguracionPage() {
                         Sedes
                       </h3>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                        <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
                           {sedes.length} {sedes.length === 1 ? 'sede' : 'sedes'}
                         </span>
                         <motion.button
@@ -1058,8 +1060,8 @@ export default function ConfiguracionPage() {
                           whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
-                            borderRadius: 10, background: showNuevaSede ? 'rgba(155,142,196,0.2)' : 'rgba(155,142,196,0.1)',
-                            border: '1px solid rgba(155,142,196,0.3)', color: 'var(--primary)',
+                            borderRadius: 10, background: showNuevaSede ? 'rgba(0,201,167,0.2)' : 'rgba(0,201,167,0.1)',
+                            border: '1px solid rgba(0,201,167,0.3)', color: 'var(--primary)',
                             fontSize: 13, fontWeight: 500, cursor: 'pointer',
                           }}>
                           <PlusIcon /> Nueva sede
@@ -1073,7 +1075,7 @@ export default function ConfiguracionPage() {
                         <motion.div
                           initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                           style={{ overflow: 'hidden', marginBottom: 20 }}>
-                          <div style={{ padding: '20px', borderRadius: 16, background: 'rgba(155,142,196,0.06)', border: '1px solid rgba(155,142,196,0.2)', marginBottom: 4 }}>
+                          <div style={{ padding: '20px', borderRadius: 16, background: 'rgba(0,201,167,0.06)', border: '1px solid rgba(0,201,167,0.2)', marginBottom: 4 }}>
                             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', marginBottom: 16 }}>Nueva sede</p>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 16 }}>
                               <div>
@@ -1123,7 +1125,7 @@ export default function ConfiguracionPage() {
                               style={{ borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', overflow: 'hidden' }}>
                               {/* Row */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px' }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(155,142,196,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,201,167,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
                                   <MapPinIcon />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1138,9 +1140,9 @@ export default function ConfiguracionPage() {
                                   title={s.activa ? 'Desactivar sede' : 'Activar sede'}
                                   style={{
                                     fontSize: 12, padding: '4px 12px', borderRadius: 20, cursor: 'pointer',
-                                    background: s.activa ? 'rgba(160,196,181,0.12)' : 'rgba(232,160,196,0.1)',
+                                    background: s.activa ? 'rgba(0,201,167,0.12)' : 'rgba(255,107,107,0.1)',
                                     color: s.activa ? 'var(--success)' : 'var(--danger)',
-                                    border: s.activa ? '1px solid rgba(160,196,181,0.2)' : '1px solid rgba(232,160,196,0.2)',
+                                    border: s.activa ? '1px solid rgba(0,201,167,0.2)' : '1px solid rgba(255,107,107,0.2)',
                                   }}>
                                   {s.activa ? 'Activa' : 'Inactiva'}
                                 </motion.button>
@@ -1148,14 +1150,14 @@ export default function ConfiguracionPage() {
                                 <motion.button
                                   onClick={() => { setEditandoSede(editandoSede === s.id ? null : s.id); setEditSedeForm({ nombre: s.nombre, direccion: s.direccion || '', telefono: s.telefono || '' }); setShowNuevaSede(false) }}
                                   whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                                  style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: editandoSede === s.id ? 'rgba(155,142,196,0.2)' : 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--primary)', cursor: 'pointer' }}>
+                                  style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: editandoSede === s.id ? 'rgba(0,201,167,0.2)' : 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--primary)', cursor: 'pointer' }}>
                                   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 </motion.button>
                                 {/* Delete */}
                                 <motion.button
                                   onClick={() => setConfirmDeleteSede({ open: true, id: s.id, nombre: s.nombre })}
                                   whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                                  style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(232,160,196,0.08)', border: '1px solid rgba(232,160,196,0.15)', color: 'var(--danger)', cursor: 'pointer' }}>
+                                  style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.15)', color: 'var(--danger)', cursor: 'pointer' }}>
                                   <TrashIcon />
                                 </motion.button>
                               </div>
@@ -1165,7 +1167,7 @@ export default function ConfiguracionPage() {
                                 {editandoSede === s.id && (
                                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                                     style={{ overflow: 'hidden' }}>
-                                    <div style={{ padding: '16px 20px 20px', borderTop: '1px solid var(--border)', background: 'rgba(155,142,196,0.04)' }}>
+                                    <div style={{ padding: '16px 20px 20px', borderTop: '1px solid var(--border)', background: 'rgba(0,201,167,0.04)' }}>
                                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
                                         <div>
                                           <label style={labelStyle}>Nombre *</label>
@@ -1329,11 +1331,11 @@ export default function ConfiguracionPage() {
                           {e.nombre && <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{e.nombre}</p>}
                           <p style={{ fontSize: 13, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.email}</p>
                         </div>
-                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'rgba(160,196,181,0.12)', color: 'var(--success)', border: '1px solid rgba(160,196,181,0.2)' }}>
+                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--success)', border: '1px solid rgba(0,201,167,0.2)' }}>
                           Activo
                         </span>
                         <motion.button onClick={() => setConfirmDelete({ open: true, id: e.id, label: e.email })} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                          style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
+                          style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
                           <TrashIcon />
                         </motion.button>
                       </motion.div>
@@ -1387,7 +1389,7 @@ export default function ConfiguracionPage() {
                 {/* Motor automático */}
                 <GlowingCard className="p-6 sm:p-8 lg:p-10">
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 14, background: motorConfig.motor_automatico ? 'rgba(160,196,181,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${motorConfig.motor_automatico ? 'rgba(160,196,181,0.3)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: motorConfig.motor_automatico ? 'var(--success)' : 'var(--muted)', flexShrink: 0, transition: 'all 0.25s' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 14, background: motorConfig.motor_automatico ? 'rgba(0,201,167,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${motorConfig.motor_automatico ? 'rgba(0,201,167,0.3)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: motorConfig.motor_automatico ? 'var(--success)' : 'var(--muted)', flexShrink: 0, transition: 'all 0.25s' }}>
                       <AutoIcon />
                     </div>
                     <div style={{ flex: 1 }}>
@@ -1436,7 +1438,7 @@ export default function ConfiguracionPage() {
                                   padding: '14px 8px',
                                   borderRadius: 14,
                                   background: motorConfig.motor_intervalo_horas === h
-                                    ? 'rgba(155,142,196,0.15)' : 'rgba(255,255,255,0.03)',
+                                    ? 'rgba(0,201,167,0.15)' : 'rgba(255,255,255,0.03)',
                                   border: motorConfig.motor_intervalo_horas === h
                                     ? '2px solid var(--primary)' : '1px solid var(--border)',
                                   color: motorConfig.motor_intervalo_horas === h ? 'var(--primary)' : 'var(--muted)',
@@ -1475,7 +1477,7 @@ export default function ConfiguracionPage() {
                 <div style={{ marginTop: 24 }}>
                   <GlowingCard className="p-6 sm:p-8 lg:p-10">
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 14, background: motorConfig.claude_activo ? 'rgba(124,181,232,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${motorConfig.claude_activo ? 'rgba(124,181,232,0.25)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: motorConfig.claude_activo ? '#7CB5E8' : 'var(--muted)', flexShrink: 0, transition: 'all 0.25s' }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, background: motorConfig.claude_activo ? 'rgba(74,158,240,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${motorConfig.claude_activo ? 'rgba(74,158,240,0.25)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: motorConfig.claude_activo ? '#4A9EF0' : 'var(--muted)', flexShrink: 0, transition: 'all 0.25s' }}>
                         <SparklesIcon />
                       </div>
                       <div style={{ flex: 1 }}>
@@ -1566,8 +1568,8 @@ export default function ConfiguracionPage() {
                   showToast('Configuración recomendada aplicada — guarda para conservar los cambios')
                 }}
                 style={{
-                  padding: '10px 18px', borderRadius: 10, border: '1px solid rgba(155,142,196,0.4)',
-                  background: 'rgba(155,142,196,0.1)', color: 'var(--primary)', fontSize: 13, fontWeight: 600,
+                  padding: '10px 18px', borderRadius: 10, border: '1px solid rgba(0,201,167,0.4)',
+                  background: 'rgba(0,201,167,0.1)', color: 'var(--primary)', fontSize: 13, fontWeight: 600,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
                 }}
               >
@@ -1582,7 +1584,7 @@ export default function ConfiguracionPage() {
                 {KPI_TIPOS.map(kpi => {
                   const cfg = configAlertas[kpi.key] || { tipo_kpi: kpi.key, canal: 'email' as const, umbral_sensibilidad: 20, activa: true, clinica: clinicaId }
                   const umbral = cfg.umbral_sensibilidad
-                  const umbralColor = umbral <= 15 ? '#A0C4B5' : umbral <= 25 ? '#9B8EC4' : '#C4B5E8'
+                  const umbralColor = umbral <= 15 ? '#00C9A7' : umbral <= 25 ? '#00C9A7' : '#4A9EF0'
                   return (
                     <div key={kpi.key} style={{ opacity: cfg.activa ? 1 : 0.5, transition: 'opacity 0.2s' }}>
                     <GlowingCard className="p-0 overflow-hidden">
@@ -1657,7 +1659,7 @@ export default function ConfiguracionPage() {
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                     style={{
                       padding: '24px', borderRadius: 18,
-                      background: (isDark ? 'dark' : 'light') === t ? 'rgba(155,142,196,0.12)' : 'rgba(255,255,255,0.03)',
+                      background: (isDark ? 'dark' : 'light') === t ? 'rgba(0,201,167,0.12)' : 'rgba(255,255,255,0.03)',
                       border: (isDark ? 'dark' : 'light') === t ? '2px solid var(--primary)' : '1px solid var(--border)',
                       cursor: 'pointer', textAlign: 'left',
                     }}>
@@ -1722,7 +1724,7 @@ export default function ConfiguracionPage() {
                       Conecta tu clínica con sistemas de información hospitalaria (HIS), ERP u otras fuentes de datos para importar información automáticamente.
                     </p>
                     <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                      style={{ padding: '11px 24px', borderRadius: 12, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
+                      style={{ padding: '11px 24px', borderRadius: 12, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
                       Solicitar integración
                     </motion.button>
                   </div>
@@ -1734,7 +1736,7 @@ export default function ConfiguracionPage() {
                         style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', borderRadius: 18, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
                         <div style={{
                           width: 48, height: 48, borderRadius: 14,
-                          background: integ.estado === 'activa' ? 'rgba(160,196,181,0.12)' : 'rgba(255,255,255,0.06)',
+                          background: integ.estado === 'activa' ? 'rgba(0,201,167,0.12)' : 'rgba(255,255,255,0.06)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           color: integ.estado === 'activa' ? 'var(--success)' : 'var(--muted)', flexShrink: 0,
                         }}>
@@ -1748,9 +1750,9 @@ export default function ConfiguracionPage() {
                         </div>
                         <span style={{
                           fontSize: 12, padding: '4px 12px', borderRadius: 20,
-                          background: integ.estado === 'activa' ? 'rgba(160,196,181,0.12)' : 'rgba(232,160,196,0.1)',
+                          background: integ.estado === 'activa' ? 'rgba(0,201,167,0.12)' : 'rgba(255,107,107,0.1)',
                           color: integ.estado === 'activa' ? 'var(--success)' : 'var(--danger)',
-                          border: integ.estado === 'activa' ? '1px solid rgba(160,196,181,0.2)' : '1px solid rgba(232,160,196,0.2)',
+                          border: integ.estado === 'activa' ? '1px solid rgba(0,201,167,0.2)' : '1px solid rgba(255,107,107,0.2)',
                         }}>
                           {integ.estado === 'activa' ? 'Conectada' : 'Desconectada'}
                         </span>
@@ -1758,7 +1760,7 @@ export default function ConfiguracionPage() {
                           whileHover={{ scale: 1.1, rotate: 180 }} whileTap={{ scale: 0.9 }}
                           style={{
                             width: 36, height: 36, borderRadius: 10,
-                            background: 'rgba(155,142,196,0.1)', border: '1px solid rgba(155,142,196,0.2)',
+                            background: 'rgba(0,201,167,0.1)', border: '1px solid rgba(0,201,167,0.2)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             cursor: 'pointer', color: 'var(--primary)', flexShrink: 0,
                           }}>
@@ -1791,7 +1793,7 @@ export default function ConfiguracionPage() {
                       style={{
                         padding: '10px 24px', borderRadius: 12, fontSize: 14, fontWeight: 600,
                         cursor: 'pointer', border: 'none',
-                        background: csvTipo === tipo ? 'rgba(155,142,196,0.15)' : 'rgba(255,255,255,0.04)',
+                        background: csvTipo === tipo ? 'rgba(0,201,167,0.15)' : 'rgba(255,255,255,0.04)',
                         borderWidth: 2, borderStyle: 'solid',
                         borderColor: csvTipo === tipo ? 'var(--primary)' : 'var(--border)',
                         color: csvTipo === tipo ? 'var(--primary)' : 'var(--muted)',
@@ -1804,7 +1806,7 @@ export default function ConfiguracionPage() {
                 </div>
 
                 {/* Columnas esperadas */}
-                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: 'rgba(155,142,196,0.06)', border: '1px solid rgba(155,142,196,0.15)' }}>
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: 'rgba(0,201,167,0.06)', border: '1px solid rgba(0,201,167,0.15)' }}>
                   {csvTipo === 'kpi'
                     ? 'Columnas esperadas: medico_id, tipo, valor, registrado_en'
                     : 'Columnas esperadas: medico_id, paciente_nombre, fecha_hora, tipo, estado'}
@@ -1830,8 +1832,8 @@ export default function ConfiguracionPage() {
                   <label style={{ display: 'block', cursor: 'pointer' }}>
                     <div style={{
                       padding: '32px', borderRadius: 16, textAlign: 'center',
-                      background: csvFile ? 'rgba(160,196,181,0.06)' : 'rgba(255,255,255,0.03)',
-                      border: `2px dashed ${csvFile ? 'rgba(160,196,181,0.4)' : 'var(--border)'}`,
+                      background: csvFile ? 'rgba(0,201,167,0.06)' : 'rgba(255,255,255,0.03)',
+                      border: `2px dashed ${csvFile ? 'rgba(0,201,167,0.4)' : 'var(--border)'}`,
                       transition: 'all 0.2s',
                     }}>
                       {csvFile ? (
@@ -1886,8 +1888,8 @@ export default function ConfiguracionPage() {
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                       style={{
                         marginTop: 20, padding: '18px 22px', borderRadius: 16,
-                        background: csvResult.errores.length === 0 ? 'rgba(160,196,181,0.08)' : 'rgba(232,160,196,0.08)',
-                        border: `1px solid ${csvResult.errores.length === 0 ? 'rgba(160,196,181,0.3)' : 'rgba(232,160,196,0.3)'}`,
+                        background: csvResult.errores.length === 0 ? 'rgba(0,201,167,0.08)' : 'rgba(255,107,107,0.08)',
+                        border: `1px solid ${csvResult.errores.length === 0 ? 'rgba(0,201,167,0.3)' : 'rgba(255,107,107,0.3)'}`,
                       }}
                     >
                       <p style={{ fontSize: 15, fontWeight: 600, color: csvResult.errores.length === 0 ? 'var(--success)' : 'var(--danger)', marginBottom: 8 }}>
@@ -1918,14 +1920,14 @@ export default function ConfiguracionPage() {
         const PLANES_DEF = [
           {
             key: 'basico', nombre: 'Básico', precio: 49,
-            color: '#7CB5E8', colorAlpha: 'rgba(124,181,232,0.18)',
-            border: 'rgba(124,181,232,0.28)',
+            color: '#4A9EF0', colorAlpha: 'rgba(74,158,240,0.18)',
+            border: 'rgba(74,158,240,0.28)',
             features: ['1 sede', 'Hasta 5 médicos', 'Alertas críticas (IA)', 'Historial 30 días', 'Soporte por email'],
           },
           {
             key: 'profesional', nombre: 'Profesional', precio: 149, popular: true,
-            color: '#9B8EC4', colorAlpha: 'rgba(155,142,196,0.2)',
-            border: 'rgba(155,142,196,0.42)',
+            color: '#00C9A7', colorAlpha: 'rgba(0,201,167,0.2)',
+            border: 'rgba(0,201,167,0.42)',
             features: ['Hasta 3 sedes', 'Hasta 20 médicos', 'IA: alertas alta + crítica', 'Historial 90 días', '1 integración externa', 'Soporte prioritario'],
           },
           {
@@ -1938,11 +1940,11 @@ export default function ConfiguracionPage() {
 
         const planActualKey = plan?.plan ?? null
         const estadoBadge = plan
-          ? { activo: { bg: 'rgba(160,196,181,0.12)', color: 'var(--success)', border: 'rgba(160,196,181,0.25)', label: 'Activo' },
+          ? { activo: { bg: 'rgba(0,201,167,0.12)', color: 'var(--success)', border: 'rgba(0,201,167,0.25)', label: 'Activo' },
               prueba:  { bg: 'rgba(232,196,144,0.12)', color: '#E8C490',        border: 'rgba(232,196,144,0.25)', label: 'Prueba' },
               vencido: { bg: 'rgba(232,160,160,0.1)',  color: 'var(--danger)',   border: 'rgba(232,160,160,0.2)',  label: 'Vencido' },
               cancelado: { bg: 'rgba(160,160,160,0.1)', color: 'var(--muted)',   border: 'rgba(160,160,160,0.15)', label: 'Cancelado' },
-            }[plan.estado as string] ?? { bg: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: 'rgba(155,142,196,0.25)', label: plan.estado }
+            }[plan.estado as string] ?? { bg: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: 'rgba(0,201,167,0.25)', label: plan.estado }
           : null
 
         const formatCard = (val: string) =>
@@ -1996,7 +1998,7 @@ export default function ConfiguracionPage() {
                     </div>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                       onClick={() => { setPlanElegido(plan.plan); setPagoModal(true) }}
-                      style={{ padding: '9px 20px', borderRadius: 11, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.25)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                      style={{ padding: '9px 20px', borderRadius: 11, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.25)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                       Cambiar método de pago
                     </motion.button>
                   </motion.div>
@@ -2052,7 +2054,7 @@ export default function ConfiguracionPage() {
                         ) : (
                           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                             onClick={() => { setPlanElegido(p.key); setCardData({ numero: '', nombre: '', expiry: '', cvv: '' }); setPagoModal(true) }}
-                            style={{ width: '100%', padding: '13px', borderRadius: 13, fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none', color: 'white', background: isCurrent ? `linear-gradient(135deg, ${p.color}bb, ${p.color}88)` : p.popular ? 'linear-gradient(135deg, var(--primary), var(--accent))' : `linear-gradient(135deg, ${p.color}99, ${p.color}66)`, boxShadow: p.popular && !isCurrent ? '0 4px 20px rgba(155,142,196,0.35)' : 'none' }}>
+                            style={{ width: '100%', padding: '13px', borderRadius: 13, fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none', color: 'white', background: isCurrent ? `linear-gradient(135deg, ${p.color}bb, ${p.color}88)` : p.popular ? 'linear-gradient(135deg, var(--primary), var(--accent))' : `linear-gradient(135deg, ${p.color}99, ${p.color}66)`, boxShadow: p.popular && !isCurrent ? '0 4px 20px rgba(0,201,167,0.35)' : 'none' }}>
                             {isCurrent ? 'Plan actual' : 'Suscribirse'}
                           </motion.button>
                         )}
@@ -2192,7 +2194,7 @@ export default function ConfiguracionPage() {
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                             onClick={handlePagar}
                             disabled={procesandoPago}
-                            style={{ marginTop: 8, width: '100%', padding: '16px', borderRadius: 14, background: procesandoPago ? 'rgba(155,142,196,0.4)' : 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 700, border: 'none', cursor: procesandoPago ? 'not-allowed' : 'pointer', boxShadow: procesandoPago ? 'none' : '0 6px 24px rgba(155,142,196,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                            style={{ marginTop: 8, width: '100%', padding: '16px', borderRadius: 14, background: procesandoPago ? 'rgba(0,201,167,0.4)' : 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 700, border: 'none', cursor: procesandoPago ? 'not-allowed' : 'pointer', boxShadow: procesandoPago ? 'none' : '0 6px 24px rgba(0,201,167,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                             {procesandoPago ? (
                               <>
                                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
@@ -2267,7 +2269,7 @@ export default function ConfiguracionPage() {
             <GlowingCard className="p-6 sm:p-8 lg:p-10">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Todas las clínicas</h3>
-                <span style={{ fontSize: 13, padding: '4px 12px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                <span style={{ fontSize: 13, padding: '4px 12px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
                   {todasClinicas.length} registradas
                 </span>
               </div>
@@ -2299,7 +2301,7 @@ export default function ConfiguracionPage() {
 
                     return (
                       <motion.div key={c.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
-                        style={{ borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: `1px solid ${isOpen ? 'rgba(155,142,196,0.3)' : 'var(--border)'}`, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+                        style={{ borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: `1px solid ${isOpen ? 'rgba(0,201,167,0.3)' : 'var(--border)'}`, overflow: 'hidden', transition: 'border-color 0.2s' }}>
 
                         {/* Header row */}
                         <div
@@ -2312,7 +2314,7 @@ export default function ConfiguracionPage() {
                             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{c.nombre}</p>
                             <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{c.email} · Plan {c.plan}</p>
                           </div>
-                          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c.activa ? 'rgba(160,196,181,0.15)' : 'rgba(232,160,196,0.1)', color: c.activa ? '#A0C4B5' : 'var(--danger)', border: `1px solid ${c.activa ? 'rgba(160,196,181,0.3)' : 'rgba(232,160,196,0.2)'}`, flexShrink: 0 }}>
+                          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c.activa ? 'rgba(0,201,167,0.15)' : 'rgba(255,107,107,0.1)', color: c.activa ? '#00C9A7' : 'var(--danger)', border: `1px solid ${c.activa ? 'rgba(0,201,167,0.3)' : 'rgba(255,107,107,0.2)'}`, flexShrink: 0 }}>
                             {c.activa ? 'Activa' : 'Inactiva'}
                           </span>
                           {/* Chevron */}
@@ -2324,7 +2326,7 @@ export default function ConfiguracionPage() {
                           <motion.button
                             onClick={e => { e.stopPropagation(); setConfirmDeleteClinica({ open: true, id: c.id, nombre: c.nombre }) }}
                             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                            style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
+                            style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
                             <TrashIcon />
                           </motion.button>
                         </div>
@@ -2351,7 +2353,7 @@ export default function ConfiguracionPage() {
                                 ) : (
                                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                     {sedesC.map(s => (
-                                      <span key={s.id} style={{ fontSize: 13, fontWeight: 500, padding: '6px 14px', borderRadius: 10, background: s.activa ? 'rgba(155,142,196,0.1)' : 'rgba(255,255,255,0.04)', color: s.activa ? 'var(--primary)' : 'var(--muted)', border: `1px solid ${s.activa ? 'rgba(155,142,196,0.25)' : 'var(--border)'}` }}>
+                                      <span key={s.id} style={{ fontSize: 13, fontWeight: 500, padding: '6px 14px', borderRadius: 10, background: s.activa ? 'rgba(0,201,167,0.1)' : 'rgba(255,255,255,0.04)', color: s.activa ? 'var(--primary)' : 'var(--muted)', border: `1px solid ${s.activa ? 'rgba(0,201,167,0.25)' : 'var(--border)'}` }}>
                                         {s.nombre}
                                         {!s.activa && <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.6 }}>inactiva</span>}
                                       </span>
@@ -2403,13 +2405,13 @@ export default function ConfiguracionPage() {
               <div style={{ display: 'flex', gap: 10 }}>
                 {!esAdmin && (
                   <motion.button onClick={() => setShowSolicitud(v => !v)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 14, background: 'rgba(124,181,232,0.1)', border: '1px solid rgba(124,181,232,0.3)', color: '#7CB5E8', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 14, background: 'rgba(74,158,240,0.1)', border: '1px solid rgba(74,158,240,0.3)', color: '#4A9EF0', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                     Solicitar cambio de rol
                   </motion.button>
                 )}
                 {esAdmin && (
                   <motion.button onClick={() => setShowInvitar(v => !v)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,201,167,0.3)' }}>
                     <PlusIcon /> Invitar miembro
                   </motion.button>
                 )}
@@ -2420,7 +2422,7 @@ export default function ConfiguracionPage() {
             <AnimatePresence>
               {tempPassword && (
                 <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-                  style={{ marginBottom: 20, padding: '20px 24px', borderRadius: 20, background: 'rgba(160,196,181,0.1)', border: '1px solid rgba(160,196,181,0.3)' }}>
+                  style={{ marginBottom: 20, padding: '20px 24px', borderRadius: 20, background: 'rgba(0,201,167,0.1)', border: '1px solid rgba(0,201,167,0.3)' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
                     <div>
                       <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--success)', marginBottom: 6 }}>Usuario creado. Contraseña temporal:</p>
@@ -2439,9 +2441,9 @@ export default function ConfiguracionPage() {
                 <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} style={{ marginBottom: 20 }}>
                   <GlowingCard className="p-6 sm:p-8">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#E8C4A0', display: 'inline-block' }} />
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFD166', display: 'inline-block' }} />
                       <h3 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>Solicitudes pendientes</h3>
-                      <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(232,196,160,0.15)', color: '#E8C4A0', border: '1px solid rgba(232,196,160,0.3)' }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,209,102,0.15)', color: '#FFD166', border: '1px solid rgba(255,209,102,0.3)' }}>
                         {equipoSolicitudes.length}
                       </span>
                     </div>
@@ -2449,7 +2451,7 @@ export default function ConfiguracionPage() {
                       {equipoSolicitudes.map(s => {
                         const rs = EQUIPO_ROL_STYLE[s.rol_solicitado as EquipoRol] || EQUIPO_ROL_STYLE.viewer
                         return (
-                          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', padding: '14px 18px', borderRadius: 14, background: 'rgba(232,196,160,0.05)', border: '1px solid rgba(232,196,160,0.15)' }}>
+                          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', padding: '14px 18px', borderRadius: 14, background: 'rgba(255,209,102,0.05)', border: '1px solid rgba(255,209,102,0.15)' }}>
                             <div style={{ flex: 1, minWidth: 160 }}>
                               <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{s.usuario_nombre || s.usuario_email}</p>
                               <p style={{ fontSize: 12, color: 'var(--muted)' }}>{s.usuario_email}</p>
@@ -2463,11 +2465,11 @@ export default function ConfiguracionPage() {
                             {s.motivo && <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', flex: '1 1 200px' }}>"{s.motivo}"</p>}
                             <div style={{ display: 'flex', gap: 8 }}>
                               <motion.button onClick={() => handleAprobarSolicitud(s.id)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(160,196,181,0.15)', border: '1px solid rgba(160,196,181,0.3)', color: '#A0C4B5', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(0,201,167,0.15)', border: '1px solid rgba(0,201,167,0.3)', color: '#00C9A7', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                                 <CheckIcon /> Aprobar
                               </motion.button>
                               <motion.button onClick={() => handleRechazarSolicitud(s.id)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', color: '#E8A0C4', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)', color: '#FF6B6B', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                                 <XIcon /> Rechazar
                               </motion.button>
                             </div>
@@ -2578,7 +2580,7 @@ export default function ConfiguracionPage() {
             <GlowingCard className="p-6 sm:p-8">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                 <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Miembros del equipo</h3>
-                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
                   {equipoUsuarios.length} usuarios
                 </span>
               </div>
@@ -2614,7 +2616,7 @@ export default function ConfiguracionPage() {
                           {esAdmin && u.id !== user?.id && (
                             <motion.button onClick={() => setConfirmDesactivar({ open: true, id: u.id, nombre: u.nombre || u.email })}
                               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
+                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
                               <UserMinusIcon />
                             </motion.button>
                           )}
@@ -2677,8 +2679,8 @@ export default function ConfiguracionPage() {
                     width: '100%',
                     display: 'flex', alignItems: 'center', gap: 14,
                     padding: '14px 18px', borderRadius: 16,
-                    background: activeSection === s.key ? 'rgba(155,142,196,0.15)' : 'transparent',
-                    border: activeSection === s.key ? '1px solid rgba(155,142,196,0.25)' : '1px solid transparent',
+                    background: activeSection === s.key ? 'rgba(0,201,167,0.15)' : 'transparent',
+                    border: activeSection === s.key ? '1px solid rgba(0,201,167,0.25)' : '1px solid transparent',
                     color: activeSection === s.key ? 'var(--text)' : 'var(--muted)',
                     cursor: 'pointer', textAlign: 'left',
                     transition: 'background 0.2s, border 0.2s, color 0.2s',

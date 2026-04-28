@@ -12,31 +12,33 @@ import SpotlightCard from '../../../../components/reactbits/SpotlightCard'
 import ScrollReveal from '../../../../components/reactbits/ScrollReveal'
 import GradientText from '../../../../components/reactbits/GradientText'
 import TiltedCard from '../../../../components/reactbits/TiltedCard'
+import StarBorder from '../../../../components/reactbits/StarBorder'
+import GlareHover from '../../../../components/reactbits/GlareHover'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
-  tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
-  tasa_noshow:       { label: 'No-Show',       color: '#C4B5E8', unit: '%' },
-  ingresos_dia:      { label: 'Ingresos',      color: '#A0C4B5', unit: '$' },
-  ticket_promedio:   { label: 'Ticket Prom',   color: '#9B8EC4', unit: '$' },
-  pacientes_nuevos:  { label: 'Pac. Nuevos',   color: '#7C6FBF', unit: '%' },
-  retencion_90:      { label: 'Retención',     color: '#BBA8E8', unit: '%' },
-  nps:               { label: 'NPS',           color: '#A8C4A0', unit: ''  },
-  citas_reagendadas: { label: 'Reagendadas',   color: '#E8C4A0', unit: '%' },
+  tasa_cancelacion:  { label: 'Cancelación',  color: '#FF6B6B', unit: '%' },
+  tasa_noshow:       { label: 'No-Show',       color: '#4A9EF0', unit: '%' },
+  ingresos_dia:      { label: 'Ingresos',      color: '#00C9A7', unit: '$' },
+  ticket_promedio:   { label: 'Ticket Prom',   color: '#00C9A7', unit: '$' },
+  pacientes_nuevos:  { label: 'Pac. Nuevos',   color: '#00A88A', unit: '%' },
+  retencion_90:      { label: 'Retención',     color: '#B06EF5', unit: '%' },
+  nps:               { label: 'NPS',           color: '#00C9A7', unit: ''  },
+  citas_reagendadas: { label: 'Reagendadas',   color: '#FFD166', unit: '%' },
 }
 
 const sevConfig: Record<string, { label: string; color: string }> = {
-  baja:    { label: 'Baja',    color: '#A0C4B5' },
-  media:   { label: 'Media',   color: '#C4B5E8' },
-  alta:    { label: 'Alta',    color: '#9B8EC4' },
-  critica: { label: 'Crítica', color: '#E8A0C4' },
+  baja:    { label: 'Baja',    color: '#00C9A7' },
+  media:   { label: 'Media',   color: '#4A9EF0' },
+  alta:    { label: 'Alta',    color: '#00C9A7' },
+  critica: { label: 'Crítica', color: '#FF6B6B' },
 }
 
 const estadoColor: Record<string, string> = {
-  completada: '#A0C4B5',
-  cancelada:  '#E8A0C4',
-  no_show:    '#C4B5E8',
-  reagendada: '#E8C4A0',
-  agendada:   '#9B8EC4',
+  completada: '#00C9A7',
+  cancelada:  '#FF6B6B',
+  no_show:    '#4A9EF0',
+  reagendada: '#FFD166',
+  agendada:   '#00C9A7',
 }
 
 const EditIcon = () => (
@@ -54,7 +56,7 @@ const CheckCircleIcon = () => (
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: 'rgba(28,24,48,0.97)', backdropFilter: 'blur(20px)', border: '1px solid rgba(155,142,196,0.3)', borderRadius: 12, padding: '10px 14px', fontSize: 13 }}>
+      <div style={{ background: 'rgba(28,24,48,0.97)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,201,167,0.3)', borderRadius: 12, padding: '10px 14px', fontSize: 13 }}>
         <p style={{ color: 'var(--muted)', marginBottom: 6 }}>{label}</p>
         {payload.map((p: any, i: number) => (
           <p key={i} style={{ color: p.color, fontWeight: 600 }}>{p.name}: {p.value}</p>
@@ -113,10 +115,10 @@ const fetchData = async () => {
 
   // Distribución de estados para gráfica
   const distribucionEstados = [
-    { name: 'Completadas', value: completadas, color: '#A0C4B5' },
-    { name: 'Canceladas', value: canceladas, color: '#E8A0C4' },
-    { name: 'No Show', value: noShow, color: '#C4B5E8' },
-    { name: 'Reagendadas', value: citas.filter(c => c.estado === 'reagendada').length, color: '#E8C4A0' },
+    { name: 'Completadas', value: completadas, color: '#00C9A7' },
+    { name: 'Canceladas', value: canceladas, color: '#FF6B6B' },
+    { name: 'No Show', value: noShow, color: '#4A9EF0' },
+    { name: 'Reagendadas', value: citas.filter(c => c.estado === 'reagendada').length, color: '#FFD166' },
   ].filter(d => d.value > 0)
 
   // Datos KPI para gráfica
@@ -131,10 +133,10 @@ const fetchData = async () => {
   const cfgKpi = kpiConfig[kpiSeleccionado]
 
   const statsCards = [
-    { label: 'Total citas', value: totalCitas, color: '#9B8EC4' },
-    { label: 'Completadas', value: completadas, color: '#A0C4B5' },
-    { label: 'Canceladas', value: canceladas, color: '#E8A0C4' },
-    { label: 'Alertas activas', value: alertas.filter(a => a.estado === 'activa').length, color: '#C4B5E8' },
+    { label: 'Total citas', value: totalCitas, color: '#00C9A7' },
+    { label: 'Completadas', value: completadas, color: '#00C9A7' },
+    { label: 'Canceladas', value: canceladas, color: '#FF6B6B' },
+    { label: 'Alertas activas', value: alertas.filter(a => a.estado === 'activa').length, color: '#4A9EF0' },
   ]
 
   if (loading) return (
@@ -150,7 +152,7 @@ const fetchData = async () => {
     </div>
   )
 
-  const colorMedico = '#9B8EC4'
+  const colorMedico = '#00C9A7'
 
   return (
     <>
@@ -167,7 +169,7 @@ const fetchData = async () => {
               ) : (
                 <motion.div
                   style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg, var(--primary), var(--accent))`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700, flexShrink: 0 }}
-                  animate={{ boxShadow: ['0 0 20px rgba(155,142,196,0.3)', '0 0 40px rgba(155,142,196,0.6)', '0 0 20px rgba(155,142,196,0.3)'] }}
+                  animate={{ boxShadow: ['0 0 20px rgba(0,201,167,0.3)', '0 0 40px rgba(0,201,167,0.6)', '0 0 20px rgba(0,201,167,0.3)'] }}
                   transition={{ duration: 3, repeat: Infinity }}>
                   {medico.nombre[0]}{medico.apellido[0]}
                 </motion.div>
@@ -178,11 +180,11 @@ const fetchData = async () => {
                   <GradientText text={`Dr. ${medico.nombre} ${medico.apellido}`} className="font-display" />
                 </h1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, padding: '3px 12px', borderRadius: 20, background: 'rgba(155,142,196,0.15)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, padding: '3px 12px', borderRadius: 20, background: 'rgba(0,201,167,0.15)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
                     {medico.especialidad}
                   </span>
                   {medico.sede_nombre && (
-                    <span style={{ fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 20, background: 'rgba(160,196,181,0.15)', color: '#A0C4B5', border: '1px solid rgba(160,196,181,0.3)' }}>
+                    <span style={{ fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 20, background: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: '1px solid rgba(0,201,167,0.3)' }}>
                       {medico.sede_nombre}
                     </span>
                   )}
@@ -229,10 +231,10 @@ const fetchData = async () => {
         <FadeContent direction="up" delay={0.15} duration={0.4}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
             {[
-              { label: 'Tasa completación', value: `${tasaCompletacion}%`, color: '#A0C4B5' },
-              { label: 'Tasa cancelación', value: `${tasaCancelacion}%`, color: '#E8A0C4' },
-              { label: 'Ingresos totales', value: `$${ingresos.toFixed(0)}`, color: '#9B8EC4' },
-              { label: 'Ticket promedio', value: `$${ticketPromedio}`, color: '#C4B5E8' },
+              { label: 'Tasa completación', value: `${tasaCompletacion}%`, color: '#00C9A7' },
+              { label: 'Tasa cancelación', value: `${tasaCancelacion}%`, color: '#FF6B6B' },
+              { label: 'Ingresos totales', value: `$${ingresos.toFixed(0)}`, color: '#00C9A7' },
+              { label: 'Ticket promedio', value: `$${ticketPromedio}`, color: '#4A9EF0' },
             ].map((k, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.06 }}
                 style={{ padding: '18px 20px', borderRadius: 18, background: `${k.color}10`, border: `1px solid ${k.color}25` }}>
@@ -266,7 +268,7 @@ const fetchData = async () => {
         {tab === 'estadisticas' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
             <FadeContent direction="up" delay={0.25} duration={0.4}>
-              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="top">
+              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="top">
                 {/* Selector KPI */}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
                   {Object.entries(kpiConfig).map(([tipo, cfg]) => (
@@ -309,7 +311,7 @@ const fetchData = async () => {
                           <stop offset="95%" stopColor={cfgKpi?.color} stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(155,142,196,0.08)" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,201,167,0.08)" />
                       <XAxis dataKey="fecha" stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
                       <YAxis stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
                       <Tooltip content={<CustomTooltip />} />
@@ -325,7 +327,7 @@ const fetchData = async () => {
 
             {/* Distribución de estados */}
             <FadeContent direction="right" delay={0.3} duration={0.4}>
-              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="top">
+              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="top">
                 <h2 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
                   Distribución de citas
                 </h2>
@@ -371,12 +373,12 @@ const fetchData = async () => {
 
         {tab === 'citas' && (
           <FadeContent direction="up" delay={0.25} duration={0.4}>
-            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="bottom">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                   Historial de citas
                 </h2>
-                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
                   {citas.length} citas
                 </span>
               </div>
@@ -388,7 +390,7 @@ const fetchData = async () => {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 520, overflowY: 'auto', paddingRight: 4 }}>
                   {citas.map((c, i) => {
-                    const color = estadoColor[c.estado] || '#9B8EC4'
+                    const color = estadoColor[c.estado] || '#00C9A7'
                     return (
                       <motion.div key={c.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
                         style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}25` }}>
@@ -405,7 +407,7 @@ const fetchData = async () => {
                           {c.estado.replace('_', ' ')}
                         </span>
                         {parseFloat(c.ingreso_generado) > 0 && (
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#A0C4B5', flexShrink: 0 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#00C9A7', flexShrink: 0 }}>
                             ${parseFloat(c.ingreso_generado).toFixed(2)}
                           </span>
                         )}
@@ -420,12 +422,12 @@ const fetchData = async () => {
 
         {tab === 'alertas' && (
           <FadeContent direction="up" delay={0.25} duration={0.4}>
-            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="bottom">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                   Historial de alertas
                 </h2>
-                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
                   {alertas.length} registros
                 </span>
               </div>
@@ -462,7 +464,7 @@ const fetchData = async () => {
                             </div>
                             <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text)', opacity: 0.85, marginBottom: 8 }}>{a.mensaje}</p>
                             {a.recomendacion && a.recomendacion !== 'Ejecuta el análisis manual para obtener recomendaciones con IA.' && (
-                              <div style={{ padding: '10px 14px', borderRadius: 12, marginBottom: 8, background: 'rgba(155,142,196,0.07)', border: '1px solid rgba(155,142,196,0.15)', fontSize: 13, lineHeight: 1.6, color: 'var(--glow)' }}>
+                              <div style={{ padding: '10px 14px', borderRadius: 12, marginBottom: 8, background: 'rgba(0,201,167,0.07)', border: '1px solid rgba(0,201,167,0.15)', fontSize: 13, lineHeight: 1.6, color: 'var(--glow)' }}>
                                 {a.recomendacion}
                               </div>
                             )}

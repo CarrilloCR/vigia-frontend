@@ -10,6 +10,8 @@ import ScrollReveal from '../../../components/reactbits/ScrollReveal'
 import GradientText from '../../../components/reactbits/GradientText'
 import Magnet from '../../../components/reactbits/Magnet'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
+import StarBorder from '../../../components/reactbits/StarBorder'
+import GlareHover from '../../../components/reactbits/GlareHover'
 
 type Rol = 'admin' | 'gerente' | 'medico' | 'viewer'
 
@@ -21,9 +23,9 @@ const ROLES: { key: Rol; label: string; desc: string }[] = [
 ]
 
 const ROL_STYLE: Record<Rol, { bg: string; color: string; border: string }> = {
-  admin:   { bg: 'rgba(155,142,196,0.15)', color: '#9B8EC4', border: 'rgba(155,142,196,0.3)' },
-  gerente: { bg: 'rgba(124,181,232,0.12)', color: '#7CB5E8', border: 'rgba(124,181,232,0.25)' },
-  medico:  { bg: 'rgba(160,196,181,0.12)', color: '#A0C4B5', border: 'rgba(160,196,181,0.25)' },
+  admin:   { bg: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: 'rgba(0,201,167,0.3)' },
+  gerente: { bg: 'rgba(74,158,240,0.12)', color: '#4A9EF0', border: 'rgba(74,158,240,0.25)' },
+  medico:  { bg: 'rgba(0,201,167,0.12)', color: '#00C9A7', border: 'rgba(0,201,167,0.25)' },
   viewer:  { bg: 'rgba(139,137,160,0.1)',  color: '#8B89A0', border: 'rgba(139,137,160,0.2)' },
 }
 
@@ -201,8 +203,8 @@ export default function EquipoPage() {
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px',
-                borderRadius: 14, background: 'rgba(124,181,232,0.1)', border: '1px solid rgba(124,181,232,0.3)',
-                color: '#7CB5E8', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                borderRadius: 14, background: 'rgba(74,158,240,0.1)', border: '1px solid rgba(74,158,240,0.3)',
+                color: '#4A9EF0', fontSize: 14, fontWeight: 600, cursor: 'pointer',
               }}
             >
               Solicitar cambio de rol
@@ -217,7 +219,7 @@ export default function EquipoPage() {
                   display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px',
                   borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))',
                   color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
-                  boxShadow: '0 4px 20px rgba(155,142,196,0.3)',
+                  boxShadow: '0 4px 20px rgba(0,201,167,0.3)',
                 }}
               >
                 <PlusIcon /> Invitar miembro
@@ -232,7 +234,7 @@ export default function EquipoPage() {
         {tempPassword && (
           <motion.div
             initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-            style={{ marginBottom: 24, padding: '20px 24px', borderRadius: 20, background: 'rgba(160,196,181,0.1)', border: '1px solid rgba(160,196,181,0.3)' }}
+            style={{ marginBottom: 24, padding: '20px 24px', borderRadius: 20, background: 'rgba(0,201,167,0.1)', border: '1px solid rgba(0,201,167,0.3)' }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
               <div>
@@ -256,11 +258,11 @@ export default function EquipoPage() {
           >
             <GlowingCard className="p-6 sm:p-8">
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#E8C4A0', display: 'inline-block' }} />
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFD166', display: 'inline-block' }} />
                 <h3 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>
                   Solicitudes de cambio de rol
                 </h3>
-                <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(232,196,160,0.15)', color: '#E8C4A0', border: '1px solid rgba(232,196,160,0.3)' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,209,102,0.15)', color: '#FFD166', border: '1px solid rgba(255,209,102,0.3)' }}>
                   {solicitudes.length} pendiente{solicitudes.length > 1 ? 's' : ''}
                 </span>
               </div>
@@ -271,7 +273,7 @@ export default function EquipoPage() {
                     <div key={s.id} style={{
                       display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
                       padding: '14px 18px', borderRadius: 14,
-                      background: 'rgba(232,196,160,0.05)', border: '1px solid rgba(232,196,160,0.15)',
+                      background: 'rgba(255,209,102,0.05)', border: '1px solid rgba(255,209,102,0.15)',
                     }}>
                       <div style={{ flex: 1, minWidth: 180 }}>
                         <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
@@ -295,14 +297,14 @@ export default function EquipoPage() {
                         <motion.button
                           onClick={() => handleAprobar(s.id)}
                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(160,196,181,0.15)', border: '1px solid rgba(160,196,181,0.3)', color: '#A0C4B5', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(0,201,167,0.15)', border: '1px solid rgba(0,201,167,0.3)', color: '#00C9A7', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                         >
                           <CheckIcon /> Aprobar
                         </motion.button>
                         <motion.button
                           onClick={() => handleRechazar(s.id)}
                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', color: '#E8A0C4', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)', color: '#FF6B6B', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                         >
                           <XIcon /> Rechazar
                         </motion.button>
@@ -456,10 +458,10 @@ export default function EquipoPage() {
 
       {/* Users list */}
       <ScrollReveal delay={0.2} direction="up">
-        <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
+        <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="bottom">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
             <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Miembros del equipo</h2>
-            <span style={{ fontSize: 14, fontWeight: 500, padding: '6px 16px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+            <span style={{ fontSize: 14, fontWeight: 500, padding: '6px 16px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
               {usuarios.length} usuarios
             </span>
           </div>
@@ -495,7 +497,7 @@ export default function EquipoPage() {
                         display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
                         padding: '16px 20px', borderRadius: 18,
                         background: 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${esYo ? 'rgba(155,142,196,0.3)' : 'var(--border)'}`,
+                        border: `1px solid ${esYo ? 'rgba(0,201,167,0.3)' : 'var(--border)'}`,
                       }}
                     >
                       {/* Avatar */}
@@ -514,7 +516,7 @@ export default function EquipoPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
                           <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{nombre}</p>
                           {esYo && (
-                            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>Tú</span>
+                            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>Tú</span>
                           )}
                         </div>
                         <p style={{ fontSize: 13, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</p>
@@ -549,7 +551,7 @@ export default function EquipoPage() {
                           whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                           style={{
                             width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                            background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)',
+                            background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             cursor: 'pointer', color: 'var(--danger)',
                           }}

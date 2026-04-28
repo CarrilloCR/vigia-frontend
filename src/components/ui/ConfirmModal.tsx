@@ -16,14 +16,14 @@ interface ConfirmModalProps {
 const variantStyles = {
   danger: {
     icon: (
-      <svg width="28" height="28" fill="none" stroke="#E8A0C4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <svg width="28" height="28" fill="none" stroke="#FF6B6B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
       </svg>
     ),
-    iconBg: 'rgba(232,160,196,0.12)',
-    iconBorder: 'rgba(232,160,196,0.25)',
-    btnBg: 'linear-gradient(135deg, #E8A0C4, #d4789e)',
-    btnShadow: '0 4px 20px rgba(232,160,196,0.3)',
+    iconBg: 'rgba(255,107,107,0.12)',
+    iconBorder: 'rgba(255,107,107,0.25)',
+    btnBg: 'linear-gradient(135deg, #FF6B6B, #d4789e)',
+    btnShadow: '0 4px 20px rgba(255,107,107,0.3)',
   },
   warning: {
     icon: (
@@ -39,14 +39,14 @@ const variantStyles = {
   },
   info: {
     icon: (
-      <svg width="28" height="28" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <svg width="28" height="28" fill="none" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
       </svg>
     ),
-    iconBg: 'rgba(155,142,196,0.12)',
-    iconBorder: 'rgba(155,142,196,0.25)',
+    iconBg: 'rgba(0,201,167,0.12)',
+    iconBorder: 'rgba(0,201,167,0.25)',
     btnBg: 'linear-gradient(135deg, var(--primary), var(--accent))',
-    btnShadow: '0 4px 20px rgba(155,142,196,0.3)',
+    btnShadow: '0 4px 20px rgba(0,201,167,0.3)',
   },
 }
 

@@ -15,6 +15,8 @@ import ScrollReveal from '../../../components/reactbits/ScrollReveal'
 import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import Magnet from '../../../components/reactbits/Magnet'
+import StarBorder from '../../../components/reactbits/StarBorder'
+import GlareHover from '../../../components/reactbits/GlareHover'
 
 interface Paciente {
   id: number
@@ -32,7 +34,7 @@ interface Paciente {
 
 interface Sede { id: number; nombre: string }
 
-const colores = ['#9B8EC4','#E8A0C4','#A0C4B5','#C4B5E8','#7C6FBF','#BBA8E8','#A8C4A0','#E8C4A0']
+const colores = ['#00C9A7','#FF6B6B','#00C9A7','#4A9EF0','#00A88A','#B06EF5','#00C9A7','#FFD166']
 
 function getColor(nombre: string) {
   let hash = 0
@@ -183,14 +185,14 @@ export default function PacientesPage() {
   )
 
   const stats = [
-    { label: 'Total pacientes', value: pacientes.length, color: '#9B8EC4' },
-    { label: 'Con citas', value: Object.keys(citas).length, color: '#A0C4B5' },
-    { label: 'Sin citas', value: pacientes.filter(p => !citas[p.id]).length, color: '#E8A0C4' },
+    { label: 'Total pacientes', value: pacientes.length, color: '#00C9A7' },
+    { label: 'Con citas', value: Object.keys(citas).length, color: '#00C9A7' },
+    { label: 'Sin citas', value: pacientes.filter(p => !citas[p.id]).length, color: '#FF6B6B' },
     { label: 'Nuevos este mes', value: pacientes.filter(p => {
       const d = new Date(p.primera_visita)
       const ahora = new Date()
       return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear()
-    }).length, color: '#C4B5E8' },
+    }).length, color: '#4A9EF0' },
   ]
 
   return (
@@ -207,14 +209,14 @@ export default function PacientesPage() {
               <motion.button onClick={() => setMostrarInactivos(v => !v)}
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none',
-                  background: mostrarInactivos ? 'rgba(232,160,196,0.12)' : 'var(--glass)', backdropFilter: 'blur(20px)',
-                  borderWidth: 1, borderStyle: 'solid', borderColor: mostrarInactivos ? 'rgba(232,160,196,0.4)' : 'var(--border)',
-                  color: mostrarInactivos ? '#E8A0C4' : 'var(--muted)' }}>
+                  background: mostrarInactivos ? 'rgba(255,107,107,0.12)' : 'var(--glass)', backdropFilter: 'blur(20px)',
+                  borderWidth: 1, borderStyle: 'solid', borderColor: mostrarInactivos ? 'rgba(255,107,107,0.4)' : 'var(--border)',
+                  color: mostrarInactivos ? '#FF6B6B' : 'var(--muted)' }}>
                 {mostrarInactivos ? 'Ocultar inactivos' : 'Mostrar inactivos'}
               </motion.button>
               <Magnet strength={0.3}>
                 <motion.button onClick={abrirCrear} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,201,167,0.3)' }}>
                   <PlusIcon /> Agregar paciente
                 </motion.button>
               </Magnet>
@@ -255,7 +257,7 @@ export default function PacientesPage() {
           <GlowingCard className="p-6 sm:p-8 lg:p-10">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
               <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Lista de pacientes</h2>
-              <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+              <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
                 {pacientesFiltrados.length} pacientes
               </span>
             </div>
@@ -314,7 +316,7 @@ export default function PacientesPage() {
                             {p.telefono && <p style={{ fontSize: 12, color: 'var(--muted)' }}>📞 {p.telefono}</p>}
                             {edad !== null && <p style={{ fontSize: 12, color: 'var(--muted)' }}>🎂 {edad} años</p>}
                             {p.sede_nombre && (
-                              <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 20, background: 'rgba(160,196,181,0.15)', color: '#A0C4B5', border: '1px solid rgba(160,196,181,0.3)' }}>
+                              <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 20, background: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: '1px solid rgba(0,201,167,0.3)' }}>
                                 {p.sede_nombre}
                               </span>
                             )}
@@ -338,23 +340,23 @@ export default function PacientesPage() {
                         {/* Acciones */}
                         <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
                           {!p.activo && (
-                            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'rgba(232,160,196,0.12)', color: '#E8A0C4', border: '1px solid rgba(232,160,196,0.3)' }}>Inactivo</span>
+                            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'rgba(255,107,107,0.12)', color: '#FF6B6B', border: '1px solid rgba(255,107,107,0.3)' }}>Inactivo</span>
                           )}
                           <motion.button onClick={() => abrirEditar(p)}
                             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                            style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(155,142,196,0.12)', border: '1px solid rgba(155,142,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
+                            style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(0,201,167,0.12)', border: '1px solid rgba(0,201,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
                             <EditIcon />
                           </motion.button>
                           {p.activo ? (
                             <motion.button onClick={() => setConfirmDelete({ open: true, id: p.id, name: `${p.nombre} ${p.apellido}` })}
                               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)' }}>
+                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)' }}>
                               <TrashIcon />
                             </motion.button>
                           ) : (
                             <motion.button onClick={async () => { await api.patch(`/pacientes/${p.id}/`, { activo: true }); fetchData() }}
                               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(160,196,181,0.12)', border: '1px solid rgba(160,196,181,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#A0C4B5', fontSize: 16, fontWeight: 700 }}>
+                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(0,201,167,0.12)', border: '1px solid rgba(0,201,167,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#00C9A7', fontSize: 16, fontWeight: 700 }}>
                               ↩
                             </motion.button>
                           )}
@@ -425,7 +427,7 @@ export default function PacientesPage() {
               </div>
 
               {error && (
-                <p style={{ marginTop: 16, fontSize: 13, color: 'var(--danger)', padding: '10px 14px', borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.3)' }}>
+                <p style={{ marginTop: 16, fontSize: 13, color: 'var(--danger)', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)' }}>
                   {error}
                 </p>
               )}

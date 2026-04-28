@@ -6,10 +6,10 @@ interface SeverityBadgeProps {
 }
 
 const config = {
-  baja: { label: 'Baja', color: 'var(--success)', emoji: '🟢' },
-  media: { label: 'Media', color: 'var(--glow)', emoji: '🟡' },
-  alta: { label: 'Alta', color: 'var(--primary)', emoji: '🟠' },
-  critica: { label: 'Crítica', color: 'var(--danger)', emoji: '🔴' },
+  baja:    { label: 'Baja',    color: 'var(--jade)',     emoji: '🟢' },
+  media:   { label: 'Media',   color: 'var(--gold)',     emoji: '🟡' },
+  alta:    { label: 'Alta',    color: 'var(--sapphire)', emoji: '🟠' },
+  critica: { label: 'Crítica', color: 'var(--coral)',    emoji: '🔴' },
 }
 
 export default function SeverityBadge({ severidad }: SeverityBadgeProps) {

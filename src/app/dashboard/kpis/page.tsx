@@ -21,16 +21,18 @@ import ScrollReveal from '../../../components/reactbits/ScrollReveal'
 import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import SedeSelector from '../../../components/ui/SedeSelector'
+import StarBorder from '../../../components/reactbits/StarBorder'
+import GlareHover from '../../../components/reactbits/GlareHover'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
-  tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
-  tasa_noshow:       { label: 'No-Show',       color: '#C4B5E8', unit: '%' },
-  ingresos_dia:      { label: 'Ingresos',      color: '#A0C4B5', unit: '$' },
-  ticket_promedio:   { label: 'Ticket Prom',   color: '#9B8EC4', unit: '$' },
-  pacientes_nuevos:  { label: 'Pac. Nuevos',   color: '#7C6FBF', unit: '%' },
-  retencion_90:      { label: 'Retención',     color: '#BBA8E8', unit: '%' },
-  nps:               { label: 'NPS',           color: '#A8C4A0', unit: ''  },
-  citas_reagendadas: { label: 'Reagendadas',   color: '#E8C4A0', unit: '%' },
+  tasa_cancelacion:  { label: 'Cancelación',  color: '#FF6B6B', unit: '%' },
+  tasa_noshow:       { label: 'No-Show',       color: '#4A9EF0', unit: '%' },
+  ingresos_dia:      { label: 'Ingresos',      color: '#00C9A7', unit: '$' },
+  ticket_promedio:   { label: 'Ticket Prom',   color: '#00C9A7', unit: '$' },
+  pacientes_nuevos:  { label: 'Pac. Nuevos',   color: '#00A88A', unit: '%' },
+  retencion_90:      { label: 'Retención',     color: '#B06EF5', unit: '%' },
+  nps:               { label: 'NPS',           color: '#00C9A7', unit: ''  },
+  citas_reagendadas: { label: 'Reagendadas',   color: '#FFD166', unit: '%' },
 }
 
 const kpiUmbrales: Record<string, { umbral: number; direccion: 'arriba' | 'abajo'; max: number; label: string }> = {
@@ -75,7 +77,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return (
     <div style={{
       background: 'rgba(18,14,36,0.97)', backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(155,142,196,0.3)', borderRadius: 14,
+      border: '1px solid rgba(0,201,167,0.3)', borderRadius: 14,
       padding: '12px 16px', fontSize: 13, minWidth: 160,
     }}>
       <p style={{ color: 'var(--muted)', marginBottom: 8, fontSize: 11 }}>{label}</p>
@@ -99,7 +101,7 @@ const NormalizedTooltip = ({ active, payload, label }: any) => {
   return (
     <div style={{
       background: 'rgba(18,14,36,0.97)', backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(155,142,196,0.3)', borderRadius: 14,
+      border: '1px solid rgba(0,201,167,0.3)', borderRadius: 14,
       padding: '12px 16px', fontSize: 12, minWidth: 180,
     }}>
       <p style={{ color: 'var(--muted)', marginBottom: 8, fontSize: 11 }}>{label}</p>
@@ -110,7 +112,7 @@ const NormalizedTooltip = ({ active, payload, label }: any) => {
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
             <p style={{ color: 'var(--text)', fontWeight: 600 }}>
-              {p.name}: <span style={{ color: p.value >= 0 ? '#A0C4B5' : '#E8A0C4' }}>
+              {p.name}: <span style={{ color: p.value >= 0 ? '#00C9A7' : '#FF6B6B' }}>
                 {sign}{p.value.toFixed(1)}%
               </span>
             </p>
@@ -200,7 +202,7 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
             {alertasActivas > 0 && (
               <span style={{
                 fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 10,
-                background: 'rgba(232,160,196,0.2)', color: '#E8A0C4', border: '1px solid rgba(232,160,196,0.3)',
+                background: 'rgba(255,107,107,0.2)', color: '#FF6B6B', border: '1px solid rgba(255,107,107,0.3)',
               }}>
                 {alertasActivas} alerta{alertasActivas > 1 ? 's' : ''}
               </span>
@@ -217,13 +219,13 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
           {overlays.prophet && prophetData && (
-            <span style={{ fontSize: 10, color: '#7CB5E8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#7CB5E8' }} />
+            <span style={{ fontSize: 10, color: '#4A9EF0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4A9EF0' }} />
               Prophet
             </span>
           )}
           {overlays.pyod && pyodAlertas.length > 0 && (
-            <span style={{ fontSize: 10, color: '#E8C4A0', fontWeight: 600 }}>
+            <span style={{ fontSize: 10, color: '#FFD166', fontWeight: 600 }}>
               {pyodAlertas.length} outlier{pyodAlertas.length > 1 ? 's' : ''}
             </span>
           )}
@@ -253,7 +255,7 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
             />
             {/* Umbral reference */}
             {overlays.umbral && umbralCfg && (
-              <ReferenceLine y={umbralCfg.umbral} stroke="#E8A0C4" strokeDasharray="4 3" strokeWidth={1} strokeOpacity={0.6} />
+              <ReferenceLine y={umbralCfg.umbral} stroke="#FF6B6B" strokeDasharray="4 3" strokeWidth={1} strokeOpacity={0.6} />
             )}
             {/* Prophet band */}
             {overlays.prophet && prophetData && (
@@ -261,11 +263,11 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
                 <ReferenceArea
                   y1={prophetData.yhat_lower}
                   y2={prophetData.yhat_upper}
-                  fill="rgba(124,181,232,0.12)"
+                  fill="rgba(74,158,240,0.12)"
                   fillOpacity={1}
                   ifOverflow="extendDomain"
                 />
-                <ReferenceLine y={prophetData.yhat} stroke="#7CB5E8" strokeDasharray="5 3" strokeWidth={1.5} strokeOpacity={0.8} />
+                <ReferenceLine y={prophetData.yhat} stroke="#4A9EF0" strokeDasharray="5 3" strokeWidth={1.5} strokeOpacity={0.8} />
               </>
             )}
             {/* Actual data */}
@@ -278,7 +280,7 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
             {/* Anomaly dots (general) */}
             {overlays.anomalias && chartData.map((d, idx) =>
               anomalyDataIndexes.has(idx) && d.valor != null ? (
-                <ReferenceDot key={`a-${idx}`} x={d.fecha} y={d.valor} r={6} fill="#E8A0C4" stroke="var(--void)" strokeWidth={2} />
+                <ReferenceDot key={`a-${idx}`} x={d.fecha} y={d.valor} r={6} fill="#FF6B6B" stroke="var(--void)" strokeWidth={2} />
               ) : null
             )}
             {/* PyOD outlier dots — larger, distinct orange with ring */}
@@ -287,8 +289,8 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
                 <ReferenceDot key={`p-${idx}`} x={d.fecha} y={d.valor} r={8}
                   shape={(p: any) => (
                     <g>
-                      <circle cx={p.cx} cy={p.cy} r={12} fill="#E8C4A0" fillOpacity={0.15} stroke="#E8C4A0" strokeOpacity={0.4} strokeWidth={1} />
-                      <circle cx={p.cx} cy={p.cy} r={5} fill="#E8C4A0" stroke="#0d0a1e" strokeWidth={1.5} />
+                      <circle cx={p.cx} cy={p.cy} r={12} fill="#FFD166" fillOpacity={0.15} stroke="#FFD166" strokeOpacity={0.4} strokeWidth={1} />
+                      <circle cx={p.cx} cy={p.cy} r={5} fill="#FFD166" stroke="#0d0a1e" strokeWidth={1.5} />
                     </g>
                   )}
                 />
@@ -302,7 +304,7 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
       {overlays.prophet && prophetData && (
         <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 10 }}>
           <span style={{ color: 'var(--muted)' }}>
-            Pred.: <strong style={{ color: '#7CB5E8' }}>{cfg.unit}{prophetData.yhat}</strong>
+            Pred.: <strong style={{ color: '#4A9EF0' }}>{cfg.unit}{prophetData.yhat}</strong>
           </span>
           <span style={{ color: 'var(--muted)' }}>
             Rango: <strong style={{ color: 'var(--text)' }}>{prophetData.yhat_lower} — {prophetData.yhat_upper}</strong>
@@ -583,7 +585,7 @@ export default function KPIsPage() {
                       border: 'none', position: 'relative', overflow: 'hidden',
                       background: isSelected ? 'transparent' : 'var(--glass)', backdropFilter: 'blur(20px)',
                       borderWidth: 1, borderStyle: 'solid',
-                      borderColor: isSelected ? c.color : hasAlerts ? 'rgba(232,160,196,0.3)' : 'var(--border)',
+                      borderColor: isSelected ? c.color : hasAlerts ? 'rgba(255,107,107,0.3)' : 'var(--border)',
                       color: isSelected ? 'white' : 'var(--muted)', transition: 'all 0.2s',
                       boxShadow: isSelected ? `0 4px 20px ${c.color}40` : 'none',
                     }}>
@@ -596,11 +598,11 @@ export default function KPIsPage() {
                     <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
                       {hasAlerts && !isSelected && (
                         <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
-                          style={{ width: 6, height: 6, borderRadius: '50%', background: '#E8A0C4', flexShrink: 0 }} />
+                          style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF6B6B', flexShrink: 0 }} />
                       )}
                       {c.label}
                       {ultimo !== null && <span style={{ opacity: 0.85, fontSize: 13 }}>{c.unit}{ultimo}</span>}
-                      {trending !== null && <span style={{ fontSize: 11, color: isSelected ? 'rgba(255,255,255,0.8)' : trending ? '#A0C4B5' : '#E8A0C4' }}>{trending ? '↑' : '↓'}</span>}
+                      {trending !== null && <span style={{ fontSize: 11, color: isSelected ? 'rgba(255,255,255,0.8)' : trending ? '#00C9A7' : '#FF6B6B' }}>{trending ? '↑' : '↓'}</span>}
                     </span>
                   </motion.button>
                 )
@@ -610,7 +612,7 @@ export default function KPIsPage() {
 
           {/* Main chart */}
           <ScrollReveal delay={0.2} direction="up">
-            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="top">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="top">
               {/* Chart header */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
                 <div>
@@ -621,17 +623,17 @@ export default function KPIsPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   {/* Overlay toggles */}
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    <OverlayBtn label="Prophet" active={overlays.prophet} color="#7CB5E8" onClick={() => toggleOverlay('prophet')} hasData={!!prophetBand} />
-                    <OverlayBtn label="PyOD" active={overlays.pyod} color="#E8C4A0" onClick={() => toggleOverlay('pyod')} hasData={pyodPoints.length > 0} />
-                    <OverlayBtn label="Umbral" active={overlays.umbral} color="#E8A0C4" onClick={() => toggleOverlay('umbral')} hasData={!!umbralActual} />
-                    <OverlayBtn label="Anomalías" active={overlays.anomalias} color="#C4B5E8" onClick={() => toggleOverlay('anomalias')} hasData={anomalyPoints.length > 0} />
+                    <OverlayBtn label="Prophet" active={overlays.prophet} color="#4A9EF0" onClick={() => toggleOverlay('prophet')} hasData={!!prophetBand} />
+                    <OverlayBtn label="PyOD" active={overlays.pyod} color="#FFD166" onClick={() => toggleOverlay('pyod')} hasData={pyodPoints.length > 0} />
+                    <OverlayBtn label="Umbral" active={overlays.umbral} color="#FF6B6B" onClick={() => toggleOverlay('umbral')} hasData={!!umbralActual} />
+                    <OverlayBtn label="Anomalías" active={overlays.anomalias} color="#4A9EF0" onClick={() => toggleOverlay('anomalias')} hasData={anomalyPoints.length > 0} />
                   </div>
 
                   {/* Chart size */}
                   <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10, padding: 3 }}>
                     {(['normal', 'grande', 'completo'] as const).map(s => (
                       <motion.button key={s} onClick={() => setChartSize(s)} whileTap={{ scale: 0.95 }}
-                        style={{ padding: '8px 14px', borderRadius: 8, fontSize: 11, fontWeight: 500, cursor: 'pointer', border: 'none', background: chartSize === s ? 'rgba(155,142,196,0.2)' : 'transparent', color: chartSize === s ? 'var(--primary)' : 'var(--muted)' }}>
+                        style={{ padding: '8px 14px', borderRadius: 8, fontSize: 11, fontWeight: 500, cursor: 'pointer', border: 'none', background: chartSize === s ? 'rgba(0,201,167,0.2)' : 'transparent', color: chartSize === s ? 'var(--primary)' : 'var(--muted)' }}>
                         {s === 'normal' ? 'S' : s === 'grande' ? 'M' : 'L'}
                       </motion.button>
                     ))}
@@ -664,37 +666,37 @@ export default function KPIsPage() {
                 </span>
                 {overlays.prophet && prophetBand && (
                   <>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#7CB5E8' }}>
-                      <svg width="16" height="3"><line x1="0" y1="1.5" x2="16" y2="1.5" stroke="#7CB5E8" strokeWidth="2" strokeDasharray="5 3"/></svg>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#4A9EF0' }}>
+                      <svg width="16" height="3"><line x1="0" y1="1.5" x2="16" y2="1.5" stroke="#4A9EF0" strokeWidth="2" strokeDasharray="5 3"/></svg>
                       Prophet (predicción)
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#7CB5E8', opacity: 0.7 }}>
-                      <div style={{ width: 14, height: 8, borderRadius: 3, background: 'rgba(124,181,232,0.2)', border: '1px solid rgba(124,181,232,0.3)' }} />
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#4A9EF0', opacity: 0.7 }}>
+                      <div style={{ width: 14, height: 8, borderRadius: 3, background: 'rgba(74,158,240,0.2)', border: '1px solid rgba(74,158,240,0.3)' }} />
                       Intervalo confianza 90%
                     </span>
                   </>
                 )}
                 {overlays.umbral && umbralActual && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#E8A0C4' }}>
-                    <svg width="16" height="3"><line x1="0" y1="1.5" x2="16" y2="1.5" stroke="#E8A0C4" strokeWidth="2" strokeDasharray="6 4"/></svg>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#FF6B6B' }}>
+                    <svg width="16" height="3"><line x1="0" y1="1.5" x2="16" y2="1.5" stroke="#FF6B6B" strokeWidth="2" strokeDasharray="6 4"/></svg>
                     {umbralActual.label}
                   </span>
                 )}
                 {overlays.anomalias && anomalyPoints.length > 0 && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#E8A0C4' }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#E8A0C4' }} />
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#FF6B6B' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF6B6B' }} />
                     {anomalyPoints.length} anomalía{anomalyPoints.length > 1 ? 's' : ''}
                   </span>
                 )}
                 {overlays.pyod && pyodPoints.length > 0 && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#E8C4A0' }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#E8C4A0' }} />
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#FFD166' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFD166' }} />
                     {pyodPoints.length} outlier PyOD
                   </span>
                 )}
                 {overlays.prophet && hayFuturos && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--muted)' }}>
-                    <div style={{ width: 14, height: 8, borderRadius: 3, background: 'rgba(124,181,232,0.08)', border: '1px dashed rgba(124,181,232,0.3)' }} />
+                    <div style={{ width: 14, height: 8, borderRadius: 3, background: 'rgba(74,158,240,0.08)', border: '1px dashed rgba(74,158,240,0.3)' }} />
                     Predicción futura
                   </span>
                 )}
@@ -720,11 +722,11 @@ export default function KPIsPage() {
                         <stop offset="95%" stopColor={cfg?.color} stopOpacity={0}/>
                       </linearGradient>
                       <linearGradient id="colorFuture" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#7CB5E8" stopOpacity={0.15}/>
-                        <stop offset="95%" stopColor="#7CB5E8" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#4A9EF0" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#4A9EF0" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(155,142,196,0.08)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,201,167,0.08)" />
                     <XAxis dataKey="fecha" stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
                     <YAxis stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} />
@@ -734,16 +736,16 @@ export default function KPIsPage() {
                     {/* Umbral zone — always rendered, opacity controlled */}
                     <ReferenceLine
                       y={umbralActual?.umbral ?? 0}
-                      stroke="#E8A0C4"
+                      stroke="#FF6B6B"
                       strokeDasharray="6 4" strokeWidth={1.5}
                       strokeOpacity={overlays.umbral && umbralActual ? 1 : 0}
                       ifOverflow="extendDomain"
-                      label={overlays.umbral && umbralActual ? { value: umbralActual.label, position: 'insideTopRight', fill: '#E8A0C4', fontSize: 11, fontWeight: 600 } : undefined}
+                      label={overlays.umbral && umbralActual ? { value: umbralActual.label, position: 'insideTopRight', fill: '#FF6B6B', fontSize: 11, fontWeight: 600 } : undefined}
                     />
                     <ReferenceArea
                       y1={umbralActual?.direccion === 'arriba' ? (umbralActual.umbral ?? 0) : 0}
                       y2={umbralActual?.direccion === 'arriba' ? (umbralActual.max ?? 0) : (umbralActual?.umbral ?? 0)}
-                      fill={overlays.umbral && umbralActual ? '#E8A0C4' : 'transparent'}
+                      fill={overlays.umbral && umbralActual ? '#FF6B6B' : 'transparent'}
                       fillOpacity={0.06}
                       ifOverflow="extendDomain"
                     />
@@ -752,32 +754,32 @@ export default function KPIsPage() {
                     <ReferenceArea
                       y1={prophetBand?.yhat_lower ?? 0}
                       y2={prophetBand?.yhat_upper ?? 0}
-                      fill={overlays.prophet && prophetBand ? 'rgba(124,181,232,0.14)' : 'transparent'}
+                      fill={overlays.prophet && prophetBand ? 'rgba(74,158,240,0.14)' : 'transparent'}
                       fillOpacity={1}
                       ifOverflow="extendDomain"
                     />
                     <ReferenceLine
                       y={prophetBand?.yhat ?? 0}
-                      stroke="#7CB5E8"
+                      stroke="#4A9EF0"
                       strokeDasharray="7 4" strokeWidth={2}
                       strokeOpacity={overlays.prophet && prophetBand ? 0.9 : 0}
                       ifOverflow="extendDomain"
-                      label={overlays.prophet && prophetBand ? { value: `P: ${prophetBand.yhat}`, position: 'insideTopLeft', fill: '#7CB5E8', fontSize: 10, fontWeight: 700 } : undefined}
+                      label={overlays.prophet && prophetBand ? { value: `P: ${prophetBand.yhat}`, position: 'insideTopLeft', fill: '#4A9EF0', fontSize: 10, fontWeight: 700 } : undefined}
                     />
 
                     {/* "Ahora" separator */}
                     <ReferenceLine
                       x={ahoraLabel ?? undefined}
-                      stroke="rgba(155,142,196,0.5)"
+                      stroke="rgba(0,201,167,0.5)"
                       strokeDasharray="4 3" strokeWidth={1.5}
                       strokeOpacity={overlays.prophet && hayFuturos ? 1 : 0}
-                      label={overlays.prophet && hayFuturos ? { value: 'Ahora', position: 'insideTopRight', fill: 'rgba(155,142,196,0.8)', fontSize: 10, fontWeight: 700 } : undefined}
+                      label={overlays.prophet && hayFuturos ? { value: 'Ahora', position: 'insideTopRight', fill: 'rgba(0,201,167,0.8)', fontSize: 10, fontWeight: 700 } : undefined}
                     />
 
                     {/* Future zone highlight */}
                     <ReferenceArea
                       x1={ahoraLabel ?? undefined}
-                      fill={overlays.prophet && hayFuturos ? 'rgba(124,181,232,0.05)' : 'transparent'}
+                      fill={overlays.prophet && hayFuturos ? 'rgba(74,158,240,0.05)' : 'transparent'}
                       fillOpacity={1}
                       ifOverflow="extendDomain"
                     />
@@ -794,18 +796,18 @@ export default function KPIsPage() {
                     {/* Future Prophet area — always in DOM, stroke/fill controlled */}
                     <Area
                       type="monotone" dataKey="prophet_yhat" name="Predicción futura"
-                      stroke={overlays.prophet && hayFuturos ? '#7CB5E8' : 'transparent'}
+                      stroke={overlays.prophet && hayFuturos ? '#4A9EF0' : 'transparent'}
                       strokeWidth={2} strokeDasharray="7 4"
                       fill={overlays.prophet && hayFuturos ? 'url(#colorFuture)' : 'transparent'}
                       dot={false}
-                      activeDot={overlays.prophet && hayFuturos ? { r: 4, fill: '#7CB5E8', stroke: 'var(--void)', strokeWidth: 2 } : false}
+                      activeDot={overlays.prophet && hayFuturos ? { r: 4, fill: '#4A9EF0', stroke: 'var(--void)', strokeWidth: 2 } : false}
                     />
 
                     {/* Anomaly dots — fill controlled by overlay */}
                     {anomalyPoints.map(ap => {
                       const d = chartData[ap.dataIdx]
                       if (!d || d.valor == null) return null
-                      const sevColor = ap.severidad === 'critica' ? '#E8A0C4' : ap.severidad === 'alta' ? '#9B8EC4' : '#C4B5E8'
+                      const sevColor = ap.severidad === 'critica' ? '#FF6B6B' : ap.severidad === 'alta' ? '#00C9A7' : '#4A9EF0'
                       return (
                         <ReferenceDot key={`anom-${ap.id}`} x={d.fecha} y={d.valor} r={7}
                           fill={overlays.anomalias ? sevColor : 'transparent'}
@@ -828,11 +830,11 @@ export default function KPIsPage() {
                               style={{ cursor: 'pointer' }}
                             >
                               {/* Pulse ring */}
-                              <circle cx={p.cx} cy={p.cy} r={14} fill="#E8C4A0" fillOpacity={0.12} stroke="#E8C4A0" strokeOpacity={0.35} strokeWidth={1.5} />
+                              <circle cx={p.cx} cy={p.cy} r={14} fill="#FFD166" fillOpacity={0.12} stroke="#FFD166" strokeOpacity={0.35} strokeWidth={1.5} />
                               {/* Core dot */}
-                              <circle cx={p.cx} cy={p.cy} r={6} fill="#E8C4A0" stroke="#0d0a1e" strokeWidth={2} />
+                              <circle cx={p.cx} cy={p.cy} r={6} fill="#FFD166" stroke="#0d0a1e" strokeWidth={2} />
                               {/* Label above */}
-                              <text x={p.cx} y={p.cy - 20} textAnchor="middle" fontSize={9} fontWeight="700" fill="#E8C4A0" letterSpacing="0.5">PYOD</text>
+                              <text x={p.cx} y={p.cy - 20} textAnchor="middle" fontSize={9} fontWeight="700" fill="#FFD166" letterSpacing="0.5">PYOD</text>
                             </g>
                           )}
                         />
@@ -851,21 +853,21 @@ export default function KPIsPage() {
                       key="pyod-panel"
                       initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.15 }}
-                      style={{ marginTop: 10, padding: '12px 16px', borderRadius: 14, background: 'rgba(232,196,160,0.07)', border: '1px solid rgba(232,196,160,0.25)', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}
+                      style={{ marginTop: 10, padding: '12px 16px', borderRadius: 14, background: 'rgba(255,209,102,0.07)', border: '1px solid rgba(255,209,102,0.25)', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#E8C4A0', display: 'inline-block', flexShrink: 0 }} />
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#E8C4A0' }}>Outlier PyOD · {new Date(hoveredPyod.creada_en).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFD166', display: 'inline-block', flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#FFD166' }}>Outlier PyOD · {new Date(hoveredPyod.creada_en).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                       <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                        Score: <strong style={{ color: p.anomaly_score < 0 ? '#E8A0C4' : '#E8C4A0' }}>{p.anomaly_score}</strong>
+                        Score: <strong style={{ color: p.anomaly_score < 0 ? '#FF6B6B' : '#FFD166' }}>{p.anomaly_score}</strong>
                         <span style={{ fontSize: 10, marginLeft: 4, color: 'var(--muted)' }}>(umbral {p.threshold})</span>
                       </span>
                       <span style={{ fontSize: 12, color: 'var(--muted)' }}>
                         Media histórica: <strong style={{ color: 'var(--text)' }}>{cfg?.unit}{p.media_historica}</strong>
                       </span>
                       <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                        Desviación: <strong style={{ color: '#E8C4A0' }}>{hoveredPyod.desviacion}%</strong>
+                        Desviación: <strong style={{ color: '#FFD166' }}>{hoveredPyod.desviacion}%</strong>
                       </span>
                       <span style={{ fontSize: 12, color: 'var(--muted)' }}>
                         Std: <strong style={{ color: 'var(--text)' }}>{p.std_historica}</strong>
@@ -880,15 +882,15 @@ export default function KPIsPage() {
 
               {/* Prophet future info */}
               {overlays.prophet && hayFuturos && prophetBand && (
-                <div style={{ marginTop: 14, padding: '12px 16px', borderRadius: 14, background: 'rgba(124,181,232,0.07)', border: '1px solid rgba(124,181,232,0.2)', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                <div style={{ marginTop: 14, padding: '12px 16px', borderRadius: 14, background: 'rgba(74,158,240,0.07)', border: '1px solid rgba(74,158,240,0.2)', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7CB5E8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A9EF0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                     </svg>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#7CB5E8' }}>Predicción futura (Prophet)</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#4A9EF0' }}>Predicción futura (Prophet)</span>
                   </div>
                   <span style={{ fontSize: 12, color: 'var(--muted)' }}>
-                    Valor esperado: <strong style={{ color: '#7CB5E8' }}>{cfg?.unit}{prophetBand.yhat}</strong>
+                    Valor esperado: <strong style={{ color: '#4A9EF0' }}>{cfg?.unit}{prophetBand.yhat}</strong>
                   </span>
                   <span style={{ fontSize: 12, color: 'var(--muted)' }}>
                     Rango 90%: <strong style={{ color: 'var(--text)' }}>{cfg?.unit}{prophetBand.yhat_lower} — {cfg?.unit}{prophetBand.yhat_upper}</strong>
@@ -904,10 +906,10 @@ export default function KPIsPage() {
           {/* Detection alerts for this KPI */}
           {overlays.anomalias && alertasDelKpi.length > 0 && (
             <ScrollReveal delay={0.15} direction="up">
-              <SpotlightCard className="p-5 sm:p-6" spotlightColor="rgba(232,160,196,0.1)" from="bottom">
+              <SpotlightCard className="p-5 sm:p-6" spotlightColor="rgba(255,107,107,0.1)" from="bottom">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                     </svg>
                     <h3 className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
@@ -920,7 +922,7 @@ export default function KPIsPage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 320, overflowY: 'auto' }}>
                   {alertasDelKpi.slice(0, 5).map(a => {
-                    const sevColor = a.severidad === 'critica' ? '#E8A0C4' : a.severidad === 'alta' ? '#9B8EC4' : a.severidad === 'media' ? '#C4B5E8' : '#A0C4B5'
+                    const sevColor = a.severidad === 'critica' ? '#FF6B6B' : a.severidad === 'alta' ? '#00C9A7' : a.severidad === 'media' ? '#4A9EF0' : '#00C9A7'
                     const d = a.detalle_deteccion
                     const isExpanded = alertaDetalleId === a.id
                     return (
@@ -933,7 +935,7 @@ export default function KPIsPage() {
                             <div style={{ display: 'flex', gap: 4 }}>
                               {d.ensemble.metodos_disponibles.map(m => {
                                 const voted = d.ensemble!.metodos_que_flaggearon.includes(m)
-                                const mColor = m === 'estadistico' ? '#A0C4B5' : m === 'prophet' ? '#7CB5E8' : '#E8C4A0'
+                                const mColor = m === 'estadistico' ? '#00C9A7' : m === 'prophet' ? '#4A9EF0' : '#FFD166'
                                 return (
                                   <span key={m} title={`${m}: ${voted ? 'anomalía' : 'normal'}`} style={{ fontSize: 9, fontWeight: 700, width: 18, height: 18, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: voted ? `${mColor}25` : 'rgba(255,255,255,0.03)', color: voted ? mColor : 'var(--muted)', border: `1px solid ${voted ? mColor + '40' : 'var(--border)'}` }}>
                                     {m === 'estadistico' ? 'σ' : m === 'prophet' ? 'P' : 'F'}
@@ -943,7 +945,7 @@ export default function KPIsPage() {
                             </div>
                           )}
                           <motion.button onClick={() => setAlertaDetalleId(isExpanded ? null : a.id)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                            style={{ marginLeft: 'auto', width: 22, height: 22, borderRadius: 11, background: isExpanded ? 'rgba(155,142,196,0.2)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isExpanded ? '#9B8EC4' : 'var(--muted)' }}>
+                            style={{ marginLeft: 'auto', width: 22, height: 22, borderRadius: 11, background: isExpanded ? 'rgba(0,201,167,0.2)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isExpanded ? '#00C9A7' : 'var(--muted)' }}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                             </svg>
@@ -958,36 +960,36 @@ export default function KPIsPage() {
                         {isExpanded && d && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {d.estadistico && (
-                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(160,196,181,0.08)', border: '1px solid rgba(160,196,181,0.2)', fontSize: 12 }}>
-                                <p style={{ fontWeight: 700, color: '#A0C4B5', marginBottom: 3 }}>σ Estadístico — {d.estadistico.es_anomalia ? '⚠ Anomalía' : '✓ Normal'}</p>
+                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(0,201,167,0.08)', border: '1px solid rgba(0,201,167,0.2)', fontSize: 12 }}>
+                                <p style={{ fontWeight: 700, color: '#00C9A7', marginBottom: 3 }}>σ Estadístico — {d.estadistico.es_anomalia ? '⚠ Anomalía' : '✓ Normal'}</p>
                                 <p style={{ color: 'var(--muted)', lineHeight: 1.5 }}>
-                                  Desviación: <strong style={{ color: '#A0C4B5' }}>{d.estadistico.desviacion}%</strong> (umbral: {d.estadistico.umbral}%) ·{' '}
+                                  Desviación: <strong style={{ color: '#00C9A7' }}>{d.estadistico.desviacion}%</strong> (umbral: {d.estadistico.umbral}%) ·{' '}
                                   Esperado: {d.estadistico.valor_esperado} · {d.estadistico.datos_usados} datos hist.
                                 </p>
                               </div>
                             )}
                             {d.prophet && (
-                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(124,181,232,0.08)', border: '1px solid rgba(124,181,232,0.2)', fontSize: 12 }}>
-                                <p style={{ fontWeight: 700, color: '#7CB5E8', marginBottom: 3 }}>P Prophet — {d.prophet.es_anomalia ? '⚠ Fuera del rango' : '✓ Dentro del rango'}</p>
+                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(74,158,240,0.08)', border: '1px solid rgba(74,158,240,0.2)', fontSize: 12 }}>
+                                <p style={{ fontWeight: 700, color: '#4A9EF0', marginBottom: 3 }}>P Prophet — {d.prophet.es_anomalia ? '⚠ Fuera del rango' : '✓ Dentro del rango'}</p>
                                 <p style={{ color: 'var(--muted)', lineHeight: 1.5 }}>
-                                  Predicción: <strong style={{ color: '#7CB5E8' }}>{d.prophet.yhat}</strong> ·
+                                  Predicción: <strong style={{ color: '#4A9EF0' }}>{d.prophet.yhat}</strong> ·
                                   Rango IC {d.prophet.intervalo_confianza}%: [{d.prophet.yhat_lower} — {d.prophet.yhat_upper}] ·
                                   Desv: {d.prophet.desviacion?.toFixed(1)}% · {d.prophet.datos_entrenamiento} registros de entrenamiento
                                 </p>
                               </div>
                             )}
                             {d.pyod && (
-                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(232,196,160,0.08)', border: '1px solid rgba(232,196,160,0.2)', fontSize: 12 }}>
-                                <p style={{ fontWeight: 700, color: '#E8C4A0', marginBottom: 3 }}>F Isolation Forest — {d.pyod.es_anomalia ? '⚠ Outlier' : '✓ Normal'}</p>
+                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(255,209,102,0.08)', border: '1px solid rgba(255,209,102,0.2)', fontSize: 12 }}>
+                                <p style={{ fontWeight: 700, color: '#FFD166', marginBottom: 3 }}>F Isolation Forest — {d.pyod.es_anomalia ? '⚠ Outlier' : '✓ Normal'}</p>
                                 <p style={{ color: 'var(--muted)', lineHeight: 1.5 }}>
-                                  Score: <strong style={{ color: d.pyod.es_outlier ? '#E8A0C4' : '#A0C4B5' }}>{d.pyod.anomaly_score}</strong> (umbral: {d.pyod.threshold}) ·
+                                  Score: <strong style={{ color: d.pyod.es_outlier ? '#FF6B6B' : '#00C9A7' }}>{d.pyod.anomaly_score}</strong> (umbral: {d.pyod.threshold}) ·
                                   Media hist.: {d.pyod.media_historica} ± {d.pyod.std_historica?.toFixed(1)}
                                 </p>
                               </div>
                             )}
                             {a.recomendacion && (
-                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(155,142,196,0.08)', border: '1px solid rgba(155,142,196,0.2)', fontSize: 12 }}>
-                                <p style={{ fontWeight: 700, color: '#C4B5E8', fontSize: 11, marginBottom: 4 }}>Recomendación IA</p>
+                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(0,201,167,0.08)', border: '1px solid rgba(0,201,167,0.2)', fontSize: 12 }}>
+                                <p style={{ fontWeight: 700, color: '#4A9EF0', fontSize: 11, marginBottom: 4 }}>Recomendación IA</p>
                                 <p style={{ color: 'var(--text)', opacity: 0.85, lineHeight: 1.6 }}>{a.recomendacion}</p>
                               </div>
                             )}
@@ -1016,7 +1018,7 @@ export default function KPIsPage() {
                   return (
                     <motion.div key={tipo} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.03 }}
                       onClick={() => setKpiSeleccionado(tipo)} whileHover={{ scale: 1.03 }}
-                      style={{ padding: '14px 16px', borderRadius: 16, cursor: 'pointer', background: isSelected ? `${c.color}15` : 'var(--glass)', backdropFilter: 'blur(20px)', border: `1px solid ${isSelected ? c.color + '40' : hasAlert ? 'rgba(232,160,196,0.25)' : 'var(--border)'}`, transition: 'all 0.2s' }}>
+                      style={{ padding: '14px 16px', borderRadius: 16, cursor: 'pointer', background: isSelected ? `${c.color}15` : 'var(--glass)', backdropFilter: 'blur(20px)', border: `1px solid ${isSelected ? c.color + '40' : hasAlert ? 'rgba(255,107,107,0.25)' : 'var(--border)'}`, transition: 'all 0.2s' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                         <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>{c.label}</p>
                         <p style={{ fontSize: 11, color: up ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>{up ? '↑' : '↓'}{Math.abs(Number(diff))}%</p>
@@ -1038,10 +1040,10 @@ export default function KPIsPage() {
         <FadeContent direction="up" delay={0.1} duration={0.4}>
           <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <p style={{ fontSize: 13, color: 'var(--muted)' }}>Overlays activos:</p>
-            <OverlayBtn label="Prophet" active={overlays.prophet} color="#7CB5E8" onClick={() => toggleOverlay('prophet')} />
-            <OverlayBtn label="PyOD" active={overlays.pyod} color="#E8C4A0" onClick={() => toggleOverlay('pyod')} />
-            <OverlayBtn label="Umbral" active={overlays.umbral} color="#E8A0C4" onClick={() => toggleOverlay('umbral')} />
-            <OverlayBtn label="Anomalías" active={overlays.anomalias} color="#C4B5E8" onClick={() => toggleOverlay('anomalias')} />
+            <OverlayBtn label="Prophet" active={overlays.prophet} color="#4A9EF0" onClick={() => toggleOverlay('prophet')} />
+            <OverlayBtn label="PyOD" active={overlays.pyod} color="#FFD166" onClick={() => toggleOverlay('pyod')} />
+            <OverlayBtn label="Umbral" active={overlays.umbral} color="#FF6B6B" onClick={() => toggleOverlay('umbral')} />
+            <OverlayBtn label="Anomalías" active={overlays.anomalias} color="#4A9EF0" onClick={() => toggleOverlay('anomalias')} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
             {Object.keys(kpiConfig).map((tipo, i) => {
@@ -1055,7 +1057,7 @@ export default function KPIsPage() {
                   style={{
                     padding: '20px', borderRadius: 22, cursor: 'pointer',
                     background: 'var(--glass)', backdropFilter: 'blur(20px)',
-                    border: `1px solid ${hasAlert ? 'rgba(232,160,196,0.3)' : c.color + '25'}`,
+                    border: `1px solid ${hasAlert ? 'rgba(255,107,107,0.3)' : c.color + '25'}`,
                     transition: 'all 0.2s',
                   }}
                   whileHover={{ scale: 1.01, borderColor: c.color + '60' } as any}
@@ -1073,7 +1075,7 @@ export default function KPIsPage() {
       {vista === 'todas' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           <ScrollReveal delay={0.1} direction="up">
-            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="bottom">
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
                 <div>
                   <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
@@ -1095,18 +1097,18 @@ export default function KPIsPage() {
               ) : (
                 <ResponsiveContainer width="100%" height={460}>
                   <LineChart data={datosNormalizados} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(155,142,196,0.08)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,201,167,0.08)" />
                     <XAxis dataKey="fecha" stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
                     <YAxis stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false}
                       tickFormatter={(v) => `${v > 0 ? '+' : ''}${v}%`} />
                     <Tooltip content={<NormalizedTooltip />} />
                     <Legend wrapperStyle={{ color: 'var(--muted)', fontSize: 12, paddingTop: 20 }} />
                     {/* Zero reference line */}
-                    <ReferenceLine y={0} stroke="rgba(155,142,196,0.3)" strokeWidth={1.5} strokeDasharray="6 3"
-                      label={{ value: 'Media base', position: 'insideLeft', fill: 'rgba(155,142,196,0.6)', fontSize: 10 }} />
+                    <ReferenceLine y={0} stroke="rgba(0,201,167,0.3)" strokeWidth={1.5} strokeDasharray="6 3"
+                      label={{ value: 'Media base', position: 'insideLeft', fill: 'rgba(0,201,167,0.6)', fontSize: 10 }} />
                     {/* Alert zones */}
-                    <ReferenceArea y1={35} y2={200} fill="rgba(232,160,196,0.05)" fillOpacity={1} />
-                    <ReferenceArea y1={-200} y2={-35} fill="rgba(232,160,196,0.05)" fillOpacity={1} />
+                    <ReferenceArea y1={35} y2={200} fill="rgba(255,107,107,0.05)" fillOpacity={1} />
+                    <ReferenceArea y1={-200} y2={-35} fill="rgba(255,107,107,0.05)" fillOpacity={1} />
                     {Object.entries(kpiConfig)
                       .filter(([t]) => kpiData[t]?.length > 0)
                       .map(([t, c]) => (
@@ -1120,9 +1122,9 @@ export default function KPIsPage() {
                 </ResponsiveContainer>
               )}
 
-              <div style={{ marginTop: 14, padding: '10px 16px', borderRadius: 12, background: 'rgba(155,142,196,0.05)', border: '1px solid rgba(155,142,196,0.12)', display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 11 }}>
+              <div style={{ marginTop: 14, padding: '10px 16px', borderRadius: 12, background: 'rgba(0,201,167,0.05)', border: '1px solid rgba(0,201,167,0.12)', display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 11 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--muted)' }}>
-                  <div style={{ width: 14, height: 8, borderRadius: 2, background: 'rgba(232,160,196,0.15)' }} />
+                  <div style={{ width: 14, height: 8, borderRadius: 2, background: 'rgba(255,107,107,0.15)' }} />
                   Zona de alerta (&gt;35% desviación)
                 </span>
                 <span style={{ color: 'var(--muted)' }}>
@@ -1145,12 +1147,12 @@ export default function KPIsPage() {
                 return (
                   <motion.div key={tipo} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.04 }}
                     onClick={() => { setKpiSeleccionado(tipo); setVista('individual') }}
-                    whileHover={{ scale: 1.03 }} style={{ padding: '14px 16px', borderRadius: 16, cursor: 'pointer', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: `1px solid ${alertCount > 0 ? 'rgba(232,160,196,0.3)' : c.color + '25'}`, transition: 'all 0.2s' }}>
+                    whileHover={{ scale: 1.03 }} style={{ padding: '14px 16px', borderRadius: 16, cursor: 'pointer', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: `1px solid ${alertCount > 0 ? 'rgba(255,107,107,0.3)' : c.color + '25'}`, transition: 'all 0.2s' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                       <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>{c.label}</p>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         {alertCount > 0 && (
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: 'rgba(232,160,196,0.2)', color: '#E8A0C4' }}>{alertCount}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 8, background: 'rgba(255,107,107,0.2)', color: '#FF6B6B' }}>{alertCount}</span>
                         )}
                         <p style={{ fontSize: 11, color: up ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>{up ? '↑' : '↓'}{Math.abs(Number(diff))}%</p>
                       </div>

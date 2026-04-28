@@ -11,30 +11,35 @@ import AnimatedInput from '../components/reactbits/AnimatedInput'
 import SpotlightCard from '../components/reactbits/SpotlightCard'
 import GradientText from '../components/reactbits/GradientText'
 import ScrollReveal from '../components/reactbits/ScrollReveal'
+import BorderGlow from '../components/reactbits/BorderGlow'
+import ClickSpark from '../components/reactbits/ClickSpark'
+import DecryptedText from '../components/reactbits/DecryptedText'
+import Ribbons from '../components/reactbits/Ribbons'
+import StarBorder from '../components/reactbits/StarBorder'
 import PasswordRequirements, { validatePassword } from '../components/ui/PasswordRequirements'
 import ThemeToggle from '../components/ui/ThemeToggle'
 import VigiaLogo from '../components/ui/VigiaLogo'
 
 const BoltIcon = () => (
-  <svg width="22" height="22" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="22" height="22" fill="none" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
   </svg>
 )
 const AiIcon = () => (
-  <svg width="22" height="22" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="22" height="22" fill="none" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="3"/>
     <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
   </svg>
 )
 const ChartIcon = () => (
-  <svg width="22" height="22" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="22" height="22" fill="none" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <line x1="18" y1="20" x2="18" y2="10"/>
     <line x1="12" y1="20" x2="12" y2="4"/>
     <line x1="6" y1="20" x2="6" y2="14"/>
   </svg>
 )
 const BellIcon = () => (
-  <svg width="22" height="22" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+  <svg width="22" height="22" fill="none" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
     <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
   </svg>
@@ -152,14 +157,12 @@ export default function AuthPage() {
       backgroundColor: 'var(--void)',
       display: 'flex', position: 'relative', overflow: 'hidden',
     }}>
-      <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={1.2} speed={0.35} />
+      <Aurora colorStops={['#00C9A7', '#4A9EF0', '#B06EF5']} amplitude={1.2} speed={0.35} />
 
-      {/* Grid */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.04,
-        backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)',
-        backgroundSize: '48px 48px',
-      }} />
+      {/* Ribbons background */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.3, zIndex: 0 }}>
+        <Ribbons colors={['#00C9A7','#B06EF5','#00C9A7','#4A9EF0']} baseThickness={15} speedMultiplier={0.3} enableFade backgroundColor={[0,0,0,0]} />
+      </div>
 
       {/* Theme toggle */}
       <div style={{ position: 'absolute', top: 28, right: 28, zIndex: 20 }}>
@@ -183,7 +186,7 @@ export default function AuthPage() {
         {/* Logo */}
         <motion.div
           style={{ marginBottom: 36 }}
-          animate={{ filter: ['drop-shadow(0 0 20px rgba(155,142,196,0.4))', 'drop-shadow(0 0 50px rgba(155,142,196,0.75))', 'drop-shadow(0 0 20px rgba(155,142,196,0.4))'] }}
+          animate={{ filter: ['drop-shadow(0 0 20px rgba(0,201,167,0.4))', 'drop-shadow(0 0 50px rgba(0,201,167,0.75))', 'drop-shadow(0 0 20px rgba(0,201,167,0.4))'] }}
           transition={{ duration: 3, repeat: Infinity }}
         >
           <VigiaLogo size={260} />
@@ -196,7 +199,16 @@ export default function AuthPage() {
           className="font-display"
           style={{ fontSize: 86, fontWeight: 800, lineHeight: 1, letterSpacing: -4, marginBottom: 24 }}
         >
-          <GradientText text="Vigía" className="font-display" />
+          <DecryptedText
+            text="Vigía"
+            animateOn="view"
+            sequential
+            revealDirection="start"
+            speed={60}
+            className="font-display"
+            style={{ background: 'linear-gradient(135deg, #00C9A7, #4A9EF0, #B06EF5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+            encryptedClassName="font-display"
+          />
         </motion.h1>
 
         <motion.p
@@ -217,8 +229,8 @@ export default function AuthPage() {
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   style={{
                     width: 54, height: 54, borderRadius: 16, flexShrink: 0,
-                    background: 'rgba(155,142,196,0.1)',
-                    border: '1px solid rgba(155,142,196,0.22)',
+                    background: 'rgba(0,201,167,0.1)',
+                    border: '1px solid rgba(0,201,167,0.22)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                   {f.icon}
@@ -245,7 +257,7 @@ export default function AuthPage() {
         }}
       >
         <div style={{ width: '100%', maxWidth: 520 }}>
-          <SpotlightCard className="p-8 sm:p-10 lg:p-12" spotlightColor="rgba(155,142,196,0.15)" from="top">
+          <BorderGlow className="p-8 sm:p-10 lg:p-12" colors={['#00C9A7','#4A9EF0','#B06EF5']} backgroundColor="var(--glass, rgba(255,255,255,0.04))" borderRadius={24} animated>
 
             {/* Mobile logo */}
             <div className="lg:!hidden" style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 40 }}>
@@ -423,8 +435,8 @@ export default function AuthPage() {
                   exit={{ opacity: 0 }}
                   style={{
                     marginTop: 22, padding: '14px 18px', borderRadius: 14,
-                    background: 'rgba(232,160,196,0.1)',
-                    border: '1px solid rgba(232,160,196,0.3)',
+                    background: 'rgba(255,107,107,0.1)',
+                    border: '1px solid rgba(255,107,107,0.3)',
                     color: 'var(--danger)', fontSize: 14,
                     display: 'flex', alignItems: 'center', gap: 10,
                   }}
@@ -435,18 +447,20 @@ export default function AuthPage() {
             </AnimatePresence>
 
             {/* Button */}
+            <StarBorder as="div" color="#00C9A7" speed="4s" className="w-full" style={{ marginTop: 32, display: 'block' }}>
+            <ClickSpark sparkColor="#00C9A7" sparkRadius={32} sparkCount={12} style={{ borderRadius: 18, overflow: 'hidden' }}>
             <motion.button
               onClick={mode === 'login' ? handleLogin : handleRegister}
               disabled={loading || (mode === 'register' && registerData.password.length > 0 && !validatePassword(registerData.password))}
               whileHover={{ scale: loading ? 1 : 1.02 }}
               whileTap={{ scale: loading ? 1 : 0.98 }}
               style={{
-                width: '100%', marginTop: 32, padding: '19px 0', borderRadius: 18,
+                width: '100%', padding: '19px 0', borderRadius: 18,
                 background: 'linear-gradient(135deg, var(--primary), var(--accent))',
                 color: 'white', fontSize: 16, fontWeight: 600,
                 border: 'none',
                 cursor: (loading || (mode === 'register' && registerData.password.length > 0 && !validatePassword(registerData.password))) ? 'not-allowed' : 'pointer',
-                boxShadow: '0 10px 32px rgba(155,142,196,0.45)',
+                boxShadow: '0 10px 32px rgba(0,201,167,0.45)',
                 opacity: (loading || (mode === 'register' && registerData.password.length > 0 && !validatePassword(registerData.password))) ? 0.5 : 1,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               }}
@@ -462,6 +476,8 @@ export default function AuthPage() {
                 </>
               ) : mode === 'login' ? 'Ingresar al sistema' : 'Crear cuenta'}
             </motion.button>
+            </ClickSpark>
+            </StarBorder>
 
             {/* Footer */}
             <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--muted)', marginTop: 28 }}>
@@ -478,7 +494,7 @@ export default function AuthPage() {
                 {mode === 'login' ? 'Regístrate gratis' : 'Inicia sesión'}
               </motion.button>
             </p>
-          </SpotlightCard>
+          </BorderGlow>
         </div>
       </div>
     </div>

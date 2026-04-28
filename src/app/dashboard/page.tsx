@@ -13,11 +13,16 @@ import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import ScrollReveal from '../../components/reactbits/ScrollReveal'
 import GradientText from '../../components/reactbits/GradientText'
 import TiltedCard from '../../components/reactbits/TiltedCard'
+import BorderGlow from '../../components/reactbits/BorderGlow'
+import ClickSpark from '../../components/reactbits/ClickSpark'
+import DecryptedText from '../../components/reactbits/DecryptedText'
 import ThemeToggle from '../../components/ui/ThemeToggle'
 import VigiaLogo from '../../components/ui/VigiaLogo'
 import SedeSelector from '../../components/ui/SedeSelector'
 import ClinicaSwitcher from '../../components/ui/ClinicaSwitcher'
 import { puedeOperar, ROL_LABELS, ROL_COLORS } from '../../lib/permisos'
+import StarBorder from '../../components/reactbits/StarBorder'
+import GlareHover from '../../components/reactbits/GlareHover'
 
 const kpiLabel: Record<string, string> = {
   tasa_cancelacion: 'Cancelación',
@@ -87,32 +92,32 @@ const sevDescripcion: Record<string, { desc: string; condicion: string }> = {
 }
 
 const sevConfig: Record<string, { label: string; color: string }> = {
-  baja:    { label: 'Baja',    color: '#A0C4B5' },
-  media:   { label: 'Media',   color: '#C4B5E8' },
-  alta:    { label: 'Alta',    color: '#9B8EC4' },
-  critica: { label: 'Crítica', color: '#E8A0C4' },
+  baja:    { label: 'Baja',    color: '#00C9A7' },
+  media:   { label: 'Media',   color: '#FFD166' },
+  alta:    { label: 'Alta',    color: '#4A9EF0' },
+  critica: { label: 'Crítica', color: '#FF6B6B' },
 }
 
 const metodoDeteccionConfig: Record<string, { label: string; color: string; icon: string }> = {
-  estadistico: { label: 'Estadístico', color: '#A0C4B5', icon: 'σ' },
-  prophet:     { label: 'Prophet',     color: '#7CB5E8', icon: 'P' },
-  pyod:        { label: 'PyOD',        color: '#E8C4A0', icon: 'F' },
+  estadistico: { label: 'Estadístico', color: '#00C9A7', icon: 'σ' },
+  prophet:     { label: 'Prophet',     color: '#4A9EF0', icon: 'P' },
+  pyod:        { label: 'PyOD',        color: '#FFD166', icon: 'F' },
 }
 
 function parseMetodoDeteccion(metodo: string | undefined): { label: string; color: string; methods: string[]; isEnsemble: boolean } {
-  if (!metodo) return { label: 'Estadístico', color: '#A0C4B5', methods: ['estadistico'], isEnsemble: false }
+  if (!metodo) return { label: 'Estadístico', color: '#00C9A7', methods: ['estadistico'], isEnsemble: false }
 
   if (metodo.startsWith('ensemble:')) {
     const parts = metodo.replace('ensemble:', '').split('+').filter(Boolean)
     if (parts[0] === 'sin_anomalia') {
-      return { label: 'Ensemble (sin anomalía)', color: '#A0C4B5', methods: [], isEnsemble: true }
+      return { label: 'Ensemble (sin anomalía)', color: '#00C9A7', methods: [], isEnsemble: true }
     }
     const labels = parts.map(p => metodoDeteccionConfig[p]?.label || p)
-    return { label: labels.join(' + '), color: '#C4B5E8', methods: parts, isEnsemble: true }
+    return { label: labels.join(' + '), color: '#4A9EF0', methods: parts, isEnsemble: true }
   }
 
   const cfg = metodoDeteccionConfig[metodo]
-  return { label: cfg?.label || metodo, color: cfg?.color || '#A0C4B5', methods: [metodo], isEnsemble: false }
+  return { label: cfg?.label || metodo, color: cfg?.color || '#00C9A7', methods: [metodo], isEnsemble: false }
 }
 
 const MetodoBadge = ({ metodo }: { metodo: string | undefined }) => {
@@ -121,7 +126,7 @@ const MetodoBadge = ({ metodo }: { metodo: string | undefined }) => {
     <span style={{
       fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
       background: parsed.isEnsemble
-        ? 'linear-gradient(135deg, rgba(124,181,232,0.15), rgba(232,196,160,0.15))'
+        ? 'linear-gradient(135deg, rgba(74,158,240,0.15), rgba(255,209,102,0.15))'
         : `${parsed.color}18`,
       color: parsed.color,
       border: `1px solid ${parsed.color}30`,
@@ -180,7 +185,7 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
           </div>
           <span style={{
             fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
-            background: data.es_anomalia ? `${color}22` : 'rgba(160,196,181,0.15)',
+            background: data.es_anomalia ? `${color}22` : 'rgba(0,201,167,0.15)',
             color: data.es_anomalia ? color : 'var(--success)',
           }}>
             {data.es_anomalia ? 'Anomalía detectada' : 'Normal'}
@@ -239,12 +244,12 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
 
         {/* Prophet confidence interval chart */}
         {name === 'prophet' && data.yhat_lower != null && (
-          <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(124,181,232,0.07)', border: '1px solid rgba(124,181,232,0.18)' }}>
+          <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(74,158,240,0.07)', border: '1px solid rgba(74,158,240,0.18)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <p style={{ fontSize: 11, color: '#7CB5E8', fontWeight: 700 }}>
+              <p style={{ fontSize: 11, color: '#4A9EF0', fontWeight: 700 }}>
                 Predicción Prophet — Intervalo de confianza {data.intervalo_confianza || 90}%
               </p>
-              <span style={{ fontSize: 10, color: outOfRange ? '#E8A0C4' : '#A0C4B5', fontWeight: 600 }}>
+              <span style={{ fontSize: 10, color: outOfRange ? '#FF6B6B' : '#00C9A7', fontWeight: 600 }}>
                 {outOfRange ? 'Valor fuera del rango' : 'Valor dentro del rango'}
               </span>
             </div>
@@ -254,7 +259,7 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginBottom: 8, flexWrap: 'wrap' }}>
               <span style={{ color: 'var(--muted)' }}>
-                Predicción: <strong style={{ color: '#7CB5E8' }}>{data.yhat}</strong>
+                Predicción: <strong style={{ color: '#4A9EF0' }}>{data.yhat}</strong>
               </span>
               <span style={{ color: 'var(--muted)' }}>
                 Rango: <strong style={{ color: 'var(--text)' }}>{data.yhat_lower}</strong>
@@ -263,23 +268,23 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
               </span>
             </div>
             {/* Chart */}
-            <div style={{ height: 8, borderRadius: 4, background: 'rgba(124,181,232,0.1)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ height: 8, borderRadius: 4, background: 'rgba(74,158,240,0.1)', position: 'relative', overflow: 'hidden' }}>
               <div style={{
                 position: 'absolute', top: 0, bottom: 0,
                 left: `${Math.max(0, Math.min(100, (data.yhat_lower / (data.yhat_upper * 1.3)) * 100))}%`,
                 right: `${Math.max(0, 100 - (data.yhat_upper / (data.yhat_upper * 1.3)) * 100)}%`,
-                background: 'rgba(124,181,232,0.35)', borderRadius: 4,
+                background: 'rgba(74,158,240,0.35)', borderRadius: 4,
               }} />
               <div style={{
                 position: 'absolute', top: -2, bottom: -2, width: 3, borderRadius: 2,
                 left: `${Math.max(0, Math.min(97, (valorDetectado / (data.yhat_upper * 1.3)) * 100))}%`,
-                background: outOfRange ? '#E8A0C4' : '#A0C4B5',
-                boxShadow: `0 0 8px ${outOfRange ? '#E8A0C4' : '#A0C4B5'}`,
+                background: outOfRange ? '#FF6B6B' : '#00C9A7',
+                boxShadow: `0 0 8px ${outOfRange ? '#FF6B6B' : '#00C9A7'}`,
               }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
               <span style={{ fontSize: 10, color: 'var(--muted)' }}>{data.yhat_lower} (mín)</span>
-              <span style={{ fontSize: 10, color: outOfRange ? '#E8A0C4' : '#A0C4B5', fontWeight: 700 }}>
+              <span style={{ fontSize: 10, color: outOfRange ? '#FF6B6B' : '#00C9A7', fontWeight: 700 }}>
                 Actual: {valorDetectado.toFixed(1)}
               </span>
               <span style={{ fontSize: 10, color: 'var(--muted)' }}>{data.yhat_upper} (máx)</span>
@@ -294,10 +299,10 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
 
         {/* PyOD score chart */}
         {name === 'pyod' && data.anomaly_score != null && (
-          <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(232,196,160,0.07)', border: '1px solid rgba(232,196,160,0.18)' }}>
+          <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,209,102,0.07)', border: '1px solid rgba(255,209,102,0.18)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <p style={{ fontSize: 11, color: '#E8C4A0', fontWeight: 700 }}>Score de Anomalía (Isolation Forest)</p>
-              <span style={{ fontSize: 10, color: data.es_outlier ? '#E8A0C4' : '#A0C4B5', fontWeight: 600 }}>
+              <p style={{ fontSize: 11, color: '#FFD166', fontWeight: 700 }}>Score de Anomalía (Isolation Forest)</p>
+              <span style={{ fontSize: 10, color: data.es_outlier ? '#FF6B6B' : '#00C9A7', fontWeight: 600 }}>
                 {data.es_outlier ? 'Outlier detectado' : 'Punto normal'}
               </span>
             </div>
@@ -307,10 +312,10 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', fontSize: 12, marginBottom: 8 }}>
               <span style={{ color: 'var(--muted)' }}>
-                Score: <strong style={{ color: data.es_outlier ? '#E8A0C4' : '#A0C4B5' }}>{data.anomaly_score}</strong>
+                Score: <strong style={{ color: data.es_outlier ? '#FF6B6B' : '#00C9A7' }}>{data.anomaly_score}</strong>
               </span>
               <span style={{ color: 'var(--muted)' }}>
-                Umbral: <strong style={{ color: '#E8C4A0' }}>{data.threshold}</strong>
+                Umbral: <strong style={{ color: '#FFD166' }}>{data.threshold}</strong>
               </span>
               {data.media_historica != null && (
                 <span style={{ color: 'var(--muted)' }}>
@@ -320,23 +325,23 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
               )}
             </div>
             {/* Bar */}
-            <div style={{ height: 8, borderRadius: 4, background: 'rgba(232,196,160,0.1)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,209,102,0.1)', position: 'relative', overflow: 'hidden' }}>
               <div style={{
                 position: 'absolute', top: 0, bottom: 0, left: 0, borderRadius: 4,
                 width: `${Math.min(100, Math.max(5, Math.abs(data.anomaly_score) / (Math.abs(data.threshold) * 2) * 100))}%`,
                 background: data.es_outlier
-                  ? 'linear-gradient(90deg, #E8C4A0, #E8A0C4)'
-                  : 'linear-gradient(90deg, #A0C4B5, #E8C4A0)',
+                  ? 'linear-gradient(90deg, #FFD166, #FF6B6B)'
+                  : 'linear-gradient(90deg, #00C9A7, #FFD166)',
               }} />
               <div style={{
                 position: 'absolute', top: -1, bottom: -1, width: 2, borderRadius: 1,
                 left: `${Math.min(95, Math.abs(data.threshold) / (Math.abs(data.threshold) * 2) * 100)}%`,
-                background: '#E8C4A0',
+                background: '#FFD166',
               }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
               <span style={{ fontSize: 10, color: 'var(--muted)' }}>Normal (0)</span>
-              <span style={{ fontSize: 10, color: '#E8C4A0' }}>Umbral: {data.threshold}</span>
+              <span style={{ fontSize: 10, color: '#FFD166' }}>Umbral: {data.threshold}</span>
             </div>
             {data.datos_entrenamiento != null && (
               <p style={{ fontSize: 10, color: 'var(--muted)', marginTop: 6 }}>
@@ -365,15 +370,15 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
     >
       <div style={{
         padding: '16px', borderRadius: 16,
-        background: 'linear-gradient(135deg, rgba(155,142,196,0.06), rgba(124,181,232,0.04))',
-        border: '1px solid rgba(155,142,196,0.18)',
+        background: 'linear-gradient(135deg, rgba(0,201,167,0.06), rgba(74,158,240,0.04))',
+        border: '1px solid rgba(0,201,167,0.18)',
       }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
           </svg>
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#9B8EC4', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#00C9A7', textTransform: 'uppercase', letterSpacing: 0.5 }}>
             Información de Detección
           </span>
           {detalle.ensemble && (
@@ -385,8 +390,8 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
 
         {/* KPI description */}
         {kpiDesc && (
-          <div style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(155,142,196,0.07)', border: '1px solid rgba(155,142,196,0.18)', marginBottom: 14 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#9B8EC4', marginBottom: 4 }}>¿Qué es este KPI?</p>
+          <div style={{ padding: '10px 12px', borderRadius: 12, background: 'rgba(0,201,167,0.07)', border: '1px solid rgba(0,201,167,0.18)', marginBottom: 14 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#00C9A7', marginBottom: 4 }}>¿Qué es este KPI?</p>
             <p style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.7, marginBottom: 4, opacity: 0.9 }}>{kpiDesc.corta}</p>
             <p style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6 }}>{kpiDesc.detalle}</p>
           </div>
@@ -405,8 +410,8 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
                 return (
                   <div key={m} style={{
                     flex: 1, padding: '10px 12px', borderRadius: 12, textAlign: 'center',
-                    background: voted ? `${cfg?.color || '#9B8EC4'}15` : 'rgba(255,255,255,0.02)',
-                    border: `1px solid ${voted ? (cfg?.color || '#9B8EC4') + '40' : 'var(--border)'}`,
+                    background: voted ? `${cfg?.color || '#00C9A7'}15` : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${voted ? (cfg?.color || '#00C9A7') + '40' : 'var(--border)'}`,
                   }}>
                     <div style={{ fontSize: 18, marginBottom: 3 }}>{voted ? '⚠' : '✓'}</div>
                     <p style={{ fontSize: 11, fontWeight: 700, color: voted ? cfg?.color : 'var(--success)' }}>
@@ -425,13 +430,13 @@ function DeteccionDetailPanel({ detalle, metodo, valorDetectado, tipoKpi }: {
         {/* Per-method details */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {detalle.estadistico && (
-            <MethodRow name="estadistico" label="Método Estadístico (σ)" color="#A0C4B5" icon="σ" data={detalle.estadistico} />
+            <MethodRow name="estadistico" label="Método Estadístico (σ)" color="#00C9A7" icon="σ" data={detalle.estadistico} />
           )}
           {detalle.prophet && (
-            <MethodRow name="prophet" label="Prophet — Predicción Temporal" color="#7CB5E8" icon="P" data={detalle.prophet} />
+            <MethodRow name="prophet" label="Prophet — Predicción Temporal" color="#4A9EF0" icon="P" data={detalle.prophet} />
           )}
           {detalle.pyod && (
-            <MethodRow name="pyod" label="PyOD — Isolation Forest" color="#E8C4A0" icon="F" data={detalle.pyod} />
+            <MethodRow name="pyod" label="PyOD — Isolation Forest" color="#FFD166" icon="F" data={detalle.pyod} />
           )}
         </div>
 
@@ -531,15 +536,15 @@ const ResolveAllIcon = () => (
 )
 
 const liveKpiConfig: Record<string, { label: string; color: string; unit: string }> = {
-  tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
-  tasa_noshow:       { label: 'No-Show',      color: '#C4B5E8', unit: '%' },
-  ingresos_dia:      { label: 'Ingresos',     color: '#A0C4B5', unit: '$' },
-  ocupacion_agenda:  { label: 'Ocupación',    color: '#BBA8E8', unit: '%' },
-  ticket_promedio:   { label: 'Ticket',       color: '#9B8EC4', unit: '$' },
-  pacientes_nuevos:  { label: 'Pac. Nuevos',  color: '#7C6FBF', unit: '' },
-  retencion_90:      { label: 'Retención',    color: '#A8C4A0', unit: '%' },
-  nps:               { label: 'NPS',          color: '#C4B5E8', unit: '' },
-  citas_reagendadas: { label: 'Reagendadas',  color: '#E8C4A0', unit: '' },
+  tasa_cancelacion:  { label: 'Cancelación',  color: '#FF6B6B', unit: '%' },
+  tasa_noshow:       { label: 'No-Show',      color: '#4A9EF0', unit: '%' },
+  ingresos_dia:      { label: 'Ingresos',     color: '#00C9A7', unit: '$' },
+  ocupacion_agenda:  { label: 'Ocupación',    color: '#B06EF5', unit: '%' },
+  ticket_promedio:   { label: 'Ticket',       color: '#00C9A7', unit: '$' },
+  pacientes_nuevos:  { label: 'Pac. Nuevos',  color: '#00A88A', unit: '' },
+  retencion_90:      { label: 'Retención',    color: '#00C9A7', unit: '%' },
+  nps:               { label: 'NPS',          color: '#4A9EF0', unit: '' },
+  citas_reagendadas: { label: 'Reagendadas',  color: '#FFD166', unit: '' },
 }
 
 interface LiveKpi { id: number; tipo: string; valor: number; fecha_hora: string }
@@ -564,21 +569,21 @@ function GeneradorLiveWidget({ clinicaId }: { clinicaId: number }) {
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }}
       onClick={() => router.push('/dashboard/generador')}
-      whileHover={{ scale: 1.02, borderColor: 'rgba(160,196,181,0.45)' }}
+      whileHover={{ scale: 1.02, borderColor: 'rgba(0,201,167,0.45)' }}
       whileTap={{ scale: 0.98 }}
       style={{
         padding: '16px 20px', borderRadius: 20, cursor: 'pointer',
-        background: 'linear-gradient(135deg, rgba(160,196,181,0.12), rgba(160,196,181,0.04))',
-        border: '1px solid rgba(160,196,181,0.25)',
+        background: 'linear-gradient(135deg, rgba(0,201,167,0.12), rgba(0,201,167,0.04))',
+        border: '1px solid rgba(0,201,167,0.25)',
         display: 'flex', alignItems: 'center', gap: 14,
       }}>
       {/* Animated activity icon */}
       <motion.div
-        animate={{ boxShadow: ['0 0 8px rgba(160,196,181,0.3)', '0 0 20px rgba(160,196,181,0.6)', '0 0 8px rgba(160,196,181,0.3)'] }}
+        animate={{ boxShadow: ['0 0 8px rgba(0,201,167,0.3)', '0 0 20px rgba(0,201,167,0.6)', '0 0 8px rgba(0,201,167,0.3)'] }}
         transition={{ duration: 2, repeat: Infinity }}
         style={{
           width: 42, height: 42, borderRadius: 14, flexShrink: 0,
-          background: 'linear-gradient(135deg, #A0C4B5, #7AB5A3)',
+          background: 'linear-gradient(135deg, #00C9A7, #00957A)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
         <motion.svg width="20" height="20" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"
@@ -593,11 +598,11 @@ function GeneradorLiveWidget({ clinicaId }: { clinicaId: number }) {
           <motion.div
             animate={{ scale: [1, 1.4, 1], opacity: [1, 0.4, 1] }}
             transition={{ duration: 1.6, repeat: Infinity }}
-            style={{ width: 6, height: 6, borderRadius: '50%', background: '#A0C4B5', boxShadow: '0 0 8px #A0C4B5' }}
+            style={{ width: 6, height: 6, borderRadius: '50%', background: '#00C9A7', boxShadow: '0 0 8px #00C9A7' }}
           />
         </div>
         <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-          {count > 0 ? <><strong style={{ color: '#A0C4B5' }}>{count}</strong> registros (1h)</> : 'Esperando datos...'}
+          {count > 0 ? <><strong style={{ color: '#00C9A7' }}>{count}</strong> registros (1h)</> : 'Esperando datos...'}
         </p>
       </div>
 
@@ -648,13 +653,13 @@ function MedicosList({ clinicaId }: { clinicaId: number }) {
             background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
             transition: 'all 0.2s',
           }}
-          whileHover={{ background: 'rgba(155,142,196,0.08)' } as any}
+          whileHover={{ background: 'rgba(0,201,167,0.08)' } as any}
         >
           {m.foto_url ? (
             <img
               src={m.foto_url}
               alt={`${m.nombre} ${m.apellido}`}
-              style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, objectFit: 'cover', border: '2px solid rgba(155,142,196,0.25)' }}
+              style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, objectFit: 'cover', border: '2px solid rgba(0,201,167,0.25)' }}
             />
           ) : (
             <div style={{
@@ -832,32 +837,32 @@ export default function DashboardPage() {
   const ensembleCount = alertas.filter(a => (a.metodo_deteccion || '').startsWith('ensemble:')).length
 
   const stats = [
-    { label: 'Total activas',  value: alertas.length, color: '#9B8EC4', filtro: 'todas' as FiltroSeveridad },
-    { label: 'Críticas',       value: alertas.filter(a => a.severidad === 'critica').length, color: '#E8A0C4', filtro: 'critica' as FiltroSeveridad },
-    { label: 'Altas',          value: alertas.filter(a => a.severidad === 'alta').length, color: '#C4B5E8', filtro: 'alta' as FiltroSeveridad },
-    { label: 'Medias / Bajas', value: alertas.filter(a => ['media', 'baja'].includes(a.severidad)).length, color: '#A0C4B5', filtro: 'media' as FiltroSeveridad },
+    { label: 'Total activas',  value: alertas.length, color: '#00C9A7', filtro: 'todas' as FiltroSeveridad },
+    { label: 'Críticas',       value: alertas.filter(a => a.severidad === 'critica').length, color: '#FF6B6B', filtro: 'critica' as FiltroSeveridad },
+    { label: 'Altas',          value: alertas.filter(a => a.severidad === 'alta').length, color: '#4A9EF0', filtro: 'alta' as FiltroSeveridad },
+    { label: 'Medias / Bajas', value: alertas.filter(a => ['media', 'baja'].includes(a.severidad)).length, color: '#00C9A7', filtro: 'media' as FiltroSeveridad },
   ]
 
   const filtros: { key: FiltroSeveridad; label: string; color: string }[] = [
-    { key: 'todas',   label: 'Todas',    color: '#9B8EC4' },
-    { key: 'critica', label: 'Críticas', color: '#E8A0C4' },
-    { key: 'alta',    label: 'Altas',    color: '#9B8EC4' },
-    { key: 'media',   label: 'Medias',   color: '#C4B5E8' },
-    { key: 'baja',    label: 'Bajas',    color: '#A0C4B5' },
+    { key: 'todas',   label: 'Todas',    color: '#00C9A7' },
+    { key: 'critica', label: 'Críticas', color: '#FF6B6B' },
+    { key: 'alta',    label: 'Altas',    color: '#00C9A7' },
+    { key: 'media',   label: 'Medias',   color: '#FFD166' },
+    { key: 'baja',    label: 'Bajas',    color: '#00C9A7' },
   ]
 
   const filtrosMetodo: { key: FiltroMetodo; label: string; color: string }[] = [
-    { key: 'todos',       label: 'Todos',       color: '#9B8EC4' },
-    { key: 'ensemble',    label: 'Ensemble',    color: '#C4B5E8' },
-    { key: 'estadistico', label: 'Estadístico', color: '#A0C4B5' },
-    { key: 'prophet',     label: 'Prophet',     color: '#7CB5E8' },
-    { key: 'pyod',        label: 'PyOD',        color: '#E8C4A0' },
+    { key: 'todos',       label: 'Todos',       color: '#00C9A7' },
+    { key: 'ensemble',    label: 'Ensemble',    color: '#4A9EF0' },
+    { key: 'estadistico', label: 'Estadístico', color: '#00C9A7' },
+    { key: 'prophet',     label: 'Prophet',     color: '#4A9EF0' },
+    { key: 'pyod',        label: 'PyOD',        color: '#FFD166' },
   ]
 
   return (
     <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={0.5} speed={0.15} />
+        <Aurora colorStops={['#00C9A7', '#4A9EF0', '#B06EF5']} amplitude={0.5} speed={0.15} />
       </div>
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03, backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
 
@@ -868,16 +873,16 @@ export default function DashboardPage() {
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 48, flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <motion.div
-              animate={{ filter: ['drop-shadow(0 0 8px rgba(155,142,196,0.3))', 'drop-shadow(0 0 20px rgba(155,142,196,0.6))', 'drop-shadow(0 0 8px rgba(155,142,196,0.3))'] }}
+              animate={{ filter: ['drop-shadow(0 0 8px rgba(0,201,167,0.3))', 'drop-shadow(0 0 20px rgba(0,201,167,0.6))', 'drop-shadow(0 0 8px rgba(0,201,167,0.3))'] }}
               transition={{ duration: 3, repeat: Infinity }}
             >
               <VigiaLogo size={68} />
             </motion.div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {user?.avatar ? (
-                <img src={user.avatar} alt={user.nombre} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(155,142,196,0.4)', flexShrink: 0 }} />
+                <img src={user.avatar} alt={user.nombre} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(0,201,167,0.4)', flexShrink: 0 }} />
               ) : (
-                <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: 'rgba(155,142,196,0.18)', border: '2px solid rgba(155,142,196,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: 'var(--primary)' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: 'rgba(0,201,167,0.18)', border: '2px solid rgba(0,201,167,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: 'var(--primary)' }}>
                   {user?.nombre?.charAt(0)?.toUpperCase() ?? '?'}
                 </div>
               )}
@@ -902,14 +907,16 @@ export default function DashboardPage() {
             {isSuperadmin && <ClinicaSwitcher />}
             <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} />
             {puedeEjecutar && (
+            <ClickSpark sparkColor="#00C9A7" sparkRadius={28} sparkCount={10} style={{ width: 'auto', height: 'auto', display: 'inline-block' }}>
             <motion.button onClick={ejecutarMotor} disabled={motorLoading}
-              whileHover={{ scale: motorLoading ? 1 : 1.03 }} whileTap={{ scale: 0.97 }}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, #7AB5A3, var(--success))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: motorLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 20px rgba(160,196,181,0.3)', opacity: motorLoading ? 0.7 : 1 }}>
+              whileHover={{ scale: motorLoading ? 1 : 1.05 }} whileTap={{ scale: 0.97 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, #00C9A7, #00957A)', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: motorLoading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 24px rgba(0,201,167,0.45)', opacity: motorLoading ? 0.7 : 1 }}>
               {motorLoading
                 ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%' }} />
                 : <BoltIcon />}
               {motorLoading ? 'Analizando...' : 'Ejecutar análisis'}
             </motion.button>
+            </ClickSpark>
             )}
 
             <motion.button onClick={() => router.push('/dashboard/notificaciones')}
@@ -920,7 +927,7 @@ export default function DashboardPage() {
               <AnimatePresence>
                 {notifPendientes > 0 && (
                   <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                    style={{ position: 'absolute', top: -6, right: -6, minWidth: 22, height: 22, borderRadius: 11, background: 'var(--danger)', boxShadow: '0 0 12px rgba(232,160,196,0.6)', color: 'white', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>
+                    style={{ position: 'absolute', top: -6, right: -6, minWidth: 22, height: 22, borderRadius: 11, background: 'var(--danger)', boxShadow: '0 0 12px rgba(255,107,107,0.6)', color: 'white', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>
                     {notifPendientes}
                   </motion.span>
                 )}
@@ -990,11 +997,11 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             style={{
               marginBottom: 28, padding: '14px 22px', borderRadius: 16,
-              background: 'rgba(155,142,196,0.1)', border: '1px solid rgba(155,142,196,0.3)',
+              background: 'rgba(0,201,167,0.1)', border: '1px solid rgba(0,201,167,0.3)',
               display: 'flex', alignItems: 'center', gap: 12,
             }}
           >
-            <svg width="16" height="16" fill="none" stroke="#9B8EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+            <svg width="16" height="16" fill="none" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
             <span style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 500 }}>
@@ -1024,7 +1031,7 @@ export default function DashboardPage() {
                   </p>
                   <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500, letterSpacing: '0.01em' }}>{s.label}</p>
                   {i === 0 && ensembleCount > 0 && (
-                    <p style={{ fontSize: 11, color: '#C4B5E8', marginTop: 6, fontWeight: 500 }}>
+                    <p style={{ fontSize: 11, color: '#4A9EF0', marginTop: 6, fontWeight: 500 }}>
                       {ensembleCount} por ensemble
                     </p>
                   )}
@@ -1044,14 +1051,14 @@ export default function DashboardPage() {
 
           {/* ALERTAS */}
           <ScrollReveal delay={0.15} direction="up">
-            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
+            <BorderGlow className="p-6 sm:p-8 lg:p-10" colors={['#00C9A7','#4A9EF0','#B06EF5']} backgroundColor="var(--glass, rgba(255,255,255,0.03))" borderRadius={18}>
 
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                   {vistaAlertas === 'activas' ? 'Alertas Activas' : 'Historial de Alertas'}
                 </h2>
-                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
                   {listaActual.length} {vistaAlertas === 'activas' ? 'activas' : 'registros'}
                 </span>
               </div>
@@ -1116,14 +1123,14 @@ export default function DashboardPage() {
                   <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
                     <motion.button onClick={() => setOcultarTodas(!ocultarTodas)}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)', background: ocultarTodas ? 'rgba(155,142,196,0.15)' : 'rgba(255,255,255,0.03)', color: ocultarTodas ? 'var(--primary)' : 'var(--muted)' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)', background: ocultarTodas ? 'rgba(0,201,167,0.15)' : 'rgba(255,255,255,0.03)', color: ocultarTodas ? 'var(--primary)' : 'var(--muted)' }}>
                       <EyeOffIcon />
                       {ocultarTodas ? 'Mostrar' : 'Ocultar'}
                     </motion.button>
                     {puedeEjecutar && (
                     <motion.button onClick={resolverTodas}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid rgba(160,196,181,0.3)', background: 'rgba(160,196,181,0.08)', color: 'var(--success)' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid rgba(0,201,167,0.3)', background: 'rgba(0,201,167,0.08)', color: 'var(--success)' }}>
                       <ResolveAllIcon />
                       Revisar todas
                     </motion.button>
@@ -1144,7 +1151,7 @@ export default function DashboardPage() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '48px 0' }}>
                   <p style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 16 }}>Alertas ocultas</p>
                   <motion.button onClick={() => setOcultarTodas(false)} whileHover={{ scale: 1.03 }}
-                    style={{ padding: '10px 24px', borderRadius: 12, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)', cursor: 'pointer', fontSize: 14 }}>
+                    style={{ padding: '10px 24px', borderRadius: 12, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)', cursor: 'pointer', fontSize: 14 }}>
                     Mostrar alertas
                   </motion.button>
                 </motion.div>
@@ -1187,7 +1194,7 @@ export default function DashboardPage() {
                                 </span>
                                 <MetodoBadge metodo={a.metodo_deteccion} />
                                 {a.sede_nombre && (
-                                  <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20, background: 'rgba(160,196,181,0.15)', color: '#A0C4B5', border: '1px solid rgba(160,196,181,0.3)' }}>
+                                  <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20, background: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: '1px solid rgba(0,201,167,0.3)' }}>
                                     {a.sede_nombre}
                                   </span>
                                 )}
@@ -1197,8 +1204,8 @@ export default function DashboardPage() {
                                     whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                                     style={{
                                       width: 24, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
-                                      background: detalleExpandido[a.id] ? 'rgba(155,142,196,0.25)' : 'rgba(155,142,196,0.1)',
-                                      color: detalleExpandido[a.id] ? '#9B8EC4' : 'var(--muted)',
+                                      background: detalleExpandido[a.id] ? 'rgba(0,201,167,0.25)' : 'rgba(0,201,167,0.1)',
+                                      color: detalleExpandido[a.id] ? '#00C9A7' : 'var(--muted)',
                                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                                       transition: 'all 0.2s',
                                     }}
@@ -1239,8 +1246,8 @@ export default function DashboardPage() {
                                     Detectado por: {parseMetodoDeteccion(a.metodo_deteccion).methods.map(m => (
                                       <span key={m} style={{
                                         fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 10,
-                                        background: `${metodoDeteccionConfig[m]?.color || '#A0C4B5'}18`,
-                                        color: metodoDeteccionConfig[m]?.color || '#A0C4B5',
+                                        background: `${metodoDeteccionConfig[m]?.color || '#00C9A7'}18`,
+                                        color: metodoDeteccionConfig[m]?.color || '#00C9A7',
                                       }}>
                                         {metodoDeteccionConfig[m]?.icon}{' '}{metodoDeteccionConfig[m]?.label || m}
                                       </span>
@@ -1258,17 +1265,17 @@ export default function DashboardPage() {
                               {a.recomendacion && (
                                 <div style={{
                                   padding: '14px 18px', borderRadius: 16, marginBottom: 12,
-                                  background: 'linear-gradient(135deg, rgba(155,142,196,0.10), rgba(232,160,196,0.06))',
-                                  border: '1px solid rgba(155,142,196,0.20)',
+                                  background: 'linear-gradient(135deg, rgba(0,201,167,0.10), rgba(255,107,107,0.06))',
+                                  border: '1px solid rgba(0,201,167,0.20)',
                                 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4B5E8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4A9EF0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                       <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.57-3.25 3.92L12 22"/>
                                       <path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.57 3.25 3.92"/>
                                       <path d="M8.5 8.5L3 11" /><path d="M15.5 8.5L21 11"/>
                                       <path d="M7.5 13L4 16" /><path d="M16.5 13L20 16"/>
                                     </svg>
-                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#C4B5E8', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#4A9EF0', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                                       Recomendación IA
                                     </span>
                                   </div>
@@ -1297,9 +1304,9 @@ export default function DashboardPage() {
                                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                                       style={{
                                         padding: '9px 14px', borderRadius: 12, fontSize: 12, fontWeight: 500,
-                                        background: feedbackDado[a.id] === 'util' ? 'rgba(160,196,181,0.15)' : 'rgba(232,160,196,0.1)',
+                                        background: feedbackDado[a.id] === 'util' ? 'rgba(0,201,167,0.15)' : 'rgba(255,107,107,0.1)',
                                         color: feedbackDado[a.id] === 'util' ? 'var(--success)' : 'var(--danger)',
-                                        border: `1px solid ${feedbackDado[a.id] === 'util' ? 'rgba(160,196,181,0.3)' : 'rgba(232,160,196,0.2)'}`,
+                                        border: `1px solid ${feedbackDado[a.id] === 'util' ? 'rgba(0,201,167,0.3)' : 'rgba(255,107,107,0.2)'}`,
                                       }}>
                                       {feedbackDado[a.id] === 'util' ? '✓ Útil' : '✗ No útil'}
                                     </motion.div>
@@ -1307,7 +1314,7 @@ export default function DashboardPage() {
                                     <>
                                       <motion.button onClick={() => marcarFeedback(a.id, true)}
                                         whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', borderRadius: 12, background: 'rgba(160,196,181,0.12)', color: 'var(--success)', fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}>
+                                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', borderRadius: 12, background: 'rgba(0,201,167,0.12)', color: 'var(--success)', fontSize: 13, fontWeight: 500, border: 'none', cursor: 'pointer' }}>
                                         <ThumbUpIcon /> Útil
                                       </motion.button>
                                       <motion.button onClick={() => marcarFeedback(a.id, false)}
@@ -1327,7 +1334,7 @@ export default function DashboardPage() {
                   </AnimatePresence>
                 </div>
               )}
-            </SpotlightCard>
+            </BorderGlow>
           </ScrollReveal>
 
           {/* SIDEBAR */}
@@ -1335,12 +1342,12 @@ export default function DashboardPage() {
             {/* User card */}
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
               onClick={() => router.push('/dashboard/configuracion')}
-              whileHover={{ scale: 1.02, borderColor: 'rgba(155,142,196,0.45)' }}
+              whileHover={{ scale: 1.02, borderColor: 'rgba(0,201,167,0.45)' }}
               whileTap={{ scale: 0.98 }}
-              style={{ padding: '24px', borderRadius: 24, background: 'linear-gradient(135deg, rgba(155,142,196,0.15), rgba(124,111,191,0.08))', border: '1px solid rgba(155,142,196,0.25)', cursor: 'pointer' }}>
+              style={{ padding: '24px', borderRadius: 24, background: 'linear-gradient(135deg, rgba(0,201,167,0.15), rgba(124,111,191,0.08))', border: '1px solid rgba(0,201,167,0.25)', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
                 {user?.avatar ? (
-                  <img src={user.avatar} alt={user.nombre} style={{ width: 52, height: 52, borderRadius: 16, flexShrink: 0, objectFit: 'cover', border: '2px solid rgba(155,142,196,0.35)' }} />
+                  <img src={user.avatar} alt={user.nombre} style={{ width: 52, height: 52, borderRadius: 16, flexShrink: 0, objectFit: 'cover', border: '2px solid rgba(0,201,167,0.35)' }} />
                 ) : (
                   <div style={{ width: 52, height: 52, borderRadius: 16, flexShrink: 0, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 18, fontWeight: 700 }}>
                     {user?.nombre?.[0] || 'U'}
@@ -1352,7 +1359,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.2)', color: 'var(--primary)' }}>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.2)', color: 'var(--primary)' }}>
                   {user?.rol || 'admin'}
                 </span>
                 <span style={{ fontSize: 13, color: 'var(--muted)' }}>{user?.clinica_nombre}</span>
@@ -1361,17 +1368,17 @@ export default function DashboardPage() {
 
             {/* Médicos */}
             <ScrollReveal delay={0.2} direction="up">
-              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(160,196,181,0.1)" from="right">
+              <BorderGlow className="p-6 sm:p-8 lg:p-10" colors={['#4A9EF0','#00C9A7','#B06EF5']} backgroundColor="var(--glass, rgba(255,255,255,0.03))" borderRadius={18}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                   <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Médicos</h2>
                   <motion.button onClick={() => router.push('/dashboard/medicos')}
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                    style={{ fontSize: 12, padding: '5px 12px', borderRadius: 20, background: 'rgba(155,142,196,0.1)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)', cursor: 'pointer' }}>
+                    style={{ fontSize: 12, padding: '5px 12px', borderRadius: 20, background: 'rgba(0,201,167,0.1)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)', cursor: 'pointer' }}>
                     Ver todos
                   </motion.button>
                 </div>
                 <MedicosList clinicaId={clinicaId} />
-              </SpotlightCard>
+              </BorderGlow>
             </ScrollReveal>
 
             {/* Generador en Vivo — mini */}

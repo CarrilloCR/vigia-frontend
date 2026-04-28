@@ -17,13 +17,15 @@ import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import Magnet from '../../../components/reactbits/Magnet'
 import SedeSelector from '../../../components/ui/SedeSelector'
+import StarBorder from '../../../components/reactbits/StarBorder'
+import GlareHover from '../../../components/reactbits/GlareHover'
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
     <div style={{
       background: 'rgba(18,14,36,0.97)',
-      border: '1px solid rgba(155,142,196,0.3)',
+      border: '1px solid rgba(0,201,167,0.3)',
       borderRadius: 12,
       padding: '10px 14px',
       fontSize: 12,
@@ -289,7 +291,7 @@ export default function ReportesPage() {
                 style={{
                   padding: '9px 18px', borderRadius: 12, fontSize: 13, fontWeight: 600,
                   cursor: 'pointer', border: 'none',
-                  background: rango === d ? 'rgba(155,142,196,0.15)' : 'var(--glass)',
+                  background: rango === d ? 'rgba(0,201,167,0.15)' : 'var(--glass)',
                   backdropFilter: 'blur(20px)',
                   borderWidth: 1, borderStyle: 'solid',
                   borderColor: rango === d ? 'var(--primary)' : 'var(--border)',
@@ -308,8 +310,8 @@ export default function ReportesPage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px',
               borderRadius: 12, fontSize: 13, fontWeight: 600,
-              background: 'rgba(160,196,181,0.1)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(160,196,181,0.3)', color: '#A0C4B5', cursor: 'pointer',
+              background: 'rgba(0,201,167,0.1)', backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(0,201,167,0.3)', color: '#00C9A7', cursor: 'pointer',
             }}
           >
             <DownloadIcon /> Alertas CSV
@@ -323,15 +325,15 @@ export default function ReportesPage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px',
               borderRadius: 12, fontSize: 13, fontWeight: 600,
-              background: 'rgba(155,142,196,0.1)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(155,142,196,0.3)', color: 'var(--primary)',
+              background: 'rgba(0,201,167,0.1)', backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(0,201,167,0.3)', color: 'var(--primary)',
               cursor: exportandoGenerador ? 'not-allowed' : 'pointer',
               opacity: exportandoGenerador ? 0.6 : 1,
             }}
           >
             {exportandoGenerador
               ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  style={{ width: 14, height: 14, border: '2px solid rgba(155,142,196,0.3)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
+                  style={{ width: 14, height: 14, border: '2px solid rgba(0,201,167,0.3)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
               : <DownloadIcon />
             }
             {exportandoGenerador ? 'Calculando...' : 'Generador + IA'}
@@ -364,10 +366,10 @@ export default function ReportesPage() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
             {[
-              { value: stats.total, label: 'Total alertas', color: '#9B8EC4', display: <CountUp to={stats.total} /> },
-              { value: stats.porcentajeResueltas, label: 'Resueltas', color: '#A0C4B5', display: <><CountUp to={stats.porcentajeResueltas} />%</> },
-              { value: stats.criticas, label: 'Críticas', color: '#E8A0C4', display: <CountUp to={stats.criticas} /> },
-              { value: 0, label: 'KPI crítico', color: '#C4B5E8', display: <span style={{ fontSize: 22 }}>{stats.kpiMasProblematico?.kpi || '—'}</span> },
+              { value: stats.total, label: 'Total alertas', color: '#00C9A7', display: <CountUp to={stats.total} /> },
+              { value: stats.porcentajeResueltas, label: 'Resueltas', color: '#00C9A7', display: <><CountUp to={stats.porcentajeResueltas} />%</> },
+              { value: stats.criticas, label: 'Críticas', color: '#FF6B6B', display: <CountUp to={stats.criticas} /> },
+              { value: 0, label: 'KPI crítico', color: '#4A9EF0', display: <span style={{ fontSize: 22 }}>{stats.kpiMasProblematico?.kpi || '—'}</span> },
             ].map((s, i) => (
               <ScrollReveal key={i} delay={i * 0.08} direction="up">
                 <TiltedCard tiltAmount={6} scaleOnHover={1.03}>
@@ -389,7 +391,7 @@ export default function ReportesPage() {
         {/* BAR CHART: Alertas por día */}
         <ScrollReveal delay={0.2} direction="up">
         <div style={{ marginBottom: 36 }}>
-          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(155,142,196,0.12)" from="bottom">
+          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="bottom">
             <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
               Alertas por día
             </h2>
@@ -405,10 +407,10 @@ export default function ReportesPage() {
                   <YAxis tick={{ fill: 'var(--muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 12, color: 'var(--muted)' }} />
-                  <Bar dataKey="baja" name="Baja" stackId="a" fill="#A0C4B5" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="media" name="Media" stackId="a" fill="#C4B5E8" />
-                  <Bar dataKey="alta" name="Alta" stackId="a" fill="#9B8EC4" />
-                  <Bar dataKey="critica" name="Crítica" stackId="a" fill="#E8A0C4" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="baja" name="Baja" stackId="a" fill="#00C9A7" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="media" name="Media" stackId="a" fill="#4A9EF0" />
+                  <Bar dataKey="alta" name="Alta" stackId="a" fill="#00C9A7" />
+                  <Bar dataKey="critica" name="Crítica" stackId="a" fill="#FF6B6B" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -421,7 +423,7 @@ export default function ReportesPage() {
         >
           {/* Ranking médicos */}
           <ScrollReveal delay={0.1} direction="up">
-          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(160,196,181,0.12)" from="left">
+          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="left">
             <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
               Top médicos por alertas
             </h2>
@@ -446,9 +448,9 @@ export default function ReportesPage() {
                           <p style={{ fontSize: 12, color: 'var(--muted)' }}>{m.especialidad || ''}</p>
                         </div>
                       </div>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#9B8EC4' }}>{m.alertas}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#00C9A7' }}>{m.alertas}</span>
                     </div>
-                    <div style={{ height: 4, borderRadius: 4, background: 'rgba(155,142,196,0.12)' }}>
+                    <div style={{ height: 4, borderRadius: 4, background: 'rgba(0,201,167,0.12)' }}>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${(m.alertas / maxAlertas) * 100}%` }}
@@ -465,7 +467,7 @@ export default function ReportesPage() {
 
           {/* KPIs tabla */}
           <ScrollReveal delay={0.2} direction="up">
-          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(196,181,232,0.12)" from="right">
+          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(176,110,245,0.12)" from="right">
             <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
               KPIs — resumen
             </h2>

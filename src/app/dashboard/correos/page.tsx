@@ -6,6 +6,14 @@ import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
+import SpotlightCard from '../../../components/reactbits/SpotlightCard'
+import ScrollReveal from '../../../components/reactbits/ScrollReveal'
+import GradientText from '../../../components/reactbits/GradientText'
+import Magnet from '../../../components/reactbits/Magnet'
+import BorderGlow from '../../../components/reactbits/BorderGlow'
+import ClickSpark from '../../../components/reactbits/ClickSpark'
+import StarBorder from '../../../components/reactbits/StarBorder'
+import GlareHover from '../../../components/reactbits/GlareHover'
 
 interface EmailNotificacion {
   id: number
@@ -103,26 +111,28 @@ export default function CorreosPage() {
         <FadeContent direction="down" duration={0.5}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
             <div>
-              <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
-                Correos de alertas
+              <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
+                <GradientText text="Correos de alertas" className="font-display" />
               </h1>
               <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>
                 Correos que reciben notificaciones de alertas
               </p>
             </div>
-            <motion.button
-              onClick={() => { setShowForm(true); setError('') }}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,142,196,0.3)' }}
-            >
-              <PlusIcon /> Agregar email
-            </motion.button>
+            <Magnet strength={0.3}>
+              <motion.button
+                onClick={() => { setShowForm(true); setError('') }}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,201,167,0.3)' }}
+              >
+                <PlusIcon /> Agregar email
+              </motion.button>
+            </Magnet>
           </div>
         </FadeContent>
 
         {/* INFO CARD */}
         <FadeContent direction="up" delay={0.1} duration={0.4}>
-          <div style={{ padding: '20px 24px', borderRadius: 20, background: 'rgba(155,142,196,0.08)', border: '1px solid rgba(155,142,196,0.2)', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ padding: '20px 24px', borderRadius: 20, background: 'rgba(0,201,167,0.08)', border: '1px solid rgba(0,201,167,0.2)', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ color: 'var(--primary)', flexShrink: 0 }}>
               <ShieldIcon />
             </div>
@@ -141,7 +151,7 @@ export default function CorreosPage() {
         <AnimatePresence>
           {success && (
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              style={{ padding: '14px 18px', borderRadius: 14, marginBottom: 20, background: 'rgba(160,196,181,0.1)', border: '1px solid rgba(160,196,181,0.3)', color: 'var(--success)', fontSize: 14 }}>
+              style={{ padding: '14px 18px', borderRadius: 14, marginBottom: 20, background: 'rgba(0,201,167,0.1)', border: '1px solid rgba(0,201,167,0.3)', color: 'var(--success)', fontSize: 14 }}>
               {success}
             </motion.div>
           )}
@@ -152,7 +162,7 @@ export default function CorreosPage() {
           {showForm && (
             <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
               style={{ marginBottom: 24 }}>
-              <GlowingCard className="p-6 sm:p-8 lg:p-10">
+              <BorderGlow className="p-6 sm:p-8 lg:p-10" colors={['#c084fc','#9b8ec4','#7dd3fc']} backgroundColor="var(--glass, rgba(255,255,255,0.03))" borderRadius={18}>
                 <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
                   Agregar correo
                 </h2>
@@ -191,7 +201,7 @@ export default function CorreosPage() {
                 </div>
 
                 {error && (
-                  <p style={{ fontSize: 13, color: 'var(--danger)', marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.3)' }}>
+                  <p style={{ fontSize: 13, color: 'var(--danger)', marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)' }}>
                     {error}
                   </p>
                 )}
@@ -212,19 +222,19 @@ export default function CorreosPage() {
                     {saving ? 'Guardando...' : 'Agregar correo'}
                   </motion.button>
                 </div>
-              </GlowingCard>
+              </BorderGlow>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* LISTA */}
-        <FadeContent direction="up" delay={0.2} duration={0.4}>
-          <GlowingCard className="p-6 sm:p-8 lg:p-10">
+        <ScrollReveal delay={0.15} direction="up">
+          <BorderGlow className="p-6 sm:p-8 lg:p-10" colors={['#c084fc','#9b8ec4','#7dd3fc']} backgroundColor="var(--glass, rgba(255,255,255,0.03))" borderRadius={18}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
               <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                 Correos configurados
               </h2>
-              <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)' }}>
+              <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
                 {emails.length} correos
               </span>
             </div>
@@ -250,7 +260,7 @@ export default function CorreosPage() {
                 </p>
                 <motion.button onClick={() => setShowForm(true)}
                   whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  style={{ padding: '11px 24px', borderRadius: 12, background: 'rgba(155,142,196,0.12)', color: 'var(--primary)', border: '1px solid rgba(155,142,196,0.2)', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
+                  style={{ padding: '11px 24px', borderRadius: 12, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
                   Agregar correo adicional
                 </motion.button>
               </div>
@@ -276,12 +286,12 @@ export default function CorreosPage() {
                           {e.email}
                         </p>
                       </div>
-                      <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'rgba(160,196,181,0.12)', color: 'var(--success)', border: '1px solid rgba(160,196,181,0.2)', flexShrink: 0 }}>
+                      <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--success)', border: '1px solid rgba(0,201,167,0.2)', flexShrink: 0 }}>
                         Activo
                       </span>
                       <motion.button onClick={() => handleEliminar(e.id)}
                         whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                        style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
+                        style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
                         <TrashIcon />
                       </motion.button>
                     </motion.div>
@@ -289,8 +299,8 @@ export default function CorreosPage() {
                 </AnimatePresence>
               </div>
             )}
-          </GlowingCard>
-        </FadeContent>
+          </BorderGlow>
+        </ScrollReveal>
     </div>
   )
 }

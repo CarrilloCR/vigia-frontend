@@ -7,13 +7,20 @@ import { useToastStore } from '../../../store/toast'
 import { useAuthStore } from '../../../store/auth'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import SedeSelector from '../../../components/ui/SedeSelector'
+import SpotlightCard from '../../../components/reactbits/SpotlightCard'
+import ScrollReveal from '../../../components/reactbits/ScrollReveal'
+import GradientText from '../../../components/reactbits/GradientText'
+import TiltedCard from '../../../components/reactbits/TiltedCard'
+import BorderGlow from '../../../components/reactbits/BorderGlow'
+import StarBorder from '../../../components/reactbits/StarBorder'
+import GlareHover from '../../../components/reactbits/GlareHover'
 
 const estadoConfig: Record<string, { color: string; bg: string; label: string }> = {
-  pendiente:  { color: '#C4B5E8', bg: 'rgba(196,181,232,0.12)', label: 'Pendiente' },
-  enviada:    { color: '#9B8EC4', bg: 'rgba(155,142,196,0.12)', label: 'Enviada' },
-  entregada:  { color: '#A0C4B5', bg: 'rgba(160,196,181,0.12)', label: 'Entregada' },
-  leida:      { color: '#A0C4B5', bg: 'rgba(160,196,181,0.12)', label: 'Leída' },
-  fallida:    { color: '#E8A0C4', bg: 'rgba(232,160,196,0.12)', label: 'Fallida' },
+  pendiente:  { color: '#4A9EF0', bg: 'rgba(176,110,245,0.12)', label: 'Pendiente' },
+  enviada:    { color: '#00C9A7', bg: 'rgba(0,201,167,0.12)', label: 'Enviada' },
+  entregada:  { color: '#00C9A7', bg: 'rgba(0,201,167,0.12)', label: 'Entregada' },
+  leida:      { color: '#00C9A7', bg: 'rgba(0,201,167,0.12)', label: 'Leída' },
+  fallida:    { color: '#FF6B6B', bg: 'rgba(255,107,107,0.12)', label: 'Fallida' },
 }
 
 const MailIcon = () => (
@@ -90,10 +97,10 @@ export default function NotificacionesPage() {
     .filter(n => filtroKpi === '' || (n as any).alerta_tipo_kpi === filtroKpi)
 
   const stats = [
-    { label: 'Total',      value: notificaciones.length,                                          color: '#9B8EC4' },
-    { label: 'Pendientes', value: notificaciones.filter(n => n.estado === 'pendiente').length,    color: '#C4B5E8' },
-    { label: 'Enviadas',   value: notificaciones.filter(n => n.estado === 'enviada').length,      color: '#A0C4B5' },
-    { label: 'Fallidas',   value: notificaciones.filter(n => n.estado === 'fallida').length,      color: '#E8A0C4' },
+    { label: 'Total',      value: notificaciones.length,                                          color: '#00C9A7' },
+    { label: 'Pendientes', value: notificaciones.filter(n => n.estado === 'pendiente').length,    color: '#4A9EF0' },
+    { label: 'Enviadas',   value: notificaciones.filter(n => n.estado === 'enviada').length,      color: '#00C9A7' },
+    { label: 'Fallidas',   value: notificaciones.filter(n => n.estado === 'fallida').length,      color: '#FF6B6B' },
   ]
 
   const filtros = ['todos', 'pendiente', 'enviada', 'entregada', 'fallida']
@@ -107,8 +114,8 @@ export default function NotificacionesPage() {
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}
         >
           <div>
-            <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
-              Notificaciones
+            <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
+              <GradientText text="Notificaciones" className="font-display" />
             </h1>
             <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>
               Historial completo de notificaciones enviadas
@@ -135,34 +142,33 @@ export default function NotificacionesPage() {
         {/* STATS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
           {stats.map((s, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              onClick={() => setFiltro(i === 0 ? 'todos' : ['todos', 'pendiente', 'enviada', 'fallida'][i])}
-              style={{
-                padding: '28px 28px', borderRadius: 24,
-                background: 'var(--glass)', backdropFilter: 'blur(20px)',
-                border: '1px solid var(--border)',
-                cursor: 'pointer', transition: 'all 0.2s',
-              }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <p className="font-display" style={{ fontSize: 48, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 10 }}>
-                {s.value}
-              </p>
-              <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
-              <div style={{ marginTop: 16, height: 3, borderRadius: 4, background: `${s.color}20` }}>
+            <ScrollReveal key={i} delay={i * 0.08} direction="up">
+              <TiltedCard tiltAmount={6} scaleOnHover={1.03}>
                 <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: s.value > 0 ? '100%' : '0%' }}
-                  transition={{ duration: 1, delay: i * 0.1 }}
-                  style={{ height: '100%', borderRadius: 4, background: s.color }}
-                />
-              </div>
-            </motion.div>
+                  onClick={() => setFiltro(i === 0 ? 'todos' : ['todos', 'pendiente', 'enviada', 'fallida'][i])}
+                  style={{
+                    padding: '28px 28px', borderRadius: 24,
+                    background: 'var(--glass)', backdropFilter: 'blur(20px)',
+                    border: '1px solid var(--border)',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <p className="font-display" style={{ fontSize: 48, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 10 }}>
+                    {s.value}
+                  </p>
+                  <p style={{ fontSize: 15, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
+                  <div style={{ marginTop: 16, height: 3, borderRadius: 4, background: `${s.color}20` }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: s.value > 0 ? '100%' : '0%' }}
+                      transition={{ duration: 1, delay: i * 0.1 }}
+                      style={{ height: '100%', borderRadius: 4, background: s.color }}
+                    />
+                  </div>
+                </motion.div>
+              </TiltedCard>
+            </ScrollReveal>
           ))}
         </div>
 
@@ -198,20 +204,16 @@ export default function NotificacionesPage() {
         </motion.div>
 
         {/* LISTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-        >
-          <GlowingCard className="p-6 sm:p-8 lg:p-10">
+        <ScrollReveal delay={0.2} direction="up">
+          <BorderGlow className="p-6 sm:p-8 lg:p-10" colors={['#7dd3fc','#9b8ec4','#a0c4b5']} backgroundColor="var(--glass, rgba(255,255,255,0.03))" borderRadius={18}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
               <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                 Historial
               </h2>
               <span style={{
                 fontSize: 14, fontWeight: 500, padding: '6px 16px', borderRadius: 20,
-                background: 'rgba(155,142,196,0.12)', color: 'var(--primary)',
-                border: '1px solid rgba(155,142,196,0.2)',
+                background: 'rgba(0,201,167,0.12)', color: 'var(--primary)',
+                border: '1px solid rgba(0,201,167,0.2)',
               }}>
                 {filtradas.length} registros
               </span>
@@ -318,8 +320,8 @@ export default function NotificacionesPage() {
                 </AnimatePresence>
               </div>
             )}
-          </GlowingCard>
-        </motion.div>
+          </BorderGlow>
+        </ScrollReveal>
     </>
   )
 }

@@ -17,8 +17,8 @@ function AccesoRestringido({ rol }: { rol: string }) {
       animate={{ opacity: 1, scale: 1 }}
       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 20, textAlign: 'center' }}
     >
-      <div style={{ width: 64, height: 64, borderRadius: 20, background: 'rgba(155,142,196,0.1)', border: '1px solid rgba(155,142,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <svg width="28" height="28" fill="none" stroke="rgba(155,142,196,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <div style={{ width: 64, height: 64, borderRadius: 20, background: 'rgba(0,201,167,0.1)', border: '1px solid rgba(0,201,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="28" height="28" fill="none" stroke="rgba(0,201,167,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
@@ -32,7 +32,7 @@ function AccesoRestringido({ rol }: { rol: string }) {
         <motion.button
           onClick={() => router.push('/dashboard/equipo')}
           whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          style={{ padding: '10px 20px', borderRadius: 12, background: 'rgba(155,142,196,0.15)', border: '1px solid rgba(155,142,196,0.35)', color: '#9B8EC4', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '10px 20px', borderRadius: 12, background: 'rgba(0,201,167,0.15)', border: '1px solid rgba(0,201,167,0.35)', color: '#00C9A7', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
         >
           Solicitar rol
         </motion.button>
@@ -82,9 +82,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <Aurora colorStops={['#9B8EC4', '#7C6FBF', '#C4B5E8']} amplitude={0.5} speed={0.15} />
+        <Aurora colorStops={['#00C9A7', '#4A9EF0', '#B06EF5']} amplitude={0.5} speed={0.15} />
       </div>
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03, backgroundImage: 'linear-gradient(var(--primary) 1px, transparent 1px), linear-gradient(90deg, var(--primary) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
 
       <div className="px-5 sm:px-8 lg:px-12 xl:px-14 pt-8 sm:pt-10 pb-10 sm:pb-12" style={{ position: 'relative', zIndex: 10, maxWidth: 1600, margin: '0 auto' }}>
         <DashboardHeader />

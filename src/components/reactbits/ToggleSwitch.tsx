@@ -31,7 +31,7 @@ export default function ToggleSwitch({ checked, onChange, disabled = false, size
         width: w,
         height: h,
         borderRadius: h,
-        border: checked ? '1px solid rgba(155,142,196,0.4)' : '1px solid var(--border)',
+        border: checked ? '1px solid rgba(0,201,167,0.4)' : '1px solid var(--border)',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.4 : 1,
         padding: 0,

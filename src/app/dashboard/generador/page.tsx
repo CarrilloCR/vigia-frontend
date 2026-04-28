@@ -11,17 +11,19 @@ import ScrollReveal from '../../../components/reactbits/ScrollReveal'
 import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import SedeSelector from '../../../components/ui/SedeSelector'
+import StarBorder from '../../../components/reactbits/StarBorder'
+import GlareHover from '../../../components/reactbits/GlareHover'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
-  tasa_cancelacion:  { label: 'Cancelación',  color: '#E8A0C4', unit: '%' },
-  tasa_noshow:       { label: 'No-Show',      color: '#C4B5E8', unit: '%' },
-  ingresos_dia:      { label: 'Ingresos',     color: '#A0C4B5', unit: '$' },
-  ocupacion_agenda:  { label: 'Ocupación',    color: '#BBA8E8', unit: '%' },
-  ticket_promedio:   { label: 'Ticket',       color: '#9B8EC4', unit: '$' },
-  pacientes_nuevos:  { label: 'Pac. Nuevos',  color: '#7C6FBF', unit: '' },
-  retencion_90:      { label: 'Retención',    color: '#A8C4A0', unit: '%' },
-  nps:               { label: 'NPS',          color: '#C4B5E8', unit: '' },
-  citas_reagendadas: { label: 'Reagendadas',  color: '#E8C4A0', unit: '' },
+  tasa_cancelacion:  { label: 'Cancelación',  color: '#FF6B6B', unit: '%' },
+  tasa_noshow:       { label: 'No-Show',      color: '#4A9EF0', unit: '%' },
+  ingresos_dia:      { label: 'Ingresos',     color: '#00C9A7', unit: '$' },
+  ocupacion_agenda:  { label: 'Ocupación',    color: '#B06EF5', unit: '%' },
+  ticket_promedio:   { label: 'Ticket',       color: '#00C9A7', unit: '$' },
+  pacientes_nuevos:  { label: 'Pac. Nuevos',  color: '#00A88A', unit: '' },
+  retencion_90:      { label: 'Retención',    color: '#00C9A7', unit: '%' },
+  nps:               { label: 'NPS',          color: '#4A9EF0', unit: '' },
+  citas_reagendadas: { label: 'Reagendadas',  color: '#FFD166', unit: '' },
 }
 
 interface RegistroKPI {
@@ -34,7 +36,7 @@ interface RegistroKPI {
   periodo: string
 }
 
-const PulseDot = ({ color = '#A0C4B5' }: { color?: string }) => (
+const PulseDot = ({ color = '#00C9A7' }: { color?: string }) => (
   <motion.div
     animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
     transition={{ duration: 1.6, repeat: Infinity }}
@@ -190,13 +192,13 @@ export default function GeneradorPage() {
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-            <PulseDot color={generadorActivo ? '#A0C4B5' : '#E8A0C4'} />
+            <PulseDot color={generadorActivo ? '#00C9A7' : '#FF6B6B'} />
             <h1 className="font-display" style={{ fontSize: 32, fontWeight: 800 }}>
               <GradientText text="Generador en Vivo" className="font-display" />
             </h1>
           </div>
           <p style={{ fontSize: 14, color: 'var(--muted)' }}>
-            Flujo de datos producido por <code style={{ background: 'rgba(155,142,196,0.1)', padding: '2px 8px', borderRadius: 6, color: 'var(--primary)' }}>generador.py</code> cada 5 minutos en Celery Beat
+            Flujo de datos producido por <code style={{ background: 'rgba(0,201,167,0.1)', padding: '2px 8px', borderRadius: 6, color: 'var(--primary)' }}>generador.py</code> cada 5 minutos en Celery Beat
           </p>
         </div>
 
@@ -211,8 +213,8 @@ export default function GeneradorPage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500,
-              background: generadorActivo ? 'rgba(160,196,181,0.15)' : 'rgba(232,160,196,0.1)',
-              border: `1px solid ${generadorActivo ? 'rgba(160,196,181,0.35)' : 'rgba(232,160,196,0.3)'}`,
+              background: generadorActivo ? 'rgba(0,201,167,0.15)' : 'rgba(255,107,107,0.1)',
+              border: `1px solid ${generadorActivo ? 'rgba(0,201,167,0.35)' : 'rgba(255,107,107,0.3)'}`,
               color: generadorActivo ? 'var(--success)' : 'var(--danger)',
               cursor: togglingGenerador || generadorActivo === null ? 'not-allowed' : 'pointer',
               backdropFilter: 'blur(20px)',
@@ -231,8 +233,8 @@ export default function GeneradorPage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500,
-              background: live ? 'rgba(155,142,196,0.15)' : 'var(--glass)',
-              border: `1px solid ${live ? 'rgba(155,142,196,0.3)' : 'var(--border)'}`,
+              background: live ? 'rgba(0,201,167,0.15)' : 'var(--glass)',
+              border: `1px solid ${live ? 'rgba(0,201,167,0.3)' : 'var(--border)'}`,
               color: live ? 'var(--primary)' : 'var(--muted)',
               cursor: 'pointer', backdropFilter: 'blur(20px)',
             }}>
@@ -256,10 +258,10 @@ export default function GeneradorPage() {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
         {[
-          { label: `Registros (${horas}h)`, value: registros.length, color: '#9B8EC4', icon: <DatabaseIcon /> },
-          { label: 'Tipos de KPI', value: tiposPresentes.length, color: '#C4B5E8', icon: <ActivityIcon /> },
-          { label: 'Último registro', text: ultimoRegistro ? relativeTime(ultimoRegistro.fecha_hora) : '—', color: '#A0C4B5', icon: <ClockIcon /> },
-          { label: 'Actualizado', text: ultimaActualizacion ? ultimaActualizacion.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—', color: '#E8A0C4', icon: <RefreshIcon /> },
+          { label: `Registros (${horas}h)`, value: registros.length, color: '#00C9A7', icon: <DatabaseIcon /> },
+          { label: 'Tipos de KPI', value: tiposPresentes.length, color: '#4A9EF0', icon: <ActivityIcon /> },
+          { label: 'Último registro', text: ultimoRegistro ? relativeTime(ultimoRegistro.fecha_hora) : '—', color: '#00C9A7', icon: <ClockIcon /> },
+          { label: 'Actualizado', text: ultimaActualizacion ? ultimaActualizacion.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—', color: '#FF6B6B', icon: <RefreshIcon /> },
         ].map((s, i) => (
           <ScrollReveal key={i} delay={i * 0.07} direction="up">
             <TiltedCard tiltAmount={6} scaleOnHover={1.03}>
@@ -309,9 +311,9 @@ export default function GeneradorPage() {
             style={{
               padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
               cursor: 'pointer', border: '1px solid',
-              background: filtroTipo === 'todos' ? 'rgba(155,142,196,0.2)' : 'rgba(255,255,255,0.03)',
+              background: filtroTipo === 'todos' ? 'rgba(0,201,167,0.2)' : 'rgba(255,255,255,0.03)',
               color: filtroTipo === 'todos' ? 'var(--primary)' : 'var(--muted)',
-              borderColor: filtroTipo === 'todos' ? 'rgba(155,142,196,0.4)' : 'var(--border)',
+              borderColor: filtroTipo === 'todos' ? 'rgba(0,201,167,0.4)' : 'var(--border)',
             }}>
             Todos ({registros.length})
           </motion.button>
@@ -339,7 +341,7 @@ export default function GeneradorPage() {
 
       {/* Lista de registros */}
       <ScrollReveal delay={0.2} direction="up">
-      <SpotlightCard className="p-4 sm:p-6" spotlightColor="rgba(155,142,196,0.12)" from="top">
+      <SpotlightCard className="p-4 sm:p-6" spotlightColor="rgba(0,201,167,0.12)" from="top">
         {loading ? (
           <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--muted)' }}>
             Cargando registros...
@@ -362,7 +364,7 @@ export default function GeneradorPage() {
                     initial={esNuevo ? { opacity: 0, y: -20, scale: 0.95 } : { opacity: 0 }}
                     animate={{
                       opacity: 1, y: 0, scale: 1,
-                      backgroundColor: esNuevo ? `${cfg?.color || '#9B8EC4'}1A` : 'rgba(255,255,255,0.02)',
+                      backgroundColor: esNuevo ? `${cfg?.color || '#00C9A7'}1A` : 'rgba(255,255,255,0.02)',
                     }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.4 }}
@@ -371,7 +373,7 @@ export default function GeneradorPage() {
                       gridTemplateColumns: '120px 1fr 140px 110px',
                       alignItems: 'center', gap: 16,
                       padding: '14px 18px', borderRadius: 14,
-                      border: `1px solid ${esNuevo ? (cfg?.color || '#9B8EC4') + '40' : 'var(--border)'}`,
+                      border: `1px solid ${esNuevo ? (cfg?.color || '#00C9A7') + '40' : 'var(--border)'}`,
                     }}>
                     {/* Timestamp */}
                     <div>
@@ -387,8 +389,8 @@ export default function GeneradorPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{
                         width: 10, height: 10, borderRadius: '50%',
-                        background: cfg?.color || '#9B8EC4',
-                        boxShadow: `0 0 10px ${cfg?.color || '#9B8EC4'}`,
+                        background: cfg?.color || '#00C9A7',
+                        boxShadow: `0 0 10px ${cfg?.color || '#00C9A7'}`,
                       }} />
                       <div>
                         <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
@@ -404,7 +406,7 @@ export default function GeneradorPage() {
                     <div style={{ textAlign: 'right' }}>
                       <p className="font-display" style={{
                         fontSize: 20, fontWeight: 800,
-                        color: cfg?.color || '#9B8EC4',
+                        color: cfg?.color || '#00C9A7',
                       }}>
                         {formatValor(r.tipo, r.valor)}
                       </p>
@@ -413,10 +415,10 @@ export default function GeneradorPage() {
                     {/* Relativo */}
                     <div style={{ textAlign: 'right' }}>
                       <span style={{
-                        fontSize: 11, color: esNuevo ? (cfg?.color || '#9B8EC4') : 'var(--muted)',
+                        fontSize: 11, color: esNuevo ? (cfg?.color || '#00C9A7') : 'var(--muted)',
                         padding: '4px 10px', borderRadius: 12,
-                        background: esNuevo ? `${cfg?.color || '#9B8EC4'}1A` : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${esNuevo ? (cfg?.color || '#9B8EC4') + '40' : 'var(--border)'}`,
+                        background: esNuevo ? `${cfg?.color || '#00C9A7'}1A` : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${esNuevo ? (cfg?.color || '#00C9A7') + '40' : 'var(--border)'}`,
                         fontWeight: 500,
                       }}>
                         {esNuevo ? '· nuevo' : relativeTime(r.fecha_hora)}

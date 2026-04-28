@@ -14,7 +14,7 @@ export default function PageLoader() {
       <div className="flex flex-col items-center gap-6">
         <motion.div
           animate={{
-            filter: ['drop-shadow(0 0 12px rgba(155,142,196,0.3))', 'drop-shadow(0 0 30px rgba(155,142,196,0.7))', 'drop-shadow(0 0 12px rgba(155,142,196,0.3))'],
+            filter: ['drop-shadow(0 0 12px rgba(0,201,167,0.3))', 'drop-shadow(0 0 30px rgba(0,201,167,0.7))', 'drop-shadow(0 0 12px rgba(0,201,167,0.3))'],
             scale: [1, 1.05, 1]
           }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}

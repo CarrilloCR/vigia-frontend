@@ -15,6 +15,8 @@ import SpotlightCard from '../../../components/reactbits/SpotlightCard'
 import ScrollReveal from '../../../components/reactbits/ScrollReveal'
 import GradientText from '../../../components/reactbits/GradientText'
 import Magnet from '../../../components/reactbits/Magnet'
+import StarBorder from '../../../components/reactbits/StarBorder'
+import GlareHover from '../../../components/reactbits/GlareHover'
 
 interface Sede { id: number; nombre: string }
 
@@ -40,7 +42,7 @@ const especialidades = [
   'Oftalmología', 'Odontología', 'Endocrinología', 'Urología', 'Reumatología',
 ]
 
-const colores = ['#9B8EC4','#E8A0C4','#A0C4B5','#C4B5E8','#7C6FBF','#BBA8E8','#A8C4A0','#E8C4A0']
+const colores = ['#00C9A7','#FF6B6B','#00C9A7','#4A9EF0','#00A88A','#B06EF5','#00C9A7','#FFD166']
 
 const EditIcon = () => (
   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -194,10 +196,10 @@ const abrirEditar = (m: Medico) => {
   const especialidadesUnicas = [...new Set(medicos.filter(m => m.activo).map(m => m.especialidad))]
 
   const stats = [
-    { label: 'Total médicos', value: medicos.filter(m => m.activo).length, color: '#9B8EC4' },
-    { label: 'Especialidades', value: especialidadesUnicas.length, color: '#C4B5E8' },
-    { label: 'Medicina General', value: medicos.filter(m => m.especialidad === 'Medicina General' && m.activo).length, color: '#A0C4B5' },
-    { label: 'Otras especialidades', value: medicos.filter(m => m.especialidad !== 'Medicina General' && m.activo).length, color: '#E8A0C4' },
+    { label: 'Total médicos', value: medicos.filter(m => m.activo).length, color: '#00C9A7' },
+    { label: 'Especialidades', value: especialidadesUnicas.length, color: '#4A9EF0' },
+    { label: 'Medicina General', value: medicos.filter(m => m.especialidad === 'Medicina General' && m.activo).length, color: '#00C9A7' },
+    { label: 'Otras especialidades', value: medicos.filter(m => m.especialidad !== 'Medicina General' && m.activo).length, color: '#FF6B6B' },
   ]
 
   return (
@@ -300,7 +302,7 @@ const abrirEditar = (m: Medico) => {
                                   {m.especialidad}
                                 </span>
                                 {m.sede_nombre && (
-                                  <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20, background: 'rgba(160,196,181,0.15)', color: '#A0C4B5', border: '1px solid rgba(160,196,181,0.3)' }}>
+                                  <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20, background: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: '1px solid rgba(0,201,167,0.3)' }}>
                                     {m.sede_nombre}
                                   </span>
                                 )}
@@ -309,11 +311,11 @@ const abrirEditar = (m: Medico) => {
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
                             <motion.button onClick={() => abrirEditar(m)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(155,142,196,0.12)', border: '1px solid rgba(155,142,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
+                              style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(0,201,167,0.12)', border: '1px solid rgba(0,201,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
                               <EditIcon />
                             </motion.button>
                             <motion.button onClick={() => setConfirmDelete({ open: true, id: m.id, name: `Dr. ${m.nombre} ${m.apellido}` })} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)' }}>
+                              style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)' }}>
                               <TrashIcon />
                             </motion.button>
                           </div>
@@ -374,7 +376,7 @@ const abrirEditar = (m: Medico) => {
                       )}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 18px', borderRadius: 12, cursor: 'pointer', background: 'rgba(155,142,196,0.1)', border: '1px dashed rgba(155,142,196,0.4)', color: 'var(--primary)', fontSize: 14, fontWeight: 500 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 18px', borderRadius: 12, cursor: 'pointer', background: 'rgba(0,201,167,0.1)', border: '1px dashed rgba(0,201,167,0.4)', color: 'var(--primary)', fontSize: 14, fontWeight: 500 }}>
                         <UploadIcon />
                         {fotoPreview ? 'Cambiar foto' : 'Subir foto'}
                         <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style={{ display: 'none' }} onChange={handleFoto} />
@@ -384,7 +386,7 @@ const abrirEditar = (m: Medico) => {
                     {fotoPreview && (
                       <motion.button onClick={() => { setFotoPreview(''); setForm(prev => ({ ...prev, foto_url: '' })) }}
                         whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                        style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
+                        style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--danger)', flexShrink: 0 }}>
                         <TrashIcon />
                       </motion.button>
                     )}
@@ -454,7 +456,7 @@ const abrirEditar = (m: Medico) => {
               </div>
 
               {error && (
-                <p style={{ marginTop: 16, fontSize: 13, color: 'var(--danger)', padding: '10px 14px', borderRadius: 10, background: 'rgba(232,160,196,0.1)', border: '1px solid rgba(232,160,196,0.3)' }}>
+                <p style={{ marginTop: 16, fontSize: 13, color: 'var(--danger)', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.3)' }}>
                   {error}
                 </p>
               )}

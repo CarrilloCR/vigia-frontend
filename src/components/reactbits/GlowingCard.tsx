@@ -41,7 +41,7 @@ export default function GlowingCard({ children, className = '', style }: Glowing
       <div
         className="absolute inset-0 pointer-events-none transition-opacity duration-300"
         style={{
-          background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, rgba(155,142,196,0.14) 0%, transparent 58%)`,
+          background: `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, rgba(0,201,167,0.14) 0%, transparent 58%)`,
         }}
       />
       {children}
