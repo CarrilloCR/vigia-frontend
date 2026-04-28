@@ -19,6 +19,7 @@ import StarBorder from '../components/reactbits/StarBorder'
 import PasswordRequirements, { validatePassword } from '../components/ui/PasswordRequirements'
 import ThemeToggle from '../components/ui/ThemeToggle'
 import VigiaLogo from '../components/ui/VigiaLogo'
+import KpiScene3D from '../components/ui/KpiScene3D'
 
 const BoltIcon = () => (
   <svg width="22" height="22" fill="none" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -215,34 +216,20 @@ export default function AuthPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
-          style={{ fontSize: 20, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 64 }}
+          style={{ fontSize: 18, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 24 }}
         >
           Sistema de Alertas Inteligentes<br />para Clínicas Médicas
         </motion.p>
 
-        {/* Features */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
-          {features.map((f, i) => (
-            <ScrollReveal key={i} delay={0.55 + i * 0.1} direction="left" distance={24}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  style={{
-                    width: 54, height: 54, borderRadius: 16, flexShrink: 0,
-                    background: 'rgba(0,201,167,0.1)',
-                    border: '1px solid rgba(0,201,167,0.22)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                  {f.icon}
-                </motion.div>
-                <div>
-                  <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{f.title}</p>
-                  <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.5 }}>{f.desc}</p>
-                </div>
-              </div>
-            </ScrollReveal>
-          ))}
-        </div>
+        {/* 3D KPI scene */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+          style={{ width: '100%' }}
+        >
+          <KpiScene3D />
+        </motion.div>
       </motion.div>
 
       {/* RIGHT PANEL */}
