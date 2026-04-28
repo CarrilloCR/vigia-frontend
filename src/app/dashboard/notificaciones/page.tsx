@@ -75,7 +75,7 @@ export default function NotificacionesPage() {
 
   const fetchNotificaciones = async () => {
     try {
-      const params = `/notificaciones/?clinica=${clinicaId}${selectedSede ? `&sede=${selectedSede}` : ''}&limit=200`
+      const params = `/notificaciones/?clinica=${clinicaId}${selectedSede ? `&sede=${selectedSede}` : ''}&limit=100`
       const res = await api.get(params)
       setNotificaciones(res.data.results || res.data)
     } catch {
@@ -93,13 +93,12 @@ export default function NotificacionesPage() {
     } catch { toast.error('Error al actualizar notificaciones') }
   }
 
-  const limpiarEnviadas = async () => {
-    const targets = notificaciones.filter(n => n.estado === 'enviada' || n.estado === 'entregada')
-    if (targets.length === 0) { toast.success('Sin enviadas para limpiar'); return }
+  const limpiarTodas = async () => {
+    if (notificaciones.length === 0) { toast.success('Sin notificaciones para limpiar'); return }
     setLoading(true)
-    await Promise.allSettled(targets.map(n => api.delete(`/notificaciones/${n.id}/`)))
+    await Promise.allSettled(notificaciones.map(n => api.delete(`/notificaciones/${n.id}/`)))
     await fetchNotificaciones()
-    toast.success(`${targets.length} notificaciones eliminadas`)
+    toast.success(`${notificaciones.length} notificaciones eliminadas`)
     setConfirmLimpiar(false)
   }
 
@@ -144,9 +143,9 @@ export default function NotificacionesPage() {
             </motion.button>
             {confirmLimpiar ? (
               <div style={{ display: 'flex', gap: 6 }}>
-                <motion.button onClick={limpiarEnviadas} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                <motion.button onClick={limpiarTodas} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   style={{ padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'rgba(255,107,107,0.2)', color: '#FF6B6B', borderWidth: 1, borderStyle: 'solid', borderColor: 'rgba(255,107,107,0.4)' }}>
-                  ¿Confirmar?
+                  ¿Eliminar {notificaciones.length}?
                 </motion.button>
                 <motion.button onClick={() => setConfirmLimpiar(false)} whileHover={{ scale: 1.03 }}
                   style={{ padding: '10px 14px', borderRadius: 12, fontSize: 13, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--glass)', color: 'var(--muted)' }}>
@@ -156,7 +155,7 @@ export default function NotificacionesPage() {
             ) : (
               <motion.button onClick={() => setConfirmLimpiar(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 style={{ padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid rgba(255,107,107,0.3)', background: 'rgba(255,107,107,0.08)', color: '#FF6B6B' }}>
-                Limpiar enviadas
+                Limpiar todas
               </motion.button>
             )}
           </div>
@@ -284,7 +283,7 @@ export default function NotificacionesPage() {
                         initial={{ opacity: 0, x: -16 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 16 }}
-                        transition={{ delay: i * 0.03 }}
+                        transition={{ delay: Math.min(i * 0.03, 0.3) }}
                         style={{
                           padding: '20px 24px', borderRadius: 20,
                           background: 'rgba(255,255,255,0.03)',

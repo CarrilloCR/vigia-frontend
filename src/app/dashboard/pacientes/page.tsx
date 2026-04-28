@@ -119,10 +119,10 @@ export default function PacientesPage() {
       const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
       const inactivosParam = mostrarInactivos ? '&inactivos=true' : ''
       const [pacRes, citRes] = await Promise.all([
-        api.get(`/pacientes/?clinica=${clinicaId}${sedeParam}${inactivosParam}&limit=200`),
-        api.get(`/citas/?clinica=${clinicaId}${sedeParam}&limit=200`),
+        api.get(`/pacientes/?clinica=${clinicaId}${sedeParam}${inactivosParam}&limit=100`),
+        api.get(`/citas/?clinica=${clinicaId}${sedeParam}&limit=100`),
       ])
-      const pacs = pacRes.data.results || pacRes.data
+      const pacs = (pacRes.data.results || pacRes.data).filter((p: any) => p.clinica === clinicaId)
       setPacientes(pacs)
 
       // Contar citas por paciente
@@ -182,13 +182,12 @@ export default function PacientesPage() {
     setConfirmDelete({ open: false, id: 0, name: '' })
   }
 
-  const limpiarInactivos = async () => {
-    const targets = pacientes.filter(p => !p.activo)
-    if (targets.length === 0) { toast.success('Sin inactivos para limpiar'); return }
+  const limpiarTodos = async () => {
+    if (pacientes.length === 0) { toast.success('Sin pacientes para limpiar'); return }
     setLoading(true)
-    await Promise.allSettled(targets.map(p => api.delete(`/pacientes/${p.id}/`)))
+    await Promise.allSettled(pacientes.map(p => api.delete(`/pacientes/${p.id}/`)))
     await fetchData()
-    toast.success(`${targets.length} pacientes eliminados`)
+    toast.success(`${pacientes.length} pacientes eliminados`)
     setConfirmLimpiarInactivos(false)
   }
 
@@ -228,9 +227,9 @@ export default function PacientesPage() {
               </motion.button>
               {confirmLimpiarInactivos ? (
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <motion.button onClick={limpiarInactivos} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  <motion.button onClick={limpiarTodos} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     style={{ padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1px solid rgba(255,107,107,0.4)', background: 'rgba(255,107,107,0.2)', color: '#FF6B6B' }}>
-                    ¿Confirmar?
+                    ¿Eliminar {pacientes.length}?
                   </motion.button>
                   <motion.button onClick={() => setConfirmLimpiarInactivos(false)} whileHover={{ scale: 1.03 }}
                     style={{ padding: '10px 14px', borderRadius: 12, fontSize: 13, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--glass)', color: 'var(--muted)' }}>
@@ -240,7 +239,7 @@ export default function PacientesPage() {
               ) : (
                 <motion.button onClick={() => setConfirmLimpiarInactivos(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   style={{ padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid rgba(255,107,107,0.3)', background: 'rgba(255,107,107,0.08)', color: '#FF6B6B' }}>
-                  Limpiar inactivos
+                  Limpiar todos
                 </motion.button>
               )}
               <Magnet strength={0.3}>
@@ -327,7 +326,7 @@ export default function PacientesPage() {
                         initial={{ opacity: 0, x: -12 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 12 }}
-                        transition={{ delay: i * 0.02 }}
+                        transition={{ delay: Math.min(i * 0.02, 0.2) }}
                         style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderRadius: 18, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', transition: 'all 0.2s' }}
                       >
                         {/* Avatar */}

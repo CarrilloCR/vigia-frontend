@@ -89,6 +89,7 @@ export default function CitasPage() {
   const [editEstado, setEditEstado] = useState('')
   const [mostrarCanceladas, setMostrarCanceladas] = useState(false)
   const [confirmLimpiar, setConfirmLimpiar] = useState(false)
+  const [displayLimit, setDisplayLimit] = useState(50)
   const [form, setForm] = useState({
     paciente: '', medico: '', fecha_hora_agendada: '', estado: 'agendada',
   })
@@ -104,13 +105,15 @@ export default function CitasPage() {
     try {
       const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
       const [citasRes, medicosRes, pacientesRes] = await Promise.all([
-        api.get(`/citas/?clinica=${clinicaId}${sedeParam}&limit=200`),
-        api.get(`/medicos/?clinica=${clinicaId}&limit=200`),
-        api.get(`/pacientes/?clinica=${clinicaId}&limit=200`),
+        api.get(`/citas/?clinica=${clinicaId}${sedeParam}&limit=100`),
+        api.get(`/medicos/?clinica=${clinicaId}&limit=100`),
+        api.get(`/pacientes/?clinica=${clinicaId}&limit=100`),
       ])
-      setCitas(citasRes.data.results || citasRes.data)
+      const allCitas = citasRes.data.results || citasRes.data
+      setCitas(allCitas.filter((c: any) => c.clinica === clinicaId))
       setMedicos(medicosRes.data.results || medicosRes.data)
-      setPacientes(pacientesRes.data.results || pacientesRes.data)
+      const allPacs = pacientesRes.data.results || pacientesRes.data
+      setPacientes(allPacs.filter((p: any) => p.clinica === clinicaId))
     } catch {
       toast.error('Error al cargar citas', 'No se pudo obtener la información de citas.')
     } finally { setLoading(false) }
@@ -167,13 +170,12 @@ export default function CitasPage() {
     }
   }
 
-  const limpiarCanceladas = async () => {
-    const targets = citas.filter(c => c.estado === 'cancelada')
-    if (targets.length === 0) { toast.success('Sin canceladas para limpiar'); return }
+  const limpiarTodas = async () => {
+    if (citas.length === 0) { toast.success('Sin citas para limpiar'); return }
     setLoading(true)
-    await Promise.allSettled(targets.map(c => api.delete(`/citas/${c.id}/`)))
+    await Promise.allSettled(citas.map(c => api.delete(`/citas/${c.id}/`)))
     await fetchData()
-    toast.success(`${targets.length} citas eliminadas`)
+    toast.success(`${citas.length} citas eliminadas`)
     setConfirmLimpiar(false)
   }
 
@@ -294,9 +296,9 @@ export default function CitasPage() {
                 {/* Limpiar canceladas */}
                 {confirmLimpiar ? (
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <motion.button onClick={limpiarCanceladas} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    <motion.button onClick={limpiarTodas} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                       style={{ padding: '9px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid rgba(255,107,107,0.4)', background: 'rgba(255,107,107,0.2)', color: '#FF6B6B' }}>
-                      ¿Confirmar?
+                      ¿Eliminar {citas.length}?
                     </motion.button>
                     <motion.button onClick={() => setConfirmLimpiar(false)} whileHover={{ scale: 1.03 }}
                       style={{ padding: '9px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--glass)', color: 'var(--muted)' }}>
@@ -306,7 +308,7 @@ export default function CitasPage() {
                 ) : (
                   <motion.button onClick={() => setConfirmLimpiar(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     style={{ padding: '9px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid rgba(255,107,107,0.3)', background: 'rgba(255,107,107,0.08)', color: '#FF6B6B' }}>
-                    Limpiar canceladas
+                    Limpiar todas
                   </motion.button>
                 )}
 
@@ -348,7 +350,7 @@ export default function CitasPage() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 560, overflowY: 'auto', paddingRight: 4 }}>
                     <AnimatePresence>
-                      {citasFiltradas.map((c, i) => {
+                      {citasFiltradas.slice(0, displayLimit).map((c, i) => {
                         const cfg = estadoConfig[c.estado] || estadoConfig.agendada
                         const ingreso = parseFloat(c.ingreso_generado || '0')
                         return (
@@ -356,7 +358,7 @@ export default function CitasPage() {
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 10 }}
-                            transition={{ delay: i * 0.02 }}
+                            transition={{ delay: Math.min(i * 0.02, 0.2) }}
                             style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: `1px solid ${cfg.color}25` }}>
 
                             {/* Dot estado */}
@@ -409,6 +411,13 @@ export default function CitasPage() {
                         )
                       })}
                     </AnimatePresence>
+                    {displayLimit < citasFiltradas.length && (
+                      <motion.button onClick={() => setDisplayLimit(v => v + 50)}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        style={{ marginTop: 8, padding: '12px', borderRadius: 14, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer', width: '100%' }}>
+                        Ver más ({citasFiltradas.length - displayLimit} restantes)
+                      </motion.button>
+                    )}
                   </div>
                 )}
               </GlowingCard>
