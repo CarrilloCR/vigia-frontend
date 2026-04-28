@@ -96,7 +96,7 @@ export default function PacientesPage() {
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number; name: string }>({ open: false, id: 0, name: '' })
   const [mostrarInactivos, setMostrarInactivos] = useState(false)
-  const [displayLimit, setDisplayLimit] = useState(50)
+  const [displayLimit, setDisplayLimit] = useState(25)
   const [confirmLimpiarInactivos, setConfirmLimpiarInactivos] = useState(false)
   const [form, setForm] = useState({
     nombre: '', apellido: '', telefono: '', email: '', fecha_nacimiento: '',
@@ -104,10 +104,10 @@ export default function PacientesPage() {
   })
   const [sedes, setSedes] = useState<Sede[]>([])
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, activeClinicaId } = useAuthStore()
+  const clinicaId = activeClinicaId || user?.clinica_id || 1
   const toast = useToastStore()
-  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
-  const [selectedSede, setSelectedSede] = useState<number | null>(null)
+  const [selectedSede, setSelectedSede] = useState<number | null>(user?.sede_id || null)
 
   useEffect(() => { fetchData() }, [clinicaId, selectedSede, mostrarInactivos])
   useEffect(() => {
@@ -119,10 +119,12 @@ export default function PacientesPage() {
       const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
       const inactivosParam = mostrarInactivos ? '&inactivos=true' : ''
       const [pacRes, citRes] = await Promise.all([
-        api.get(`/pacientes/?clinica=${clinicaId}${sedeParam}${inactivosParam}&limit=100`),
-        api.get(`/citas/?clinica=${clinicaId}${sedeParam}&limit=100`),
+        api.get(`/pacientes/?clinica=${clinicaId}${sedeParam}${inactivosParam}&limit=30`),
+        api.get(`/citas/?clinica=${clinicaId}${sedeParam}&limit=30`),
       ])
-      const pacs = (pacRes.data.results || pacRes.data).filter((p: any) => p.clinica === clinicaId)
+      const pacs = (pacRes.data.results || pacRes.data)
+        .filter((p: any) => p.clinica === clinicaId)
+        .filter((p: any) => !selectedSede || p.sede === selectedSede)
       setPacientes(pacs)
 
       // Contar citas por paciente

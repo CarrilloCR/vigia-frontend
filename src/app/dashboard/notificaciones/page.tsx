@@ -58,15 +58,15 @@ const canalIcon: Record<string, React.ReactNode> = {
 }
 
 export default function NotificacionesPage() {
+  const { user, activeClinicaId } = useAuthStore()
+  const clinicaId = activeClinicaId || user?.clinica_id || 1
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState<string>('todos')
   const [filtroKpi, setFiltroKpi] = useState('')
-  const [selectedSede, setSelectedSede] = useState<number | null>(null)
-  const [displayLimit, setDisplayLimit] = useState(50)
+  const [selectedSede, setSelectedSede] = useState<number | null>(user?.sede_id || null)
+  const [displayLimit, setDisplayLimit] = useState(25)
   const [confirmLimpiar, setConfirmLimpiar] = useState(false)
-  const { user } = useAuthStore()
-  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const toast = useToastStore()
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function NotificacionesPage() {
 
   const fetchNotificaciones = async () => {
     try {
-      const params = `/notificaciones/?clinica=${clinicaId}${selectedSede ? `&sede=${selectedSede}` : ''}&limit=100`
+      const params = `/notificaciones/?clinica=${clinicaId}${selectedSede ? `&sede=${selectedSede}` : ''}&limit=30`
       const res = await api.get(params)
       setNotificaciones(res.data.results || res.data)
     } catch {

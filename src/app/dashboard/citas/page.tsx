@@ -89,15 +89,15 @@ export default function CitasPage() {
   const [editEstado, setEditEstado] = useState('')
   const [mostrarCanceladas, setMostrarCanceladas] = useState(false)
   const [confirmLimpiar, setConfirmLimpiar] = useState(false)
-  const [displayLimit, setDisplayLimit] = useState(50)
+  const [displayLimit, setDisplayLimit] = useState(25)
   const [form, setForm] = useState({
     paciente: '', medico: '', fecha_hora_agendada: '', estado: 'agendada',
   })
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, activeClinicaId } = useAuthStore()
+  const clinicaId = activeClinicaId || user?.clinica_id || 1
   const toast = useToastStore()
-  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
-  const [selectedSede, setSelectedSede] = useState<number | null>(null)
+  const [selectedSede, setSelectedSede] = useState<number | null>(user?.sede_id || null)
 
   useEffect(() => { fetchData() }, [clinicaId, selectedSede])
 
@@ -105,15 +105,15 @@ export default function CitasPage() {
     try {
       const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
       const [citasRes, medicosRes, pacientesRes] = await Promise.all([
-        api.get(`/citas/?clinica=${clinicaId}${sedeParam}&limit=100`),
-        api.get(`/medicos/?clinica=${clinicaId}&limit=100`),
-        api.get(`/pacientes/?clinica=${clinicaId}&limit=100`),
+        api.get(`/citas/?clinica=${clinicaId}${sedeParam}&limit=30`),
+        api.get(`/medicos/?clinica=${clinicaId}${sedeParam}&limit=30`),
+        api.get(`/pacientes/?clinica=${clinicaId}${sedeParam}&limit=30`),
       ])
       const allCitas = citasRes.data.results || citasRes.data
-      setCitas(allCitas.filter((c: any) => c.clinica === clinicaId))
+      setCitas(allCitas.filter((c: any) => c.clinica === clinicaId && (!selectedSede || c.sede === selectedSede)))
       setMedicos(medicosRes.data.results || medicosRes.data)
       const allPacs = pacientesRes.data.results || pacientesRes.data
-      setPacientes(allPacs.filter((p: any) => p.clinica === clinicaId))
+      setPacientes(allPacs.filter((p: any) => p.clinica === clinicaId && (!selectedSede || p.sede === selectedSede)))
     } catch {
       toast.error('Error al cargar citas', 'No se pudo obtener la información de citas.')
     } finally { setLoading(false) }

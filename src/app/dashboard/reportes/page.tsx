@@ -57,10 +57,10 @@ const DownloadIcon = () => (
 )
 
 export default function ReportesPage() {
-  const { user } = useAuthStore()
+  const { user, activeClinicaId } = useAuthStore()
+  const clinicaId = activeClinicaId || user?.clinica_id || 1
   const toast = useToastStore()
-  const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
-  const [selectedSede, setSelectedSede] = useState<number | null>(null)
+  const [selectedSede, setSelectedSede] = useState<number | null>(user?.sede_id || null)
 
   const [rango, setRango] = useState<7 | 30 | 90>(30)
   const [alertas, setAlertas] = useState<any[]>([])
