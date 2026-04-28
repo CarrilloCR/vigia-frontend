@@ -13,7 +13,6 @@ import SpotlightCard from '../../components/reactbits/SpotlightCard'
 import ScrollReveal from '../../components/reactbits/ScrollReveal'
 import GradientText from '../../components/reactbits/GradientText'
 import TiltedCard from '../../components/reactbits/TiltedCard'
-import BorderGlow from '../../components/reactbits/BorderGlow'
 import ClickSpark from '../../components/reactbits/ClickSpark'
 import DecryptedText from '../../components/reactbits/DecryptedText'
 import ThemeToggle from '../../components/ui/ThemeToggle'
@@ -1051,7 +1050,7 @@ export default function DashboardPage() {
 
           {/* ALERTAS */}
           <ScrollReveal delay={0.15} direction="up">
-            <BorderGlow className="p-6 sm:p-8 lg:p-10" colors={['#00C9A7','#4A9EF0','#B06EF5']} backgroundColor="var(--glass, rgba(255,255,255,0.03))" borderRadius={18}>
+            <GlowingCard className="p-6 sm:p-8 lg:p-10">
 
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -1334,7 +1333,7 @@ export default function DashboardPage() {
                   </AnimatePresence>
                 </div>
               )}
-            </BorderGlow>
+            </GlowingCard>
           </ScrollReveal>
 
           {/* SIDEBAR */}
@@ -1368,7 +1367,7 @@ export default function DashboardPage() {
 
             {/* Médicos */}
             <ScrollReveal delay={0.2} direction="up">
-              <BorderGlow className="p-6 sm:p-8 lg:p-10" colors={['#4A9EF0','#00C9A7','#B06EF5']} backgroundColor="var(--glass, rgba(255,255,255,0.03))" borderRadius={18}>
+              <GlowingCard className="p-6 sm:p-8 lg:p-10">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                   <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Médicos</h2>
                   <motion.button onClick={() => router.push('/dashboard/medicos')}
@@ -1378,7 +1377,7 @@ export default function DashboardPage() {
                   </motion.button>
                 </div>
                 <MedicosList clinicaId={clinicaId} />
-              </BorderGlow>
+              </GlowingCard>
             </ScrollReveal>
 
             {/* Generador en Vivo — mini */}

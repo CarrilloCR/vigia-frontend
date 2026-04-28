@@ -11,7 +11,6 @@ import SpotlightCard from '../../../components/reactbits/SpotlightCard'
 import ScrollReveal from '../../../components/reactbits/ScrollReveal'
 import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
-import BorderGlow from '../../../components/reactbits/BorderGlow'
 import StarBorder from '../../../components/reactbits/StarBorder'
 import GlareHover from '../../../components/reactbits/GlareHover'
 
@@ -205,7 +204,7 @@ export default function NotificacionesPage() {
 
         {/* LISTA */}
         <ScrollReveal delay={0.2} direction="up">
-          <BorderGlow className="p-6 sm:p-8 lg:p-10" colors={['#7dd3fc','#9b8ec4','#a0c4b5']} backgroundColor="var(--glass, rgba(255,255,255,0.03))" borderRadius={18}>
+          <GlowingCard className="p-6 sm:p-8 lg:p-10">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
               <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                 Historial
@@ -320,7 +319,7 @@ export default function NotificacionesPage() {
                 </AnimatePresence>
               </div>
             )}
-          </BorderGlow>
+          </GlowingCard>
         </ScrollReveal>
     </>
   )
