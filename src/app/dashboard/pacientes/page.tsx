@@ -96,6 +96,8 @@ export default function PacientesPage() {
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number; name: string }>({ open: false, id: 0, name: '' })
   const [mostrarInactivos, setMostrarInactivos] = useState(false)
+  const [displayLimit, setDisplayLimit] = useState(50)
+  const [confirmLimpiarInactivos, setConfirmLimpiarInactivos] = useState(false)
   const [form, setForm] = useState({
     nombre: '', apellido: '', telefono: '', email: '', fecha_nacimiento: '',
     sede: '' as string | number,
@@ -117,8 +119,8 @@ export default function PacientesPage() {
       const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
       const inactivosParam = mostrarInactivos ? '&inactivos=true' : ''
       const [pacRes, citRes] = await Promise.all([
-        api.get(`/pacientes/?clinica=${clinicaId}${sedeParam}${inactivosParam}`),
-        api.get(`/citas/?clinica=${clinicaId}${sedeParam}`),
+        api.get(`/pacientes/?clinica=${clinicaId}${sedeParam}${inactivosParam}&limit=200`),
+        api.get(`/citas/?clinica=${clinicaId}${sedeParam}&limit=200`),
       ])
       const pacs = pacRes.data.results || pacRes.data
       setPacientes(pacs)
@@ -180,6 +182,16 @@ export default function PacientesPage() {
     setConfirmDelete({ open: false, id: 0, name: '' })
   }
 
+  const limpiarInactivos = async () => {
+    const targets = pacientes.filter(p => !p.activo)
+    if (targets.length === 0) { toast.success('Sin inactivos para limpiar'); return }
+    setLoading(true)
+    await Promise.allSettled(targets.map(p => api.delete(`/pacientes/${p.id}/`)))
+    await fetchData()
+    toast.success(`${targets.length} pacientes eliminados`)
+    setConfirmLimpiarInactivos(false)
+  }
+
   const pacientesFiltrados = pacientes.filter(p =>
     `${p.nombre} ${p.apellido} ${p.email}`.toLowerCase().includes(busqueda.toLowerCase())
   )
@@ -214,6 +226,23 @@ export default function PacientesPage() {
                   color: mostrarInactivos ? '#FF6B6B' : 'var(--muted)' }}>
                 {mostrarInactivos ? 'Ocultar inactivos' : 'Mostrar inactivos'}
               </motion.button>
+              {confirmLimpiarInactivos ? (
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <motion.button onClick={limpiarInactivos} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    style={{ padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1px solid rgba(255,107,107,0.4)', background: 'rgba(255,107,107,0.2)', color: '#FF6B6B' }}>
+                    ¿Confirmar?
+                  </motion.button>
+                  <motion.button onClick={() => setConfirmLimpiarInactivos(false)} whileHover={{ scale: 1.03 }}
+                    style={{ padding: '10px 14px', borderRadius: 12, fontSize: 13, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--glass)', color: 'var(--muted)' }}>
+                    Cancelar
+                  </motion.button>
+                </div>
+              ) : (
+                <motion.button onClick={() => setConfirmLimpiarInactivos(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  style={{ padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid rgba(255,107,107,0.3)', background: 'rgba(255,107,107,0.08)', color: '#FF6B6B' }}>
+                  Limpiar inactivos
+                </motion.button>
+              )}
               <Magnet strength={0.3}>
                 <motion.button onClick={abrirCrear} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,201,167,0.3)' }}>
@@ -289,7 +318,7 @@ export default function PacientesPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <AnimatePresence>
-                  {pacientesFiltrados.map((p, i) => {
+                  {pacientesFiltrados.slice(0, displayLimit).map((p, i) => {
                     const color = getColor(p.nombre + p.apellido)
                     const edad = calcularEdad(p.fecha_nacimiento)
                     const numCitas = citas[p.id] || 0
@@ -365,6 +394,13 @@ export default function PacientesPage() {
                     )
                   })}
                 </AnimatePresence>
+                {displayLimit < pacientesFiltrados.length && (
+                  <motion.button onClick={() => setDisplayLimit(v => v + 50)}
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    style={{ marginTop: 8, padding: '12px', borderRadius: 14, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer', width: '100%' }}>
+                    Ver más ({pacientesFiltrados.length - displayLimit} restantes)
+                  </motion.button>
+                )}
               </div>
             )}
           </GlowingCard>

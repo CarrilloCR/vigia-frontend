@@ -88,6 +88,7 @@ export default function CitasPage() {
   const [editModal, setEditModal] = useState<{ open: boolean; cita: Cita | null }>({ open: false, cita: null })
   const [editEstado, setEditEstado] = useState('')
   const [mostrarCanceladas, setMostrarCanceladas] = useState(false)
+  const [confirmLimpiar, setConfirmLimpiar] = useState(false)
   const [form, setForm] = useState({
     paciente: '', medico: '', fecha_hora_agendada: '', estado: 'agendada',
   })
@@ -103,9 +104,9 @@ export default function CitasPage() {
     try {
       const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
       const [citasRes, medicosRes, pacientesRes] = await Promise.all([
-        api.get(`/citas/?clinica=${clinicaId}${sedeParam}`),
-        api.get(`/medicos/?clinica=${clinicaId}`),
-        api.get(`/pacientes/?clinica=${clinicaId}`),
+        api.get(`/citas/?clinica=${clinicaId}${sedeParam}&limit=200`),
+        api.get(`/medicos/?clinica=${clinicaId}&limit=200`),
+        api.get(`/pacientes/?clinica=${clinicaId}&limit=200`),
       ])
       setCitas(citasRes.data.results || citasRes.data)
       setMedicos(medicosRes.data.results || medicosRes.data)
@@ -164,6 +165,16 @@ export default function CitasPage() {
     } catch {
       toast.error('Error', 'No se pudo actualizar el estado.')
     }
+  }
+
+  const limpiarCanceladas = async () => {
+    const targets = citas.filter(c => c.estado === 'cancelada')
+    if (targets.length === 0) { toast.success('Sin canceladas para limpiar'); return }
+    setLoading(true)
+    await Promise.allSettled(targets.map(c => api.delete(`/citas/${c.id}/`)))
+    await fetchData()
+    toast.success(`${targets.length} citas eliminadas`)
+    setConfirmLimpiar(false)
   }
 
   const citasFiltradas = citas.filter(c => {
@@ -279,6 +290,25 @@ export default function CitasPage() {
                   }}>
                   {mostrarCanceladas ? 'Ocultar canceladas' : 'Mostrar canceladas'}
                 </motion.button>
+
+                {/* Limpiar canceladas */}
+                {confirmLimpiar ? (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <motion.button onClick={limpiarCanceladas} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                      style={{ padding: '9px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: '1px solid rgba(255,107,107,0.4)', background: 'rgba(255,107,107,0.2)', color: '#FF6B6B' }}>
+                      ¿Confirmar?
+                    </motion.button>
+                    <motion.button onClick={() => setConfirmLimpiar(false)} whileHover={{ scale: 1.03 }}
+                      style={{ padding: '9px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--glass)', color: 'var(--muted)' }}>
+                      Cancelar
+                    </motion.button>
+                  </div>
+                ) : (
+                  <motion.button onClick={() => setConfirmLimpiar(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    style={{ padding: '9px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid rgba(255,107,107,0.3)', background: 'rgba(255,107,107,0.08)', color: '#FF6B6B' }}>
+                    Limpiar canceladas
+                  </motion.button>
+                )}
 
                 {/* Filtro médico */}
                 <select value={filtroMedico} onChange={e => setFiltroMedico(e.target.value)}
