@@ -178,8 +178,8 @@ export default function AuthPage() {
         style={{
           width: '44%', minHeight: '100vh',
           flexDirection: 'column', justifyContent: 'center',
-          alignItems: 'flex-end',
-          padding: '80px 80px 80px 64px',
+          alignItems: 'center',
+          padding: '80px 40px 80px 64px',
           position: 'relative', zIndex: 10,
         }}
         className="hidden lg:flex"
@@ -226,7 +226,7 @@ export default function AuthPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.8 }}
-          style={{ width: '100%' }}
+          style={{ width: '100%', alignSelf: 'center' }}
         >
           <KpiScene3D />
         </motion.div>

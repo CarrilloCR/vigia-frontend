@@ -35,24 +35,24 @@ const alertItems = [
 
 const floatingCards = [
   {
-    title: '⚠️ Alerta crítica',
+    title: 'Alerta crítica',
     body: 'Tasa de ausencias supera umbral',
     color: CORAL,
-    x: -210, y: -60,
+    x: -180, y: -70,
     delay: 1.4,
   },
   {
-    title: '📈 KPI +12%',
+    title: 'KPI +12%',
     body: 'Ocupación de citas al alza',
     color: JADE,
-    x: 170, y: -30,
+    x: 180, y: -40,
     delay: 1.8,
   },
   {
-    title: '🔔 3 reportes',
+    title: '3 nuevos reportes',
     body: 'Generados esta semana',
     color: ORCHID,
-    x: -160, y: 120,
+    x: -155, y: 110,
     delay: 2.2,
   },
 ]
@@ -71,7 +71,7 @@ export default function KpiScene3D() {
   }, [tick, lineCtrl])
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: 340, display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 8 }}>
+    <div style={{ position: 'relative', width: '100%', height: 340, display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: 8, marginLeft: 'auto', marginRight: 'auto' }}>
 
       {/* Ambient glow blobs */}
       <motion.div
@@ -319,36 +319,6 @@ export default function KpiScene3D() {
         </motion.div>
       ))}
 
-      {/* Orbiting data particles */}
-      {[0, 1, 2, 3].map(i => (
-        <motion.div
-          key={i}
-          animate={{
-            rotate: 360,
-          }}
-          transition={{ duration: 8 + i * 2, repeat: Infinity, ease: 'linear' }}
-          style={{
-            position: 'absolute',
-            width: 200 + i * 40,
-            height: 200 + i * 40,
-            borderRadius: '50%',
-            border: `1px dashed rgba(0,201,167,${0.04 - i * 0.008})`,
-            pointerEvents: 'none',
-          }}
-        >
-          <motion.div
-            style={{
-              position: 'absolute',
-              top: -3, left: '50%',
-              width: 5, height: 5,
-              borderRadius: '50%',
-              background: [JADE, SAPPHIRE, ORCHID, GOLD][i],
-              boxShadow: `0 0 8px ${[JADE, SAPPHIRE, ORCHID, GOLD][i]}`,
-              transform: 'translateX(-50%)',
-            }}
-          />
-        </motion.div>
-      ))}
     </div>
   )
 }
