@@ -30,9 +30,9 @@ const alertItems = [
   { color: GOLD, text: 'Espera >30 min', severity: 'MEDIA' },
 ]
 const floatingCards = [
-  { title: 'Alerta crítica', body: 'Tasa de ausencias supera umbral', color: CORAL, x: -178, y: -80, z: 40, delay: 1.4 },
-  { title: 'KPI +12%', body: 'Ocupación de citas al alza', color: JADE, x: 182, y: -50, z: 60, delay: 1.8 },
-  { title: '3 nuevos reportes', body: 'Generados esta semana', color: ORCHID, x: -160, y: 120, z: 30, delay: 2.2 },
+  { title: 'Alerta crítica', body: 'Tasa de ausencias supera umbral', color: CORAL, x: -220, y: -90, z: 40, delay: 1.4 },
+  { title: 'KPI +12%', body: 'Ocupación de citas al alza', color: JADE, x: 224, y: -60, z: 60, delay: 1.8 },
+  { title: '3 nuevos reportes', body: 'Generados esta semana', color: ORCHID, x: -200, y: 140, z: 30, delay: 2.2 },
 ]
 
 export default function KpiScene3D() {
@@ -86,9 +86,9 @@ export default function KpiScene3D() {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
-        position: 'relative', width: '100%', height: 460,
-        display: 'flex', justifyContent: 'center', alignItems: 'center',
-        cursor: 'grab',
+        position: 'relative', width: '100%', height: 680,
+        display: 'flex', justifyContent: 'flex-end', alignItems: 'center', paddingRight: 8, paddingLeft: 220,
+        cursor: 'grab', overflow: 'visible',
       }}
     >
       {/* Ambient glows */}
@@ -179,7 +179,7 @@ export default function KpiScene3D() {
           }}>
             {/* Screen */}
             <div style={{
-              width: 360,
+              width: 520,
               background: 'linear-gradient(180deg, #060410 0%, #0a0716 100%)',
               borderRadius: 12,
               padding: '12px 14px',
@@ -230,7 +230,7 @@ export default function KpiScene3D() {
               {/* Line chart */}
               <div style={{ marginBottom: 12, position: 'relative', zIndex: 1 }}>
                 <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.28)', marginBottom: 5, letterSpacing: 0.8, fontFamily: 'monospace' }}>OCUPACIÓN 30 DÍAS</div>
-                <svg width="332" height="60" viewBox="0 0 180 62" style={{ display: 'block' }}>
+                <svg width="496" height="60" viewBox="0 0 180 62" style={{ display: 'block' }}>
                   <defs>
                     <linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={JADE} stopOpacity="0.32" />
@@ -260,7 +260,7 @@ export default function KpiScene3D() {
               {/* Bar chart */}
               <div style={{ marginBottom: 12, position: 'relative', zIndex: 1 }}>
                 <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.28)', marginBottom: 5, letterSpacing: 0.8, fontFamily: 'monospace' }}>CITAS / SEMANA</div>
-                <svg width="332" height="38" viewBox="0 0 180 40" style={{ display: 'block' }}>
+                <svg width="496" height="38" viewBox="0 0 180 40" style={{ display: 'block' }}>
                   {BAR_H.map((h, i) => (
                     <motion.rect key={i}
                       x={i * 22 + 2} y={40 - h * 0.44} width="17" height={h * 0.44} rx="3"

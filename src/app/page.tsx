@@ -178,8 +178,8 @@ export default function AuthPage() {
         style={{
           width: '44%', minHeight: '100vh',
           flexDirection: 'column', justifyContent: 'center',
-          alignItems: 'center',
-          padding: '80px 40px 80px 64px',
+          alignItems: 'flex-end',
+          padding: '60px 12px 60px 24px',
           position: 'relative', zIndex: 10,
         }}
         className="hidden lg:flex"
@@ -189,13 +189,13 @@ export default function AuthPage() {
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7 }}
-          style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16, width: '100%' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 32, marginBottom: 20, width: '100%', justifyContent: 'flex-end' }}
         >
           <motion.div
-            animate={{ filter: ['drop-shadow(0 0 16px rgba(0,201,167,0.4))', 'drop-shadow(0 0 38px rgba(0,201,167,0.75))', 'drop-shadow(0 0 16px rgba(0,201,167,0.4))'] }}
+            animate={{ filter: ['drop-shadow(0 0 20px rgba(0,201,167,0.4))', 'drop-shadow(0 0 50px rgba(0,201,167,0.8))', 'drop-shadow(0 0 20px rgba(0,201,167,0.4))'] }}
             transition={{ duration: 3, repeat: Infinity }}
           >
-            <VigiaLogo size={100} />
+            <VigiaLogo size={210} />
           </motion.div>
           <div>
             <motion.h1
@@ -203,7 +203,7 @@ export default function AuthPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.25 }}
               className="font-display"
-              style={{ fontSize: 64, fontWeight: 800, lineHeight: 1, letterSpacing: -3, margin: 0 }}
+              style={{ fontSize: 118, fontWeight: 800, lineHeight: 1, letterSpacing: -6, margin: 0 }}
             >
               <DecryptedText
                 text="Vigía"
@@ -220,7 +220,7 @@ export default function AuthPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, letterSpacing: 0.5 }}
+              style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6, letterSpacing: 0.5 }}
             >
               Alertas Inteligentes para Clínicas
             </motion.p>
@@ -232,7 +232,7 @@ export default function AuthPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45 }}
-          style={{ fontSize: 15, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 12, width: '100%' }}
+          style={{ fontSize: 15, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 12, width: '100%', textAlign: 'right' }}
         >
           Sistema de monitoreo en tiempo real con IA integrada.<br />
           Detecta anomalías en 8 KPIs médicos especializados 24/7.
@@ -243,7 +243,7 @@ export default function AuthPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.8 }}
-          style={{ width: '100%' }}
+          style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}
         >
           <KpiScene3D />
         </motion.div>
