@@ -13,19 +13,22 @@ import ConfirmModal from '../../../components/ui/ConfirmModal'
 import StarBorder from '../../../components/reactbits/StarBorder'
 import GlareHover from '../../../components/reactbits/GlareHover'
 
-type Rol = 'admin' | 'gerente' | 'medico' | 'viewer'
+type Rol = 'superadmin' | 'admin' | 'gerente' | 'medico' | 'user' | 'viewer'
 
 const ROLES: { key: Rol; label: string; desc: string }[] = [
   { key: 'admin',   label: 'Administrador', desc: 'Acceso completo, gestiona usuarios y configuración' },
   { key: 'gerente', label: 'Gerente',        desc: 'Reportes, equipo y alertas. Sin cambios de sistema' },
-  { key: 'medico',  label: 'Personal Médico',desc: 'Ve sus alertas y KPIs asociados' },
-  { key: 'viewer',  label: 'Visualizador',   desc: 'Solo lectura del dashboard' },
+  { key: 'medico',  label: 'Personal Médico',desc: 'Aparece en listado de médicos. Lectura de su sede' },
+  { key: 'user',    label: 'Usuario',        desc: 'Solo lectura: KPIs, médicos, notificaciones' },
+  { key: 'viewer',  label: 'Visualizador',   desc: 'Pendiente de aprobación, sin acceso' },
 ]
 
 const ROL_STYLE: Record<Rol, { bg: string; color: string; border: string }> = {
+  superadmin: { bg: 'rgba(232,160,100,0.15)', color: '#E8A064', border: 'rgba(232,160,100,0.35)' },
   admin:   { bg: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: 'rgba(0,201,167,0.3)' },
   gerente: { bg: 'rgba(74,158,240,0.12)', color: '#4A9EF0', border: 'rgba(74,158,240,0.25)' },
-  medico:  { bg: 'rgba(0,201,167,0.12)', color: '#00C9A7', border: 'rgba(0,201,167,0.25)' },
+  medico:  { bg: 'rgba(100,196,160,0.12)', color: '#64C4A0', border: 'rgba(100,196,160,0.3)' },
+  user:    { bg: 'rgba(180,180,200,0.10)', color: '#B0B0C8', border: 'rgba(180,180,200,0.25)' },
   viewer:  { bg: 'rgba(139,137,160,0.1)',  color: '#8B89A0', border: 'rgba(139,137,160,0.2)' },
 }
 
@@ -67,9 +70,12 @@ export default function EquipoPage() {
   const { user } = useAuthStore()
   const toast = useToastStore()
   const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
-  const esAdmin = user?.rol === 'admin' || user?.rol === 'gerente'
+  const esAdmin = user?.rol === 'admin' || user?.rol === 'gerente' || user?.rol === 'superadmin'
+  const puedeAprobar = user?.rol === 'admin' || user?.rol === 'superadmin'
 
   const [usuarios, setUsuarios] = useState<any[]>([])
+  const [sedes, setSedes] = useState<any[]>([])
+  const [aprobarForm, setAprobarForm] = useState<Record<number, { rol: Rol; sede_id: number | null }>>({})
   const [solicitudes, setSolicitudes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showInvitar, setShowInvitar] = useState(false)
@@ -85,7 +91,15 @@ export default function EquipoPage() {
   useEffect(() => {
     fetchUsuarios()
     fetchSolicitudes()
-  }, [])
+    fetchSedes()
+  }, [clinicaId])
+
+  const fetchSedes = async () => {
+    try {
+      const res = await api.get(`/sedes/?clinica=${clinicaId}`)
+      setSedes(res.data.results || res.data)
+    } catch { /* silent */ }
+  }
 
   const fetchUsuarios = async () => {
     try {
@@ -145,6 +159,37 @@ export default function EquipoPage() {
       toast.error('Error al desactivar el usuario')
     }
     setConfirmDesactivar({ open: false, id: 0, nombre: '' })
+  }
+
+  const handleAprobarUsuario = async (id: number) => {
+    const cfg = aprobarForm[id] || { rol: 'user', sede_id: null }
+    try {
+      await api.post(`/usuarios/${id}/aprobar/`, { rol: cfg.rol, sede_id: cfg.sede_id })
+      await fetchUsuarios()
+      toast.success('Usuario aprobado')
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Error al aprobar')
+    }
+  }
+
+  const handleRechazarUsuario = async (id: number) => {
+    try {
+      await api.post(`/usuarios/${id}/rechazar/`)
+      setUsuarios(prev => prev.filter(u => u.id !== id))
+      toast.success('Usuario rechazado')
+    } catch {
+      toast.error('Error al rechazar')
+    }
+  }
+
+  const handleAsignarSede = async (id: number, sede_id: number | null) => {
+    try {
+      await api.post(`/usuarios/${id}/asignar_sede/`, { sede_id })
+      setUsuarios(prev => prev.map(u => u.id === id ? { ...u, sede: sede_id, sede_nombre: sedes.find(s => s.id === sede_id)?.nombre || null } : u))
+      toast.success('Sede asignada')
+    } catch {
+      toast.error('Error al asignar sede')
+    }
   }
 
   const handleAprobar = async (solicitudId: number) => {
@@ -245,6 +290,78 @@ export default function EquipoPage() {
               <motion.button onClick={() => setTempPassword(null)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 20, padding: 4 }}>×</motion.button>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Usuarios pendientes de aprobación — admin/superadmin */}
+      <AnimatePresence>
+        {puedeAprobar && usuarios.filter(u => !u.aprobado).length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+            style={{ marginBottom: 24 }}
+          >
+            <GlowingCard className="p-6 sm:p-8">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFD166' }} />
+                <h3 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>
+                  Usuarios pendientes de aprobación
+                </h3>
+                <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 20, background: 'rgba(255,209,102,0.15)', color: '#FFD166', border: '1px solid rgba(255,209,102,0.3)' }}>
+                  {usuarios.filter(u => !u.aprobado).length}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {usuarios.filter(u => !u.aprobado).map(u => {
+                  const cfg = aprobarForm[u.id] || { rol: 'user' as Rol, sede_id: null }
+                  return (
+                    <div key={u.id} style={{
+                      display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr auto', gap: 12, alignItems: 'center',
+                      padding: 16, borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+                    }}>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{u.nombre}</div>
+                        <div style={{ fontSize: 12, color: 'var(--muted)' }}>{u.email}</div>
+                      </div>
+                      <select
+                        value={cfg.rol}
+                        onChange={e => setAprobarForm({ ...aprobarForm, [u.id]: { ...cfg, rol: e.target.value as Rol } })}
+                        style={{ ...inputStyle, padding: '9px 12px', fontSize: 13 }}
+                      >
+                        <option value="user">Usuario</option>
+                        <option value="medico">Personal Médico</option>
+                        <option value="gerente">Gerente</option>
+                        <option value="admin">Administrador</option>
+                      </select>
+                      <select
+                        value={cfg.sede_id ?? ''}
+                        onChange={e => setAprobarForm({ ...aprobarForm, [u.id]: { ...cfg, sede_id: e.target.value ? Number(e.target.value) : null } })}
+                        style={{ ...inputStyle, padding: '9px 12px', fontSize: 13 }}
+                      >
+                        <option value="">— Sin sede —</option>
+                        {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                      </select>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <motion.button
+                          onClick={() => handleAprobarUsuario(u.id)}
+                          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                          style={{ padding: '9px 14px', borderRadius: 10, background: 'rgba(0,201,167,0.18)', border: '1px solid rgba(0,201,167,0.4)', color: '#00C9A7', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                        >
+                          <CheckIcon /> Aprobar
+                        </motion.button>
+                        <motion.button
+                          onClick={() => handleRechazarUsuario(u.id)}
+                          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                          style={{ padding: '9px 14px', borderRadius: 10, background: 'rgba(255,107,107,0.12)', border: '1px solid rgba(255,107,107,0.35)', color: '#FF6B6B', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                        >
+                          <XIcon />
+                        </motion.button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </GlowingCard>
           </motion.div>
         )}
       </AnimatePresence>
@@ -480,7 +597,7 @@ export default function EquipoPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <AnimatePresence>
-                {usuarios.map((u, i) => {
+                {usuarios.filter(u => u.aprobado).map((u, i) => {
                   const rol: Rol = (u.rol as Rol) || 'viewer'
                   const rolStyle = ROL_STYLE[rol] || ROL_STYLE.viewer
                   const rolLabel = ROLES.find(r => r.key === rol)?.label || rol
@@ -541,6 +658,23 @@ export default function EquipoPage() {
                           {ROLES.map(r => (
                             <option key={r.key} value={r.key}>{r.label}</option>
                           ))}
+                        </select>
+                      )}
+
+                      {/* Asignar sede (admin/superadmin) */}
+                      {puedeAprobar && !esYo && (
+                        <select
+                          value={u.sede ?? ''}
+                          onChange={e => handleAsignarSede(u.id, e.target.value ? Number(e.target.value) : null)}
+                          style={{
+                            padding: '7px 12px', borderRadius: 10, fontSize: 13,
+                            background: 'rgba(74,158,240,0.06)', border: '1px solid rgba(74,158,240,0.2)',
+                            color: 'var(--text)', cursor: 'pointer', outline: 'none', flexShrink: 0,
+                          }}
+                          title="Sede asignada"
+                        >
+                          <option value="">— Sin sede —</option>
+                          {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                         </select>
                       )}
 

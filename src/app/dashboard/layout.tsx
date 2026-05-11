@@ -48,6 +48,39 @@ function AccesoRestringido({ rol }: { rol: string }) {
   )
 }
 
+function PendienteAprobacion() {
+  const router = useRouter()
+  const clearAuth = useAuthStore(s => s.clearAuth)
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', gap: 24, textAlign: 'center', padding: 32 }}
+    >
+      <div style={{ width: 80, height: 80, borderRadius: 24, background: 'rgba(245,197,24,0.12)', border: '1px solid rgba(245,197,24,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="36" height="36" fill="none" stroke="#F5C518" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div>
+        <h2 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text)', margin: 0, marginBottom: 8 }}>Cuenta pendiente de aprobación</h2>
+        <p style={{ color: 'var(--muted)', fontSize: 15, maxWidth: 460, margin: 0, lineHeight: 1.6 }}>
+          Un administrador de tu clínica debe aprobar tu acceso y asignarte una sede.
+          Recibirás una notificación cuando se complete el proceso.
+        </p>
+      </div>
+      <motion.button
+        onClick={() => { clearAuth(); router.replace('/') }}
+        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+        style={{ padding: '10px 22px', borderRadius: 12, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
+      >
+        Cerrar sesión
+      </motion.button>
+    </motion.div>
+  )
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuthStore()
   const router = useRouter()
@@ -65,10 +98,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!checked) return <PageLoader />
 
+  const rol = user?.rol ?? 'viewer'
+  const aprobado = rol === 'superadmin' || !!user?.aprobado
+  const pendiente = !aprobado || rol === 'viewer'
+
   // Check route permission (skip for main dashboard - always accessible)
   const permisos = NAV_PERMISOS[pathname]
-  const rol = user?.rol ?? 'viewer'
-  const sinAcceso = !isMainDashboard && rol !== 'superadmin' && permisos !== undefined && !permisos.includes(rol as 'admin' | 'gerente' | 'medico' | 'viewer')
+  const sinAcceso = !isMainDashboard && rol !== 'superadmin' && permisos !== undefined &&
+    !permisos.includes(rol as 'admin' | 'gerente' | 'medico' | 'user' | 'viewer')
+
+  // Pending approval gate: show wait screen everywhere
+  if (pendiente) {
+    return (
+      <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+          <Aurora colorStops={['#F5C518', '#FF6B6B', '#B06EF5']} amplitude={0.3} speed={0.1} />
+        </div>
+        <div style={{ position: 'relative', zIndex: 10 }}>
+          <PendienteAprobacion />
+        </div>
+      </div>
+    )
+  }
 
   // Dashboard principal maneja su propio layout completo
   if (isMainDashboard) return (

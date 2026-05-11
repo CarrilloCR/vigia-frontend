@@ -193,17 +193,17 @@ const KPI_TIPOS: { key: string; label: string }[] = [
   { key: 'nps',                label: 'Net Promoter Score' },
 ]
 
-const SECTIONS: { key: Section; label: string; icon: React.ReactNode; desc: string; superadminOnly?: boolean }[] = [
+const SECTIONS: { key: Section; label: string; icon: React.ReactNode; desc: string; superadminOnly?: boolean; roles?: string[] }[] = [
   { key: 'perfil', label: 'Perfil', icon: <UserIcon />, desc: 'Información personal' },
   { key: 'seguridad', label: 'Seguridad', icon: <LockIcon />, desc: 'Contraseña y acceso' },
-  { key: 'clinica', label: 'Clínica', icon: <BuildingIcon />, desc: 'Datos de la clínica' },
-  { key: 'notificaciones', label: 'Notificaciones', icon: <BellIcon />, desc: 'Alertas y correos' },
-  { key: 'automatizacion', label: 'Automatización', icon: <AutoIcon />, desc: 'Motor y análisis IA' },
-  { key: 'alertas', label: 'Reglas de Alertas', icon: <SlidersIcon />, desc: 'Umbrales por KPI' },
   { key: 'apariencia', label: 'Apariencia', icon: <PaletteIcon />, desc: 'Tema y visualización' },
-  { key: 'integraciones', label: 'Integraciones', icon: <LinkIcon />, desc: 'Conexiones externas' },
-  { key: 'facturacion', label: 'Facturación', icon: <CreditCardIcon />, desc: 'Plan y pagos' },
-  { key: 'equipo', label: 'Equipo', icon: <TeamIcon />, desc: 'Usuarios y roles de acceso' },
+  { key: 'clinica', label: 'Clínica', icon: <BuildingIcon />, desc: 'Datos de la clínica', roles: ['superadmin', 'admin', 'gerente'] },
+  { key: 'notificaciones', label: 'Notificaciones', icon: <BellIcon />, desc: 'Alertas y correos', roles: ['superadmin', 'admin', 'gerente'] },
+  { key: 'automatizacion', label: 'Automatización', icon: <AutoIcon />, desc: 'Motor y análisis IA', roles: ['superadmin', 'admin'] },
+  { key: 'alertas', label: 'Reglas de Alertas', icon: <SlidersIcon />, desc: 'Umbrales por KPI', roles: ['superadmin', 'admin', 'gerente'] },
+  { key: 'integraciones', label: 'Integraciones', icon: <LinkIcon />, desc: 'Conexiones externas', roles: ['superadmin', 'admin'] },
+  { key: 'facturacion', label: 'Facturación', icon: <CreditCardIcon />, desc: 'Plan y pagos', roles: ['superadmin', 'admin'] },
+  { key: 'equipo', label: 'Equipo', icon: <TeamIcon />, desc: 'Usuarios y roles de acceso', roles: ['superadmin', 'admin', 'gerente'] },
   { key: 'superadmin', label: 'Super Admin', icon: <BuildingIcon />, desc: 'Gestión global de clínicas', superadminOnly: true },
 ]
 
@@ -2667,7 +2667,11 @@ export default function ConfiguracionPage() {
               background: 'var(--glass)', backdropFilter: 'blur(20px)',
               border: '1px solid var(--border)',
             }}>
-              {SECTIONS.filter(s => !s.superadminOnly || user?.rol === 'superadmin').map((s, i) => (
+              {SECTIONS.filter(s => {
+                if (s.superadminOnly && user?.rol !== 'superadmin') return false
+                if (s.roles && !s.roles.includes(user?.rol || '')) return false
+                return true
+              }).map((s, i) => (
                 <motion.button
                   key={s.key}
                   onClick={() => setActiveSection(s.key)}

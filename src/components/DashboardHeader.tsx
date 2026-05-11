@@ -151,7 +151,7 @@ export default function DashboardHeader() {
     if (isSuperadmin) return true
     const permisos = NAV_PERMISOS[item.path]
     if (!permisos) return user?.rol === 'admin'
-    return permisos.includes((user?.rol ?? 'viewer') as 'admin' | 'gerente' | 'medico' | 'viewer')
+    return permisos.includes((user?.rol ?? 'viewer') as 'admin' | 'gerente' | 'medico' | 'user' | 'viewer')
   })
 
   const rolColor = ROL_COLORS[user?.rol ?? 'viewer'] ?? ROL_COLORS.viewer

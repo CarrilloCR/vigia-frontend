@@ -6,6 +6,7 @@ interface User {
   nombre: string
   email: string
   rol: string
+  aprobado?: boolean
   clinica_id: number | null
   clinica_nombre: string | null
   sede_id: number | null

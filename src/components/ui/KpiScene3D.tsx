@@ -1,5 +1,6 @@
 'use client'
 import { Canvas, useFrame } from '@react-three/fiber'
+import { Edges } from '@react-three/drei'
 import { useRef, Suspense } from 'react'
 import * as THREE from 'three'
 
@@ -34,24 +35,28 @@ function Core() {
 
   return (
     <group>
+      {/* Solid core with crisp edges */}
       <mesh ref={inner}>
-        <icosahedronGeometry args={[1.6, 1]} />
+        <icosahedronGeometry args={[1.3, 1]} />
         <meshStandardMaterial
           color={JADE}
           emissive={JADE}
-          emissiveIntensity={1.8}
-          metalness={0.3}
-          roughness={0.2}
+          emissiveIntensity={1.6}
+          metalness={0.5}
+          roughness={0.25}
           toneMapped={false}
         />
+        <Edges color={JADE} threshold={15} lineWidth={2} />
       </mesh>
+      {/* Outer wireframe shell — clean polyhedron edges only */}
       <mesh ref={wire}>
-        <icosahedronGeometry args={[1.6, 2]} />
-        <meshBasicMaterial color={JADE} wireframe transparent opacity={0.4} toneMapped={false} />
+        <icosahedronGeometry args={[1.3, 0]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        <Edges color={JADE} threshold={1} lineWidth={3} />
       </mesh>
       <mesh ref={halo}>
-        <sphereGeometry args={[1.6, 48, 48]} />
-        <meshBasicMaterial color={JADE} transparent opacity={0.14} toneMapped={false} />
+        <sphereGeometry args={[1.3, 48, 48]} />
+        <meshBasicMaterial color={JADE} transparent opacity={0.12} toneMapped={false} />
       </mesh>
     </group>
   )
