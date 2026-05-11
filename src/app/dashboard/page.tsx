@@ -758,11 +758,22 @@ export default function DashboardPage() {
   const ejecutarMotor = async () => {
     setMotorLoading(true)
     try {
-      await api.post('/motor/ejecutar/', { clinica_id: clinicaId })
-      await fetchAlertas()
-      await fetchHistorial()
-      await fetchNotifs()
-      toast.success('Análisis completado', 'El motor de detección (Estadístico + Prophet + PyOD) se ejecutó correctamente.')
+      const res = await api.post('/motor/ejecutar/', { clinica_id: clinicaId }, { timeout: 120000 })
+      const mode = res.data?.mode
+      if (mode === 'async') {
+        toast.success('Análisis encolado', 'Procesando en segundo plano. Refrescando en ~15s...')
+        // Poll-refresh after delay
+        setTimeout(async () => {
+          await fetchAlertas()
+          await fetchHistorial()
+          await fetchNotifs()
+        }, 15000)
+      } else {
+        await fetchAlertas()
+        await fetchHistorial()
+        await fetchNotifs()
+        toast.success('Análisis completado', 'El motor de detección (Estadístico + Prophet + PyOD) se ejecutó correctamente.')
+      }
     } catch (err: any) {
       const status = err?.response?.status
       const detail = err?.response?.data?.error || err?.response?.data?.detail || err?.message || 'Intenta de nuevo.'
