@@ -763,8 +763,11 @@ export default function DashboardPage() {
       await fetchHistorial()
       await fetchNotifs()
       toast.success('Análisis completado', 'El motor de detección (Estadístico + Prophet + PyOD) se ejecutó correctamente.')
-    } catch {
-      toast.error('Error en el análisis', 'No se pudo ejecutar el motor de alertas. Intenta de nuevo.')
+    } catch (err: any) {
+      const status = err?.response?.status
+      const detail = err?.response?.data?.error || err?.response?.data?.detail || err?.message || 'Intenta de nuevo.'
+      console.error('[motor] error', status, err?.response?.data || err)
+      toast.error(`Error en el análisis${status ? ` (${status})` : ''}`, String(detail))
     } finally { setMotorLoading(false) }
   }
 
