@@ -82,7 +82,7 @@ function PendienteAprobacion() {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated, user, setUser } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
   const [checked, setChecked] = useState(false)
@@ -93,14 +93,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.replace('/')
     } else {
       setChecked(true)
+      // Refresh user from server to catch approval/role updates
+      import('../../lib/axios').then(({ default: api }) => {
+        api.get('/auth/me/').then(res => {
+          if (res.data) setUser(res.data)
+        }).catch(() => {})
+      })
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, router, setUser, pathname])
 
   if (!checked) return <PageLoader />
 
   const rol = user?.rol ?? 'viewer'
   const aprobado = rol === 'superadmin' || !!user?.aprobado
   const pendiente = !aprobado || rol === 'viewer'
+
+  // While pendiente, poll /me every 10s to detect approval
+  useEffect(() => {
+    if (!pendiente || !isAuthenticated) return
+    const id = setInterval(() => {
+      import('../../lib/axios').then(({ default: api }) => {
+        api.get('/auth/me/').then(res => {
+          if (res.data) setUser(res.data)
+        }).catch(() => {})
+      })
+    }, 10000)
+    return () => clearInterval(id)
+  }, [pendiente, isAuthenticated, setUser])
 
   // Check route permission (skip for main dashboard - always accessible)
   const permisos = NAV_PERMISOS[pathname]

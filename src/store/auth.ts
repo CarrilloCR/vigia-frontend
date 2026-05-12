@@ -24,6 +24,7 @@ interface AuthState {
   activeClinicaId: number | null
   activeClinicaNombre: string | null
   setAuth: (user: User, accessToken: string, refreshToken: string) => void
+  setUser: (user: User) => void
   setActiveClinica: (id: number, nombre: string) => void
   clearAuth: () => void
 }
@@ -46,6 +47,7 @@ export const useAuthStore = create<AuthState>()(
           activeClinicaId: user.clinica_id,
           activeClinicaNombre: user.clinica_nombre,
         }),
+      setUser: (user) => set({ user }),
       setActiveClinica: (id, nombre) =>
         set({ activeClinicaId: id, activeClinicaNombre: nombre }),
       clearAuth: () =>
