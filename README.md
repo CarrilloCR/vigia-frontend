@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vigía — Frontend
 
-## Getting Started
+Dashboard Next.js para el sistema de alertas inteligentes Vigía. Conecta al backend Django (`/home/carrillo/vigia`) vía REST. UI en español.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 16** (App Router, Turbopack) + **React 19** + **TypeScript**
+- **Tailwind CSS v4**
+- **Zustand** (state, persistido en `localStorage`)
+- **Axios** con interceptors JWT (`/auth/refresh/` automático en 401)
+- **Framer Motion** + **react-three-fiber** + **drei** (animación 3D login)
+- Fuentes: **Inter** (body), **Syne** (display)
+
+## Estructura
+
+```
+src/
+├── app/
+│   ├── page.tsx                    # Login/register con orbe 3D
+│   ├── dashboard/
+│   │   ├── layout.tsx              # Auth guard + role gating + polling /me
+│   │   ├── page.tsx                # Alertas activas + ejecutar motor
+│   │   ├── kpis/, medicos/, citas/, pacientes/, reportes/,
+│   │   ├── notificaciones/, generador/, equipo/, correos/,
+│   │   └── configuracion/          # Tabs gated por rol
+├── components/
+│   ├── DashboardHeader.tsx         # Nav lateral filtrada por rol
+│   ├── ui/                         # Primitives: Button, Card, Input, KpiScene3D, ...
+│   └── reactbits/                  # Animados: Aurora, GlowingCard, BlurText, ...
+├── store/
+│   ├── auth.ts                     # user + tokens, persist 'vigia-auth'
+│   └── theme.ts                    # dark/light persist 'vigia-theme'
+├── lib/
+│   ├── axios.ts                    # Instancia con auth interceptors
+│   ├── permissions.ts              # canAccess / canWrite matrix
+│   └── permisos.ts                 # NAV_PERMISOS, ROL_LABELS, ROL_COLORS
+├── hooks/
+│   └── usePermissions.ts           # Hook + useRequireAccess route guard
+└── types/index.ts                  # Interfaces dominio
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Roles
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Coordinados con backend (`core/permissions.py`):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Rol           | Páginas accesibles                                                     |
+|---------------|------------------------------------------------------------------------|
+| `superadmin`  | Todo + selector de clínica + Super Admin                               |
+| `admin`       | Todo dentro de su clínica (incl. generador)                            |
+| `gerente`     | + reportes, correos, equipo; CRUD dentro de su sede                    |
+| `medico`      | + pacientes, citas (scope sede)                                        |
+| `user`        | dashboard, KPIs, médicos, alertas, notificaciones, reportes (read-only)|
+| `viewer`      | Pantalla "Cuenta pendiente de aprobación" hasta que admin lo apruebe   |
 
-## Learn More
+`DashboardLayout` hace polling de `/auth/me/` cada 10s mientras la cuenta esté pendiente para detectar aprobación sin re-login.
 
-To learn more about Next.js, take a look at the following resources:
+## Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm install
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+```bash
+npm run dev      # Turbopack en localhost:3000
+npm run build    # Production build
+npm run lint     # ESLint (next core-web-vitals + TS)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+No hay framework de tests configurado.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Theming
+
+Variables CSS por `data-theme` en `<html>`. Default dark. Toggle con `ThemeToggle`. Tokens en `app/globals.css`.
+
+## Animación login
+
+`src/components/ui/KpiScene3D.tsx` — orbe icosaedro jade con `<Edges>` (drei) para aristas crispas, halo pulsante, point lights. Pure visual loop, sin controles.
+
+## Notas
+
+- Alias `@/*` mapea a la raíz del proyecto (ver `tsconfig.json`).
+- Backend URL vía `NEXT_PUBLIC_API_URL`.
+- Frontend nunca debe confiar en role gating sola: backend (`RoleBasedAccess`) enforza permisos. UI gating es UX.
