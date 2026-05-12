@@ -88,6 +88,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [checked, setChecked] = useState(false)
   const isMainDashboard = pathname === '/dashboard'
 
+  const rol = user?.rol ?? 'viewer'
+  const aprobado = rol === 'superadmin' || !!user?.aprobado
+  const pendiente = !aprobado || rol === 'viewer'
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace('/')
@@ -102,12 +106,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [isAuthenticated, router, setUser, pathname])
 
-  if (!checked) return <PageLoader />
-
-  const rol = user?.rol ?? 'viewer'
-  const aprobado = rol === 'superadmin' || !!user?.aprobado
-  const pendiente = !aprobado || rol === 'viewer'
-
   // While pendiente, poll /me every 10s to detect approval
   useEffect(() => {
     if (!pendiente || !isAuthenticated) return
@@ -120,6 +118,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }, 10000)
     return () => clearInterval(id)
   }, [pendiente, isAuthenticated, setUser])
+
+  if (!checked) return <PageLoader />
 
   // Check route permission (skip for main dashboard - always accessible)
   const permisos = NAV_PERMISOS[pathname]
