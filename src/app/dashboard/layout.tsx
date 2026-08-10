@@ -8,6 +8,7 @@ import DashboardHeader from '../../components/DashboardHeader'
 import KpiMiniChart from '../../components/KpiMiniChart'
 import AuroraMesh from '../../components/reactbits/AuroraMesh'
 import TerminosGate from '../../components/TerminosGate'
+import GuidedTour from '../../components/GuidedTour'
 import CopilotoOrb from '../../components/CopilotoOrb'
 import { NAV_PERMISOS, ROL_LABELS } from '../../lib/permisos'
 
@@ -158,6 +159,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (isMainDashboard) return (
     <>
       <TerminosGate />
+      <GuidedTour />
       {children}
       <KpiMiniChart />
       <CopilotoOrb />
@@ -168,6 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div style={{ width: '100%', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
       <TerminosGate />
+      <GuidedTour />
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
         <AuroraMesh intensity={0.35} />
       </div>

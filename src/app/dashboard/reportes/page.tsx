@@ -291,7 +291,7 @@ export default function ReportesPage() {
             Análisis de alertas y rendimiento clínico
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div data-tour="reportes-acciones" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
           {/* Rango selector */}
           <div style={{ display: 'flex', gap: 6 }}>

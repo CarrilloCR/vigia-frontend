@@ -224,7 +224,7 @@ export default function NotificacionesPage() {
 
         {/* LISTA */}
         <div>
-          <GlowingCard className="p-6 sm:p-8 lg:p-10">
+          <GlowingCard dataTour="notif-lista" className="p-6 sm:p-8 lg:p-10">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
               <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                 Historial

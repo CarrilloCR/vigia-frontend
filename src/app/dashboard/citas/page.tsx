@@ -241,7 +241,7 @@ export default function CitasPage() {
         </FadeContent>
 
         {/* STATS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
+        <div data-tour="citas-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
           {stats.map((s, i) => (
             <div key={s.label ?? i}>
               <TiltedCard tiltAmount={7} scaleOnHover={1.03}>
@@ -337,7 +337,7 @@ export default function CitasPage() {
             </FadeContent>
 
             <FadeContent direction="up" delay={0.25} duration={0.4}>
-              <GlowingCard className="p-6 sm:p-8 lg:p-10">
+              <GlowingCard dataTour="citas-lista" className="p-6 sm:p-8 lg:p-10">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, gap: 14, flexWrap: 'wrap' }}>
                   <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Historial de citas</h2>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>

@@ -991,7 +991,7 @@ export default function DashboardPage() {
             </motion.button>
 
             {puedeEjecutar && (
-              <motion.button onClick={ejecutarMotor} disabled={motorLoading}
+              <motion.button data-tour="ejecutar-analisis" onClick={ejecutarMotor} disabled={motorLoading}
                 whileHover={{ scale: motorLoading ? 1 : 1.03, y: motorLoading ? 0 : -1 }} whileTap={{ scale: 0.97 }}
                 style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 22px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg, var(--jade), #06B79B)', color: '#03130F', fontSize: 14.5, fontWeight: 700, border: '1px solid rgba(0,214,178,0.5)', cursor: motorLoading ? 'not-allowed' : 'pointer', boxShadow: 'var(--shadow-brand)', opacity: motorLoading ? 0.7 : 1 }}>
                 {motorLoading
@@ -1023,7 +1023,7 @@ export default function DashboardPage() {
         )}
 
         {/* STATS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 48 }}>
+        <div data-tour="kpis-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 48 }}>
           {stats.map((s, i) => {
             const active = filtroSev === s.filtro
             return (
@@ -1069,7 +1069,7 @@ export default function DashboardPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) min(420px,38%)', gap: 32 }}>
 
           {/* ALERTAS */}
-          <GlowingCard className="p-6 sm:p-8 lg:p-10">
+          <GlowingCard dataTour="alertas" className="p-6 sm:p-8 lg:p-10">
 
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22, gap: 12 }}>
@@ -1371,7 +1371,7 @@ export default function DashboardPage() {
           {/* SIDEBAR */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {/* Médicos */}
-            <GlowingCard className="p-6 sm:p-8 lg:p-10">
+            <GlowingCard dataTour="dashboard-medicos" className="p-6 sm:p-8 lg:p-10">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                   <div>
                     <span className="eyebrow" style={{ marginBottom: 6, display: 'inline-flex' }}>Equipo</span>
@@ -1386,8 +1386,8 @@ export default function DashboardPage() {
                 <MedicosList clinicaId={clinicaId} />
             </GlowingCard>
 
-            {/* Generador en Vivo — mini */}
-            <GeneradorLiveWidget clinicaId={clinicaId} />
+            {/* HIS en vivo — mini */}
+            <div data-tour="his-widget"><GeneradorLiveWidget clinicaId={clinicaId} /></div>
           </div>
         </div>
       </div>

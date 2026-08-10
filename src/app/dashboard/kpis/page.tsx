@@ -589,7 +589,7 @@ export default function KPIsPage() {
             <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 8 }}>Actualización automática cada 30s</p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div data-tour="kpi-controls" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
             {/* Unidad: días (KPIs diarios) / horas (volumen de citas intradía) */}
             <div style={{ display: 'flex', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 14, padding: 4 }}>
@@ -639,7 +639,7 @@ export default function KPIsPage() {
       </FadeContent>
 
       {/* ── IA: Predicción de saturación + Análisis de tendencias ── */}
-      <div style={{ marginBottom: 28 }}>
+      <div data-tour="ia-insights" style={{ marginBottom: 28 }}>
         <IaInsights clinicaId={clinicaId} />
       </div>
 
@@ -692,7 +692,7 @@ export default function KPIsPage() {
 
           {/* KPI tiles — value + sparkline + delta (Tremor-style) */}
           <FadeContent direction="up" delay={0.1} duration={0.4}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 14 }}>
+            <div data-tour="kpi-selector" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 14 }}>
               {Object.entries(kpiConfig).map(([tipo, c], idx) => {
                 const datos = kpiData[tipo] || []
                 const serie = datos.map(d => d.valor)

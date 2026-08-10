@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import ThemeProvider from '../components/ThemeProvider'
 import CursorEffect from '../components/CursorEffect'
+import AutoTranslate from '../components/AutoTranslate'
 
 export const metadata: Metadata = {
   title: 'Vigía — Sistema de Alertas Inteligentes',
@@ -14,6 +15,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es" data-theme="dark">
       <body style={{ margin: 0, padding: 0, minHeight: '100vh' }}>
         <ThemeProvider>
+          {/* Traductor global ES→EN (aplica a todo el DOM). */}
+          <AutoTranslate />
           {/* CursorEffect va FUERA del contenedor con zoom: lee coordenadas del
               viewport y el zoom escalaría su sistema de coordenadas. */}
           <CursorEffect />

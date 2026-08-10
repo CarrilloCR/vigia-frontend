@@ -283,7 +283,7 @@ export default function PacientesPage() {
 
         {/* BUSQUEDA */}
         <FadeContent direction="up" delay={0.2} duration={0.4}>
-          <div style={{ position: 'relative', marginBottom: 28 }}>
+          <div data-tour="pacientes-toolbar" style={{ position: 'relative', marginBottom: 28 }}>
             <div style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
               <SearchIcon />
             </div>
@@ -295,7 +295,7 @@ export default function PacientesPage() {
 
         {/* TABLA */}
         <FadeContent direction="up" delay={0.25} duration={0.4}>
-          <GlowingCard className="p-6 sm:p-8 lg:p-10">
+          <GlowingCard dataTour="pacientes-lista" className="p-6 sm:p-8 lg:p-10">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, gap: 14, flexWrap: 'wrap' }}>
               <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Lista de pacientes</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>

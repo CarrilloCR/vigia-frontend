@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/auth'
 import api from '../lib/axios'
 import { useToastStore } from '../store/toast'
 import ShaderBackground from '../components/reactbits/ShaderBackground'
-import VideoMock3D from '../components/reactbits/VideoMock3D'
+import HeroDemo3D from '../components/reactbits/HeroDemo3D'
 import AnimatedInput from '../components/reactbits/AnimatedInput'
 import PasswordRequirements, { validatePassword } from '../components/ui/PasswordRequirements'
 import ThemeToggle from '../components/ui/ThemeToggle'
@@ -26,10 +26,14 @@ const AlertIcon = () => (
 )
 
 const stats = [
-  { n: '11', l: 'KPIs vigilados' },
-  { n: '24/7', l: 'Monitoreo activo' },
-  { n: '<1min', l: 'Detección de anomalías' },
-  { n: 'IA', l: 'Análisis con Claude' },
+  { n: '11', l: 'KPIs vigilados',
+    icon: <path d="M3 3v18h18M7 14l3-4 3 3 4-6" /> },
+  { n: '24/7', l: 'Monitoreo activo',
+    icon: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></> },
+  { n: '<1min', l: 'Detección de anomalías',
+    icon: <path d="M13 2 3 14h7l-1 8 10-12h-7z" /> },
+  { n: 'IA', l: 'Análisis con Claude',
+    icon: <><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17l-1.9-5.1L4.5 10l5.6-1.4z" /><circle cx="18" cy="18" r="1.6" /><circle cx="6" cy="17" r="1.2" /></> },
 ]
 
 interface ClinicaPublica { id: number; nombre: string; sedes: { id: number; nombre: string }[] }
@@ -38,6 +42,7 @@ export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [demoOpen, setDemoOpen] = useState(false)  // modal con el recorrido de producto
   const router = useRouter()
   const { setAuth, isAuthenticated } = useAuthStore()
   const toast = useToastStore()
@@ -108,9 +113,44 @@ export default function AuthPage() {
     <div style={{ width: '100%', minHeight: '100vh', backgroundColor: 'var(--void)', display: 'flex', position: 'relative', overflow: 'hidden' }}>
       <ShaderBackground />
 
-      <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 30 }}>
+      <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 30, display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Botón "?" → abre el recorrido de producto (video/demo oculto por defecto). */}
+        <motion.button onClick={() => setDemoOpen(true)} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }}
+          title="Ver cómo funciona Vigía"
+          style={{ width: 40, height: 40, borderRadius: '50%', border: '1px solid var(--border)', background: 'var(--glass)', backdropFilter: 'blur(12px)', color: 'var(--primary)', cursor: 'pointer', fontSize: 18, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(0,214,178,0.2)' }}>
+          ?
+        </motion.button>
         <ThemeToggle />
       </div>
+
+      {/* Modal: recorrido/demo del producto (aparece al tocar "?") */}
+      <AnimatePresence>
+        {demoOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setDemoOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(4,3,12,0.82)', backdropFilter: 'blur(14px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              onClick={e => e.stopPropagation()}
+              style={{ width: '100%', maxWidth: 760, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 24, overflow: 'hidden', boxShadow: '0 40px 100px rgba(0,0,0,0.6)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 22px', borderBottom: '1px solid var(--border)' }}>
+                <div>
+                  <p className="eyebrow" style={{ color: 'var(--primary)' }}>Recorrido</p>
+                  <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: '2px 0 0' }}>Cómo funciona Vigía</h3>
+                </div>
+                <button onClick={() => setDemoOpen(false)}
+                  style={{ width: 34, height: 34, borderRadius: 10, background: 'var(--sunken)', border: '1px solid var(--border)', color: 'var(--muted)', cursor: 'pointer', fontSize: 16 }}>✕</button>
+              </div>
+              {/* Video real del producto: dashboard, KPIs y configuración. */}
+              <video controls autoPlay loop muted playsInline
+                style={{ display: 'block', width: '100%', maxHeight: '70vh', background: 'var(--void)' }}>
+                <source src="/preview-dashboard.webm" type="video/webm" />
+                <source src="/preview-dashboard.mp4" type="video/mp4" />
+              </video>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ─── LEFT · brand storytelling ─── */}
       <motion.div
@@ -122,10 +162,11 @@ export default function AuthPage() {
           width: '50%', minHeight: '100vh',
           flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-end',
           paddingRight: 'clamp(40px, 5vw, 88px)', paddingLeft: 'clamp(24px, 3vw, 56px)',
+          paddingTop: 'clamp(48px, 8vh, 96px)', paddingBottom: 'clamp(40px, 6vh, 72px)',
           position: 'relative', zIndex: 10,
         }}
       >
-        <div style={{ width: '100%', maxWidth: 540, display: 'flex', flexDirection: 'column', gap: 40 }}>
+        <div style={{ width: '100%', maxWidth: 540, display: 'flex', flexDirection: 'column', gap: 26 }}>
           <div>
             <motion.span initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="eyebrow" style={{ marginBottom: 20, display: 'inline-flex' }}>
@@ -158,19 +199,27 @@ export default function AuthPage() {
 
           </div>
 
-          {/* 3D product preview — real footage */}
+          {/* Hero — frame 3D con dashboard animado: alertas/KPIs de ejemplo cambiando. */}
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}>
-            <VideoMock3D />
+            <HeroDemo3D />
           </motion.div>
 
-          {/* Stats strip */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
-            style={{ display: 'flex', gap: 36, flexWrap: 'wrap', paddingTop: 8, borderTop: '1px solid var(--hairline)' }}>
-            {stats.map(s => (
-              <div key={s.l}>
-                <div className="display-md tnum" style={{ color: 'var(--text)', lineHeight: 1 }}>{s.n}</div>
-                <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 6 }}>{s.l}</div>
-              </div>
+          {/* Stats — 2×2 sobrio, acento jade unificado */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, paddingTop: 22, borderTop: '1px solid var(--hairline)' }}>
+            {stats.map((s, i) => (
+              <motion.div key={s.l}
+                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 + i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ x: 3 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,214,178,0.10)', border: '1px solid rgba(0,214,178,0.28)' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{s.icon}</svg>
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div className="tnum" style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--text)' }}>{s.n}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3, lineHeight: 1.25 }}>{s.l}</div>
+                </div>
+              </motion.div>
             ))}
           </motion.div>
         </div>

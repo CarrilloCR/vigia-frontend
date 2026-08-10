@@ -246,7 +246,7 @@ const abrirEditar = (m: Medico) => {
 
         {/* FILTROS */}
         <FadeContent direction="up" delay={0.2} duration={0.4}>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 28, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div data-tour="medicos-lista" style={{ display: 'flex', gap: 12, marginBottom: 28, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
               <div style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
                 <SearchIcon />

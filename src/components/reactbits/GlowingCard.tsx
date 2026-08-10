@@ -6,9 +6,10 @@ interface GlowingCardProps {
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
+  dataTour?: string
 }
 
-export default function GlowingCard({ children, className = '', style }: GlowingCardProps) {
+export default function GlowingCard({ children, className = '', style, dataTour }: GlowingCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [glowPos, setGlowPos] = useState({ x: 50, y: 50 })
 
@@ -23,6 +24,7 @@ export default function GlowingCard({ children, className = '', style }: Glowing
   return (
     <motion.div
       ref={cardRef}
+      data-tour={dataTour}
       onMouseMove={handleMouseMove}
       initial={{ opacity: 0, y: 30, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}

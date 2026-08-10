@@ -158,14 +158,14 @@ export default function TerminosGate() {
                 {/* Footer planes */}
                 <div style={{ padding: '18px 28px', borderTop: '1px solid var(--border)', display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap' }}>
                   <button
-                    onClick={() => setNecesita(false)}
+                    onClick={() => { setNecesita(false); if (typeof window !== 'undefined') window.dispatchEvent(new Event('vigia-tos-done')) }}
                     style={{ padding: '11px 20px', borderRadius: 12, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}
                   >
                     {esResponsable ? 'Continuar en Gratis' : 'Entendido'}
                   </button>
                   {esResponsable && (
                     <motion.button
-                      onClick={() => { setNecesita(false); router.push('/dashboard/configuracion') }}
+                      onClick={() => { setNecesita(false); if (typeof window !== 'undefined') window.dispatchEvent(new Event('vigia-tos-done')); router.push('/dashboard/configuracion') }}
                       whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                       style={{ padding: '11px 24px', borderRadius: 12, border: 'none', color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer', background: 'linear-gradient(135deg, var(--primary), var(--accent))', boxShadow: '0 4px 18px rgba(0,214,178,0.35)' }}
                     >

@@ -196,7 +196,7 @@ export default function CopilotoOrb() {
         )}
       </AnimatePresence>
 
-      <motion.button onClick={() => setAbierto(v => !v)} whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} aria-label="Copiloto Vigía"
+      <motion.button data-tour="copiloto" onClick={() => setAbierto(v => !v)} whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} aria-label="Copiloto Vigía"
         style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9200, width: 60, height: 60, borderRadius: '50%',
           background: 'var(--bg)', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
         <Orbe pensando={pensando} size={44} />

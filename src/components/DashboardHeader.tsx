@@ -169,12 +169,13 @@ export default function DashboardHeader() {
       </div>
 
       {/* Row 2 — nav pills (horizontal scroll, never wraps) */}
-      <nav style={{ display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', width: '100%', paddingBottom: 2, scrollbarWidth: 'none' }}>
+      <nav data-tour="nav" style={{ display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', width: '100%', paddingBottom: 2, scrollbarWidth: 'none' }}>
         {navFinal.map(item => {
           const active = isActive(item)
           return (
             <motion.button
               key={item.path}
+              data-tour={`nav-${item.path.split('/').pop()}`}
               onClick={() => router.push(item.path)}
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.96 }}

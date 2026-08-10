@@ -18,6 +18,7 @@ import CreditCard3D, { type CardData } from '../../../components/ui/CreditCard3D
 import type { Clinica, Sede, IntegracionExterna, PlanFacturacion } from '../../../types'
 import StarBorder from '../../../components/reactbits/StarBorder'
 import GlareHover from '../../../components/reactbits/GlareHover'
+import { getGuia } from '../../../lib/guiaContenido'
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -61,6 +62,11 @@ const LinkIcon = () => (
 const CreditCardIcon = () => (
   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
     <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+  </svg>
+)
+const BookIcon = () => (
+  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
   </svg>
 )
 const MailIcon = () => (
@@ -148,7 +154,7 @@ const UserMinusIcon = () => (
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Section = 'perfil' | 'seguridad' | 'clinica' | 'notificaciones' | 'automatizacion' | 'alertas' | 'apariencia' | 'integraciones' | 'facturacion' | 'superadmin' | 'equipo'
+type Section = 'perfil' | 'seguridad' | 'clinica' | 'notificaciones' | 'automatizacion' | 'alertas' | 'apariencia' | 'integraciones' | 'facturacion' | 'superadmin' | 'equipo' | 'documentacion'
 
 type EquipoRol = 'admin' | 'gerente' | 'medico' | 'viewer'
 const EQUIPO_ROLES: { key: EquipoRol; label: string; desc: string }[] = [
@@ -207,6 +213,7 @@ const SECTIONS: { key: Section; label: string; icon: React.ReactNode; desc: stri
   { key: 'facturacion', label: 'Facturación', icon: <CreditCardIcon />, desc: 'Plan y pagos', roles: ['superadmin', 'admin'] },
   { key: 'equipo', label: 'Equipo', icon: <TeamIcon />, desc: 'Usuarios y roles de acceso', roles: ['superadmin', 'admin', 'gerente'] },
   { key: 'superadmin', label: 'Super Admin', icon: <BuildingIcon />, desc: 'Gestión global de clínicas', superadminOnly: true },
+  { key: 'documentacion', label: 'Documentación', icon: <BookIcon />, desc: 'Cómo usar Vigía', roles: ['superadmin', 'admin', 'gerente', 'medico', 'user'] },
 ]
 
 const SECTION_GROUPS: { label: string; keys: Section[] }[] = [
@@ -214,6 +221,7 @@ const SECTION_GROUPS: { label: string; keys: Section[] }[] = [
   { label: 'Clínica', keys: ['clinica', 'notificaciones', 'automatizacion', 'alertas'] },
   { label: 'Sistema', keys: ['integraciones', 'facturacion', 'equipo'] },
   { label: 'Global',  keys: ['superadmin'] },
+  { label: 'Ayuda',   keys: ['documentacion'] },
 ]
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
@@ -445,7 +453,58 @@ export default function ConfiguracionPage() {
   const [pagoModal, setPagoModal] = useState(false)
   const [planElegido, setPlanElegido] = useState<string | null>(null)
   const [cardData, setCardData] = useState<CardData>({ numero: '', nombre: '', expiry: '', cvv: '' })
+  const [docCap, setDocCap] = useState(0)  // capítulo de documentación seleccionado
   const [cardFocused, setCardFocused] = useState<string | null>(null)
+
+  // Retorno del checkout (Tilopay o Stripe): confirma el pago y activa el plan.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')                    // Tilopay
+    const stripeSession = params.get('stripe_session')  // Stripe
+    let stored: any = null
+    try { stored = JSON.parse(sessionStorage.getItem('vigia-tilopay') || 'null') } catch { /* */ }
+    if (!code && !stripeSession && !stored) return
+    try { sessionStorage.removeItem('vigia-tilopay') } catch { /* */ }
+    window.history.replaceState({}, '', window.location.pathname)  // limpia la query
+    const cid = stored?.clinicaId ?? clinicaId
+
+    const refrescar = async () => {
+      const [planRes, clinRes] = await Promise.all([
+        api.get(`/planes/?clinica=${cid}`).catch(() => null),
+        api.get(`/clinicas/${cid}/`).catch(() => null),
+      ])
+      const pd = planRes && (Array.isArray(planRes.data) ? planRes.data[0] : (planRes.data.results?.[0] ?? planRes.data))
+      if (pd) setPlan(pd)
+      if (clinRes?.data) setClinica(clinRes.data)
+    }
+
+    ;(async () => {
+      setActiveSection('facturacion')
+      try {
+        let data: any
+        if (stripeSession) {
+          data = (await api.post('/facturacion/stripe/confirmar/', { session_id: stripeSession, clinica_id: cid })).data
+        } else {
+          const returnData = params.get('returnData') || stored?.token
+          if (!returnData) return
+          data = (await api.post('/facturacion/tilopay/confirmar/', {
+            code: code ?? '1', returnData, clinica_id: cid,
+            brand: params.get('brand') || '', crd: params.get('crd') || '', description: params.get('description') || '',
+          })).data
+        }
+        if (data?.aprobado) {
+          await refrescar()
+          toast.success('Pago aprobado', `Plan ${data.plan} activo (modo prueba · sin cobro real).`)
+        } else {
+          toast.error('Pago no aprobado', data?.motivo || 'La transacción no se completó.')
+        }
+      } catch (e: any) {
+        toast.error('No se pudo confirmar el pago', e?.response?.data?.error || 'Intentá de nuevo.')
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [procesandoPago, setProcesandoPago] = useState(false)
 
   // ─── Super admin: solicitudes de administrador pendientes (cross-clínica)
@@ -2165,11 +2224,6 @@ export default function ConfiguracionPage() {
                       </p>
                     </div>
                     <div style={{ padding: '22px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                      <button
-                        onClick={() => setHisForm({ nombre: 'HIS de demostración', url: 'http://127.0.0.1:8001', key: 'his-demo-key-vigia-2026' })}
-                        style={{ alignSelf: 'flex-start', padding: '7px 14px', borderRadius: 10, background: 'var(--sunken)', border: '1px dashed var(--border)', color: 'var(--muted)', fontSize: 12.5, cursor: 'pointer' }}>
-                        ⚡ Usar el HIS de demostración (rellena los datos)
-                      </button>
                       <div>
                         <label style={labelStyle}>Nombre del sistema</label>
                         <input value={hisForm.nombre} onChange={e => setHisForm({ ...hisForm, nombre: e.target.value })} placeholder="Ej: HIS Clínica Central" style={inputStyle} />
@@ -2528,6 +2582,33 @@ export default function ConfiguracionPage() {
           return 'Tarjeta'
         }
 
+        // Checkout externo: intenta Tilopay, luego Stripe (test), y si ninguno está
+        // configurado cae a la simulación local. Todo en modo prueba · sin cobro real.
+        const handleCheckout = async () => {
+          if (!planElegido) return
+          setProcesandoPago(true)
+          const noConfig = (m: string) => m.includes('no está configurado')
+          const falla = (msg: string) => { toast.error('No se pudo iniciar el pago', msg || 'Intentá de nuevo.'); setProcesandoPago(false) }
+
+          // 1) Tilopay
+          try {
+            const { data } = await api.post('/facturacion/tilopay/crear/', { plan: planElegido, clinica_id: clinicaId })
+            if (data?.url) {
+              try { sessionStorage.setItem('vigia-tilopay', JSON.stringify({ token: data.token, plan: planElegido, clinicaId })) } catch {}
+              window.location.href = data.url; return
+            }
+          } catch (e: any) { const m = e?.response?.data?.error || ''; if (!noConfig(m)) return falla(m) }
+
+          // 2) Stripe (test)
+          try {
+            const { data } = await api.post('/facturacion/stripe/crear/', { plan: planElegido, clinica_id: clinicaId })
+            if (data?.url) { window.location.href = data.url; return }
+          } catch (e: any) { const m = e?.response?.data?.error || ''; if (!noConfig(m)) return falla(m) }
+
+          // 3) Simulación local
+          await handlePagar()
+        }
+
         const handlePagar = async () => {
           if (!planElegido) return
           setProcesandoPago(true)
@@ -2795,25 +2876,25 @@ export default function ConfiguracionPage() {
                             </div>
                           </div>
 
-                          {/* Pay button */}
+                          {/* Pay button — Tilopay checkout hosted (externo, modo prueba) */}
                           <motion.button
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                            onClick={handlePagar}
+                            onClick={handleCheckout}
                             disabled={procesandoPago}
                             style={{ marginTop: 8, width: '100%', padding: '16px', borderRadius: 14, background: procesandoPago ? 'rgba(0,214,178,0.4)' : 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 700, border: 'none', cursor: procesandoPago ? 'not-allowed' : 'pointer', boxShadow: procesandoPago ? 'none' : '0 6px 24px rgba(0,214,178,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                             {procesandoPago ? (
                               <>
                                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
                                   style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%' }} />
-                                Activando…
+                                Redirigiendo…
                               </>
                             ) : (
-                              <>Activar plan ${pd.precio}/mes →</>
+                              <>Ir al pago seguro ${pd.precio}/mes →</>
                             )}
                           </motion.button>
 
                           <p style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center', lineHeight: 1.5 }}>
-                            Al continuar aceptas los Términos de Servicio. Puedes cancelar en cualquier momento desde esta sección.
+                            Te llevamos a la <strong style={{ color: 'var(--text)' }}>pasarela de pago</strong> (Tilopay o Stripe). Modo prueba: usá una tarjeta de test, no se hace ningún cobro real. Al continuar aceptas los Términos de Servicio.
                           </p>
                         </div>
                       </div>
@@ -3144,6 +3225,110 @@ export default function ConfiguracionPage() {
       // ═══════════════════════════════════════════════════════════
       // EQUIPO
       // ═══════════════════════════════════════════════════════════
+      case 'documentacion': {
+        const esAdminDoc = user?.rol === 'superadmin' || user?.rol === 'admin'
+        const GUIA = getGuia(idioma)  // guía en el idioma actual (ES/EN)
+        if (!esAdminDoc) {
+          return (
+            <motion.div key="doc-lock" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+              <GlowingCard className="p-8" style={{ textAlign: 'center' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(232,196,144,0.12)', border: '1px solid rgba(232,196,144,0.3)', color: '#E8C490' }}><BookIcon /></div>
+                <h3 className="font-display" style={{ fontSize: 19, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Documentación completa</h3>
+                <p style={{ fontSize: 13.5, color: 'var(--muted)', maxWidth: 460, margin: '0 auto 18px', lineHeight: 1.6 }}>
+                  La documentación detallada de administración de Vigía está disponible para administradores en planes superiores. Pedile acceso al administrador de tu clínica.
+                </p>
+                <span style={{ fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 20, background: 'rgba(232,196,144,0.15)', color: '#E8C490', border: '1px solid rgba(232,196,144,0.35)' }}>Función de plan superior</span>
+              </GlowingCard>
+            </motion.div>
+          )
+        }
+        return (
+          <motion.div key="documentacion" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+              <p style={{ ...sectionDesc, margin: 0 }}>Guía de uso de Vigía. Cada página, sección y botón: qué es, qué hace y cómo usarlo.</p>
+              <motion.button onClick={() => { if (typeof window !== 'undefined') window.dispatchEvent(new Event('vigia-open-guia')) }}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                style={{ flexShrink: 0, padding: '10px 20px', borderRadius: 12, border: 'none', color: '#032', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, background: 'linear-gradient(135deg, var(--primary), var(--accent))', boxShadow: '0 4px 18px rgba(0,214,178,0.35)' }}>
+                Iniciar recorrido guiado
+              </motion.button>
+            </div>
+            {/* Índice de capítulos + capítulo seleccionado */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 240px) 1fr', gap: 20, alignItems: 'start' }}>
+              {/* Índice */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, position: 'sticky', top: 16 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px 4px' }}>Capítulos</p>
+                {GUIA.map((g, gi) => {
+                  const activo = gi === docCap
+                  return (
+                    <motion.button key={g.id} onClick={() => setDocCap(gi)} whileHover={{ x: 2 }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12, cursor: 'pointer', textAlign: 'left', border: `1px solid ${activo ? 'var(--primary)' : 'transparent'}`, background: activo ? 'rgba(0,214,178,0.12)' : 'transparent', transition: 'all 0.2s' }}>
+                      <span style={{ width: 26, height: 26, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Sora', sans-serif", fontSize: 12.5, fontWeight: 800, color: activo ? 'var(--primary)' : 'var(--muted)', background: activo ? 'rgba(0,214,178,0.15)' : 'var(--sunken)', border: `1px solid ${activo ? 'rgba(0,214,178,0.4)' : 'var(--border)'}` }}>{gi + 1}</span>
+                      <span style={{ fontSize: 13, fontWeight: activo ? 700 : 500, color: activo ? 'var(--text)' : 'var(--muted)' }}>{g.titulo}</span>
+                    </motion.button>
+                  )
+                })}
+              </div>
+
+              {/* Capítulo */}
+              <AnimatePresence mode="wait">
+                <motion.div key={docCap} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.25 }}>
+                  {(() => {
+                    const g = GUIA[docCap]
+                    return (
+                      <GlowingCard className="p-8">
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 18, paddingBottom: 18, borderBottom: '1px solid var(--border)' }}>
+                          <div style={{ width: 52, height: 52, borderRadius: 14, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 800, color: 'var(--primary)', background: 'rgba(0,214,178,0.1)', border: '1px solid rgba(0,214,178,0.28)' }}>{docCap + 1}</div>
+                          <div>
+                            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Capítulo {docCap + 1}</p>
+                            <h2 className="font-display" style={{ fontSize: 26, fontWeight: 800, color: 'var(--text)', margin: '2px 0 6px' }}>{g.titulo}</h2>
+                            <p style={{ fontSize: 14.5, color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>{g.resumen}</p>
+                            <p style={{ fontSize: 13, color: 'var(--primary)', margin: '10px 0 0' }}>Cómo llegar: <span style={{ color: 'var(--muted)' }}>{g.comoLlegar}</span></p>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+                          {g.secciones.map((sec, si) => (
+                            <div key={si}>
+                              <h3 className="font-display" style={{ fontSize: 16.5, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px' }}>{sec.nombre}</h3>
+                              {sec.desc && <p style={{ fontSize: 13.5, color: 'var(--muted)', margin: '0 0 12px', lineHeight: 1.55 }}>{sec.desc}</p>}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {sec.elementos.map((el, ei) => (
+                                  <div key={ei} style={{ display: 'flex', gap: 12, padding: '13px 15px', borderRadius: 12, background: 'var(--sunken)', border: '1px solid var(--border)' }}>
+                                    <span style={{ color: 'var(--primary)', fontWeight: 800, flexShrink: 0, fontSize: 15 }}>→</span>
+                                    <div>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{el.nombre}</p>
+                                        {el.gate && (
+                                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 9px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.03em', background: 'rgba(232,196,144,0.14)', color: '#E8C490', border: '1px solid rgba(232,196,144,0.32)' }}>
+                                            {el.gate === 'admin' ? 'Admin' : el.gate === 'pro' ? 'Plan Pro' : 'Plan Básico+'}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p style={{ fontSize: 13.5, color: 'var(--muted)', margin: '4px 0 0', lineHeight: 1.5 }}>{el.que}</p>
+                                      {el.como && <p style={{ fontSize: 13, color: 'var(--text)', opacity: 0.8, margin: '5px 0 0', lineHeight: 1.5 }}><strong style={{ color: 'var(--primary)' }}>Cómo usarlo:</strong> {el.como}</p>}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {/* Navegación entre capítulos */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 24, paddingTop: 18, borderTop: '1px solid var(--border)' }}>
+                          <button onClick={() => setDocCap(c => Math.max(0, c - 1))} disabled={docCap === 0}
+                            style={{ padding: '9px 16px', borderRadius: 10, background: 'transparent', border: '1px solid var(--border)', color: docCap === 0 ? 'var(--border)' : 'var(--muted)', cursor: docCap === 0 ? 'default' : 'pointer', fontSize: 13 }}>← Anterior</button>
+                          <button onClick={() => setDocCap(c => Math.min(GUIA.length - 1, c + 1))} disabled={docCap === GUIA.length - 1}
+                            style={{ padding: '9px 16px', borderRadius: 10, background: 'transparent', border: '1px solid var(--border)', color: docCap === GUIA.length - 1 ? 'var(--border)' : 'var(--primary)', cursor: docCap === GUIA.length - 1 ? 'default' : 'pointer', fontSize: 13, fontWeight: 600 }}>Siguiente capítulo →</button>
+                        </div>
+                      </GlowingCard>
+                    )
+                  })()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )
+      }
+
       case 'equipo':
         return (
           <motion.div key="equipo" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
@@ -3411,7 +3596,7 @@ export default function ConfiguracionPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '272px 1fr', gap: 28, alignItems: 'start' }}>
 
           {/* SIDEBAR — grouped */}
-          <motion.aside initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          <motion.aside data-tour="config-menu" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             style={{ position: 'sticky', top: 16, display: 'flex', flexDirection: 'column', gap: 18, padding: 14, borderRadius: 'var(--r-xl)', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
             {visibleGroups.map(g => (
               <div key={g.label}>

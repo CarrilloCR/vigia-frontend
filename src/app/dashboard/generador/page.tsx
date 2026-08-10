@@ -197,7 +197,7 @@ export default function GeneradorPage() {
   // dentro de Vigía (solo lectura), no el generador de datos falsos.
   if (hisConn) {
     return (
-      <div>
+      <div data-tour="his-mirror">
         <HisMirror clinicaId={clinicaId} />
       </div>
     )
