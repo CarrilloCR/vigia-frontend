@@ -16,7 +16,7 @@ export default function NotFound() {
     }}>
       {/* Background */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <Aurora colorStops={['#FF6B6B', '#00C9A7', '#4A9EF0']} amplitude={0.6} speed={0.15} />
+        <Aurora colorStops={['#FF6B6B', '#00D6B2', '#4A9EF0']} amplitude={0.6} speed={0.15} />
       </div>
       <div style={{
         position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.03,
@@ -35,9 +35,9 @@ export default function NotFound() {
             className="font-display"
             animate={{
               textShadow: [
-                '0 0 20px rgba(0,201,167,0.3)',
-                '0 0 60px rgba(0,201,167,0.6)',
-                '0 0 20px rgba(0,201,167,0.3)',
+                '0 0 20px rgba(0,214,178,0.3)',
+                '0 0 60px rgba(0,214,178,0.6)',
+                '0 0 20px rgba(0,214,178,0.3)',
               ],
             }}
             transition={{ duration: 3, repeat: Infinity }}
@@ -88,7 +88,7 @@ export default function NotFound() {
               background: 'linear-gradient(135deg, var(--primary), var(--accent))',
               color: 'white', fontSize: 15, fontWeight: 600,
               border: 'none', cursor: 'pointer',
-              boxShadow: '0 8px 28px rgba(0,201,167,0.4)',
+              boxShadow: '0 8px 28px rgba(0,214,178,0.4)',
               display: 'flex', alignItems: 'center', gap: 10,
             }}
           >
@@ -139,7 +139,7 @@ export default function NotFound() {
               width: 6 + i * 2,
               height: 6 + i * 2,
               borderRadius: '50%',
-              background: `rgba(0,201,167,${0.15 + i * 0.05})`,
+              background: `rgba(0,214,178,${0.15 + i * 0.05})`,
               top: `${20 + i * 15}%`,
               left: `${10 + i * 18}%`,
               pointerEvents: 'none',

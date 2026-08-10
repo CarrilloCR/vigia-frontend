@@ -5,11 +5,11 @@ import { motion } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts'
 import api from '../../../../lib/axios'
 import { useToastStore } from '../../../../store/toast'
+import { useAuthStore } from '../../../../store/auth'
 import GlowingCard from '../../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../../components/reactbits/FadeContent'
 import CountUp from '../../../../components/reactbits/CountUp'
 import SpotlightCard from '../../../../components/reactbits/SpotlightCard'
-import ScrollReveal from '../../../../components/reactbits/ScrollReveal'
 import GradientText from '../../../../components/reactbits/GradientText'
 import TiltedCard from '../../../../components/reactbits/TiltedCard'
 import StarBorder from '../../../../components/reactbits/StarBorder'
@@ -18,27 +18,27 @@ import GlareHover from '../../../../components/reactbits/GlareHover'
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
   tasa_cancelacion:  { label: 'Cancelación',  color: '#FF6B6B', unit: '%' },
   tasa_noshow:       { label: 'No-Show',       color: '#4A9EF0', unit: '%' },
-  ingresos_dia:      { label: 'Ingresos',      color: '#00C9A7', unit: '$' },
-  ticket_promedio:   { label: 'Ticket Prom',   color: '#00C9A7', unit: '$' },
+  ingresos_dia:      { label: 'Ingresos',      color: '#00D6B2', unit: '$' },
+  ticket_promedio:   { label: 'Ticket Prom',   color: '#00D6B2', unit: '$' },
   pacientes_nuevos:  { label: 'Pac. Nuevos',   color: '#00A88A', unit: '%' },
   retencion_90:      { label: 'Retención',     color: '#B06EF5', unit: '%' },
-  nps:               { label: 'NPS',           color: '#00C9A7', unit: ''  },
+  nps:               { label: 'NPS',           color: '#00D6B2', unit: ''  },
   citas_reagendadas: { label: 'Reagendadas',   color: '#FFD166', unit: '%' },
 }
 
 const sevConfig: Record<string, { label: string; color: string }> = {
-  baja:    { label: 'Baja',    color: '#00C9A7' },
+  baja:    { label: 'Baja',    color: '#00D6B2' },
   media:   { label: 'Media',   color: '#4A9EF0' },
-  alta:    { label: 'Alta',    color: '#00C9A7' },
+  alta:    { label: 'Alta',    color: '#00D6B2' },
   critica: { label: 'Crítica', color: '#FF6B6B' },
 }
 
 const estadoColor: Record<string, string> = {
-  completada: '#00C9A7',
+  completada: '#00D6B2',
   cancelada:  '#FF6B6B',
   no_show:    '#4A9EF0',
   reagendada: '#FFD166',
-  agendada:   '#00C9A7',
+  agendada:   '#00D6B2',
 }
 
 const EditIcon = () => (
@@ -56,7 +56,7 @@ const CheckCircleIcon = () => (
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div style={{ background: 'rgba(28,24,48,0.97)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,201,167,0.3)', borderRadius: 12, padding: '10px 14px', fontSize: 13 }}>
+      <div style={{ background: 'rgba(28,24,48,0.97)', backdropFilter: 'blur(20px)', border: '1px solid rgba(0,214,178,0.3)', borderRadius: 12, padding: '10px 14px', fontSize: 13 }}>
         <p style={{ color: 'var(--muted)', marginBottom: 6 }}>{label}</p>
         {payload.map((p: any, i: number) => (
           <p key={i} style={{ color: p.color, fontWeight: 600 }}>{p.name}: {p.value}</p>
@@ -72,12 +72,53 @@ export default function MedicoPage() {
   const [alertas, setAlertas] = useState<any[]>([])
   const [kpis, setKpis] = useState<any[]>([])
   const [citas, setCitas] = useState<any[]>([])
+  const [citasTotal, setCitasTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'estadisticas' | 'citas' | 'alertas'>('estadisticas')
   const [kpiSeleccionado, setKpiSeleccionado] = useState('ingresos_dia')
   const router = useRouter()
   const params = useParams()
   const id = params.id
+  const user = useAuthStore(s => s.user)
+  const puedeDescargar = ['superadmin', 'admin', 'gerente'].includes(user?.rol || '')
+  const esMiConsultorio = user?.rol === 'medico' && String((user as any)?.medico_id) === String(id)
+  const puedeEditarMedico = ['superadmin', 'admin', 'gerente'].includes(user?.rol || '') || esMiConsultorio
+  const [editPerfil, setEditPerfil] = useState(false)
+  const [perfilForm, setPerfilForm] = useState<any>({})
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false)
+
+  const abrirEditarPerfil = () => {
+    setPerfilForm({
+      nombre: medico?.nombre || '', apellido: medico?.apellido || '',
+      especialidad: medico?.especialidad || '', email: medico?.email || '', telefono: medico?.telefono || '',
+    })
+    setEditPerfil(true)
+  }
+
+  const guardarPerfil = async () => {
+    setGuardandoPerfil(true)
+    try {
+      // Médico edita su propio perfil vía acción scoped; roles superiores PATCH directo.
+      const res = esMiConsultorio
+        ? await api.patch('/medicos/mi_perfil/', perfilForm)
+        : await api.patch(`/medicos/${id}/`, perfilForm)
+      setMedico(res.data)
+      setEditPerfil(false)
+      useToastStore.getState().success('Perfil actualizado')
+    } catch { useToastStore.getState().error('No se pudo actualizar el perfil') }
+    finally { setGuardandoPerfil(false) }
+  }
+
+  const descargarReporte = async () => {
+    try {
+      const res = await api.get(`/reportes/descargar/?tipo=medico&id=${id}`, { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+      const a = document.createElement('a')
+      a.href = url; a.download = `reporte_medico_${id}.csv`
+      document.body.appendChild(a); a.click(); a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch { useToastStore.getState().error('No se pudo descargar el reporte') }
+  }
 
   useEffect(() => { fetchData() }, [id])
 
@@ -87,15 +128,18 @@ const fetchData = async () => {
     const med = medicoRes.data
     setMedico(med)
 
-    const sedeParam = med.sede ? `&sede=${med.sede}` : ''
     const [alertasRes, kpisRes, citasRes] = await Promise.all([
-      api.get(`/alertas/?clinica=${med.clinica}${sedeParam}`),
-      api.get(`/kpis/?clinica=${med.clinica}&horas=168${sedeParam}`),
+      // Alertas específicas de este médico (granularidad individual)
+      api.get(`/alertas/?clinica=${med.clinica}&medico=${id}`),
+      // KPIs calculados desde las citas de ESTE médico (gráficos propios, no clínica-wide)
+      api.get(`/medicos/series/?medico=${id}&dias=30`),
       api.get(`/citas/?medico=${id}`),
     ])
     setAlertas(alertasRes.data.results || alertasRes.data)
     setKpis(kpisRes.data.results || kpisRes.data)
-    setCitas((citasRes.data.results || citasRes.data).slice(0, 50))
+    const citasArr = citasRes.data.results || citasRes.data
+    setCitas(citasArr)               // completo → stats reales
+    setCitasTotal(citasArr.length)
   } catch {
     useToastStore.getState().error('Error al cargar médico', 'No se pudo obtener la información del médico.')
   } finally {
@@ -115,7 +159,7 @@ const fetchData = async () => {
 
   // Distribución de estados para gráfica
   const distribucionEstados = [
-    { name: 'Completadas', value: completadas, color: '#00C9A7' },
+    { name: 'Completadas', value: completadas, color: '#00D6B2' },
     { name: 'Canceladas', value: canceladas, color: '#FF6B6B' },
     { name: 'No Show', value: noShow, color: '#4A9EF0' },
     { name: 'Reagendadas', value: citas.filter(c => c.estado === 'reagendada').length, color: '#FFD166' },
@@ -133,8 +177,8 @@ const fetchData = async () => {
   const cfgKpi = kpiConfig[kpiSeleccionado]
 
   const statsCards = [
-    { label: 'Total citas', value: totalCitas, color: '#00C9A7' },
-    { label: 'Completadas', value: completadas, color: '#00C9A7' },
+    { label: 'Total citas', value: totalCitas, color: '#00D6B2' },
+    { label: 'Completadas', value: completadas, color: '#00D6B2' },
     { label: 'Canceladas', value: canceladas, color: '#FF6B6B' },
     { label: 'Alertas activas', value: alertas.filter(a => a.estado === 'activa').length, color: '#4A9EF0' },
   ]
@@ -152,10 +196,14 @@ const fetchData = async () => {
     </div>
   )
 
-  const colorMedico = '#00C9A7'
+  const colorMedico = '#00D6B2'
 
   return (
     <>
+        <button onClick={() => router.push('/dashboard/medicos')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 13.5, marginBottom: 16 }}>
+          ← Médicos
+        </button>
         {/* HEADER */}
         <FadeContent direction="down" duration={0.5}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
@@ -169,7 +217,7 @@ const fetchData = async () => {
               ) : (
                 <motion.div
                   style={{ width: 72, height: 72, borderRadius: 22, background: `linear-gradient(135deg, var(--primary), var(--accent))`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 24, fontWeight: 700, flexShrink: 0 }}
-                  animate={{ boxShadow: ['0 0 20px rgba(0,201,167,0.3)', '0 0 40px rgba(0,201,167,0.6)', '0 0 20px rgba(0,201,167,0.3)'] }}
+                  animate={{ boxShadow: ['0 0 20px rgba(0,214,178,0.3)', '0 0 40px rgba(0,214,178,0.6)', '0 0 20px rgba(0,214,178,0.3)'] }}
                   transition={{ duration: 3, repeat: Infinity }}>
                   {medico.nombre[0]}{medico.apellido[0]}
                 </motion.div>
@@ -180,16 +228,22 @@ const fetchData = async () => {
                   <GradientText text={`Dr. ${medico.nombre} ${medico.apellido}`} className="font-display" />
                 </h1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, padding: '3px 12px', borderRadius: 20, background: 'rgba(0,201,167,0.15)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, padding: '3px 12px', borderRadius: 20, background: 'rgba(0,214,178,0.15)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)' }}>
                     {medico.especialidad}
                   </span>
                   {medico.sede_nombre && (
-                    <span style={{ fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 20, background: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: '1px solid rgba(0,201,167,0.3)' }}>
+                    <span style={{ fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 20, background: 'rgba(0,214,178,0.15)', color: '#00D6B2', border: '1px solid rgba(0,214,178,0.3)' }}>
                       {medico.sede_nombre}
                     </span>
                   )}
                   {medico.email && <span style={{ fontSize: 13, color: 'var(--muted)' }}>✉ {medico.email}</span>}
                   {medico.telefono && <span style={{ fontSize: 13, color: 'var(--muted)' }}>📞 {medico.telefono}</span>}
+                  {puedeDescargar && (
+                    <motion.button onClick={descargarReporte} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                      style={{ fontSize: 12.5, fontWeight: 600, padding: '5px 14px', borderRadius: 20, background: 'rgba(176,110,245,0.12)', color: '#B06EF5', border: '1px solid rgba(176,110,245,0.3)', cursor: 'pointer' }}>
+                      ↓ Descargar reporte
+                    </motion.button>
+                  )}
                   {medico.fecha_ingreso && (
                     <span style={{ fontSize: 13, color: 'var(--muted)' }}>
                       📅 Desde {new Date(medico.fecha_ingreso).toLocaleDateString('es-CR', { year: 'numeric', month: 'long' })}
@@ -203,18 +257,20 @@ const fetchData = async () => {
                 )}
               </div>
             </div>
-            <motion.button onClick={() => router.push(`/dashboard/medicos`)}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px', borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
-              <EditIcon /> Editar
-            </motion.button>
+            {puedeEditarMedico && (
+              <motion.button onClick={abrirEditarPerfil}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 20px', borderRadius: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                <EditIcon /> {esMiConsultorio ? 'Editar mi perfil' : 'Editar'}
+              </motion.button>
+            )}
           </div>
         </FadeContent>
 
         {/* STATS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 32 }}>
           {statsCards.map((s, i) => (
-            <ScrollReveal key={i} delay={i * 0.08} direction="up">
+            <div key={s.label ?? i}>
               <TiltedCard tiltAmount={7} scaleOnHover={1.03}>
                 <div style={{ padding: '24px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
                   <p className="font-display" style={{ fontSize: 40, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 8 }}>
@@ -223,7 +279,7 @@ const fetchData = async () => {
                   <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
                 </div>
               </TiltedCard>
-            </ScrollReveal>
+            </div>
           ))}
         </div>
 
@@ -231,9 +287,9 @@ const fetchData = async () => {
         <FadeContent direction="up" delay={0.15} duration={0.4}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
             {[
-              { label: 'Tasa completación', value: `${tasaCompletacion}%`, color: '#00C9A7' },
+              { label: 'Tasa completación', value: `${tasaCompletacion}%`, color: '#00D6B2' },
               { label: 'Tasa cancelación', value: `${tasaCancelacion}%`, color: '#FF6B6B' },
-              { label: 'Ingresos totales', value: `$${ingresos.toFixed(0)}`, color: '#00C9A7' },
+              { label: 'Ingresos totales', value: `$${ingresos.toFixed(0)}`, color: '#00D6B2' },
               { label: 'Ticket promedio', value: `$${ticketPromedio}`, color: '#4A9EF0' },
             ].map((k, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.06 }}
@@ -268,7 +324,7 @@ const fetchData = async () => {
         {tab === 'estadisticas' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24 }}>
             <FadeContent direction="up" delay={0.25} duration={0.4}>
-              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="top">
+              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,214,178,0.12)" from="top">
                 {/* Selector KPI */}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
                   {Object.entries(kpiConfig).map(([tipo, cfg]) => (
@@ -311,7 +367,7 @@ const fetchData = async () => {
                           <stop offset="95%" stopColor={cfgKpi?.color} stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,201,167,0.08)" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,214,178,0.08)" />
                       <XAxis dataKey="fecha" stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
                       <YAxis stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
                       <Tooltip content={<CustomTooltip />} />
@@ -327,7 +383,7 @@ const fetchData = async () => {
 
             {/* Distribución de estados */}
             <FadeContent direction="right" delay={0.3} duration={0.4}>
-              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="top">
+              <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,214,178,0.12)" from="top">
                 <h2 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
                   Distribución de citas
                 </h2>
@@ -373,12 +429,12 @@ const fetchData = async () => {
 
         {tab === 'citas' && (
           <FadeContent direction="up" delay={0.25} duration={0.4}>
-            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="bottom">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,214,178,0.12)" from="bottom">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                   Historial de citas
                 </h2>
-                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)' }}>
                   {citas.length} citas
                 </span>
               </div>
@@ -389,8 +445,8 @@ const fetchData = async () => {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 520, overflowY: 'auto', paddingRight: 4 }}>
-                  {citas.map((c, i) => {
-                    const color = estadoColor[c.estado] || '#00C9A7'
+                  {citas.slice(0, 50).map((c, i) => {
+                    const color = estadoColor[c.estado] || '#00D6B2'
                     return (
                       <motion.div key={c.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.02 }}
                         style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}25` }}>
@@ -407,7 +463,7 @@ const fetchData = async () => {
                           {c.estado.replace('_', ' ')}
                         </span>
                         {parseFloat(c.ingreso_generado) > 0 && (
-                          <span style={{ fontSize: 13, fontWeight: 600, color: '#00C9A7', flexShrink: 0 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#00D6B2', flexShrink: 0 }}>
                             ${parseFloat(c.ingreso_generado).toFixed(2)}
                           </span>
                         )}
@@ -422,12 +478,12 @@ const fetchData = async () => {
 
         {tab === 'alertas' && (
           <FadeContent direction="up" delay={0.25} duration={0.4}>
-            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="bottom">
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,214,178,0.12)" from="bottom">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
                 <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
                   Historial de alertas
                 </h2>
-                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)' }}>
                   {alertas.length} registros
                 </span>
               </div>
@@ -464,7 +520,7 @@ const fetchData = async () => {
                             </div>
                             <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text)', opacity: 0.85, marginBottom: 8 }}>{a.mensaje}</p>
                             {a.recomendacion && a.recomendacion !== 'Ejecuta el análisis manual para obtener recomendaciones con IA.' && (
-                              <div style={{ padding: '10px 14px', borderRadius: 12, marginBottom: 8, background: 'rgba(0,201,167,0.07)', border: '1px solid rgba(0,201,167,0.15)', fontSize: 13, lineHeight: 1.6, color: 'var(--glow)' }}>
+                              <div style={{ padding: '10px 14px', borderRadius: 12, marginBottom: 8, background: 'rgba(0,214,178,0.07)', border: '1px solid rgba(0,214,178,0.15)', fontSize: 13, lineHeight: 1.6, color: 'var(--glow)' }}>
                                 {a.recomendacion}
                               </div>
                             )}
@@ -479,6 +535,35 @@ const fetchData = async () => {
             </SpotlightCard>
           </FadeContent>
         )}
+
+      {editPerfil && (
+        <div onClick={() => setEditPerfil(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
+          <motion.div onClick={e => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            style={{ width: '100%', maxWidth: 440, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 28 }}>
+            <h3 className="font-display" style={{ fontSize: 19, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>Editar mi perfil</h3>
+            <p style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 20 }}>Actualiza tus datos de contacto y especialidad.</p>
+            {[
+              { k: 'nombre', l: 'Nombre' }, { k: 'apellido', l: 'Apellido' },
+              { k: 'especialidad', l: 'Especialidad' }, { k: 'email', l: 'Email' }, { k: 'telefono', l: 'Teléfono' },
+            ].map(f => (
+              <div key={f.k} style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, color: 'var(--muted)', display: 'block', marginBottom: 5 }}>{f.l}</label>
+                <input value={perfilForm[f.k] || ''} onChange={e => setPerfilForm((p: any) => ({ ...p, [f.k]: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, background: 'var(--sunken)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 14 }} />
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button onClick={() => setEditPerfil(false)}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', cursor: 'pointer', fontSize: 13.5 }}>Cancelar</button>
+              <motion.button onClick={guardarPerfil} disabled={guardandoPerfil} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'linear-gradient(135deg, var(--primary), var(--accent))', border: 'none', color: '#032', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, opacity: guardandoPerfil ? 0.6 : 1 }}>
+                {guardandoPerfil ? 'Guardando…' : 'Guardar'}
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </>
   )
 }

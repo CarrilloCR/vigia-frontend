@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -12,8 +13,6 @@ import GlowingCard from '../../../components/reactbits/GlowingCard'
 import CountUp from '../../../components/reactbits/CountUp'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import SpotlightCard from '../../../components/reactbits/SpotlightCard'
-import ScrollReveal from '../../../components/reactbits/ScrollReveal'
-import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import Magnet from '../../../components/reactbits/Magnet'
 import SedeSelector from '../../../components/ui/SedeSelector'
@@ -25,7 +24,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return (
     <div style={{
       background: 'rgba(18,14,36,0.97)',
-      border: '1px solid rgba(0,201,167,0.3)',
+      border: '1px solid rgba(0,214,178,0.3)',
       borderRadius: 12,
       padding: '10px 14px',
       fontSize: 12,
@@ -57,9 +56,16 @@ const DownloadIcon = () => (
 )
 
 export default function ReportesPage() {
+  const router = useRouter()
   const { user, activeClinicaId } = useAuthStore()
   const clinicaId = activeClinicaId || user?.clinica_id || 1
   const toast = useToastStore()
+  // Reportes con IA (detección Prophet/PyOD) requieren plan Básico o superior.
+  const [plan, setPlan] = useState<string | null>(null)
+  const tieneIA = plan !== null && plan !== 'gratis'
+  useEffect(() => {
+    api.get(`/clinicas/${clinicaId}/`).then(r => setPlan(r.data.plan)).catch(() => setPlan('gratis'))
+  }, [clinicaId])
   const [selectedSede, setSelectedSede] = useState<number | null>(user?.sede_id || null)
 
   const [rango, setRango] = useState<7 | 30 | 90>(30)
@@ -190,14 +196,21 @@ export default function ReportesPage() {
   }
 
   const exportarGenerador = async () => {
+    if (!tieneIA) {
+      toast.error('Función IA', 'Los reportes con IA requieren plan Básico o superior.')
+      router.push('/dashboard/configuracion')
+      return
+    }
     setExportandoGenerador(true)
     try {
       const sedeParam = selectedSede ? `&sede=${selectedSede}` : ''
-      const res = await api.get(`/kpis/exportar/?clinica=${clinicaId}&horas=${rango * 24}${sedeParam}`)
+      // El export calcula detección (Prophet/PyOD) en el servidor → puede tardar;
+      // sube el timeout muy por encima del default de 30s.
+      const res = await api.get(`/kpis/exportar/?clinica=${clinicaId}&horas=${rango * 24}${sedeParam}`, { timeout: 150000 })
       const datos: any[] = res.data
 
       if (!datos.length) {
-        toast.error('Sin datos', 'No hay registros del generador para ese período.')
+        toast.error('Sin datos', 'No hay registros del HIS para ese período.')
         return
       }
 
@@ -244,11 +257,11 @@ export default function ReportesPage() {
       const link = document.createElement('a')
       link.href = url
       const sedeSuffix = selectedSede ? `-sede${selectedSede}` : ''
-      link.download = `vigia-generador-${rango}d${sedeSuffix}-${new Date().toISOString().slice(0, 10)}.csv`
+      link.download = `vigia-his-${rango}d${sedeSuffix}-${new Date().toISOString().slice(0, 10)}.csv`
       link.click()
       URL.revokeObjectURL(url)
     } catch {
-      toast.error('Error al exportar', 'No se pudieron obtener los datos del generador.')
+      toast.error('Error al exportar', 'No se pudieron obtener los datos del HIS.')
     } finally {
       setExportandoGenerador(false)
     }
@@ -272,9 +285,8 @@ export default function ReportesPage() {
         data-no-print
       >
         <div>
-          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
-            <GradientText text="Reportes" className="font-display" />
-          </h1>
+          <span className="eyebrow" style={{ marginBottom: 10, display: 'inline-flex' }}>Análisis y desempeño</span>
+          <h1 className="display-md" style={{ color: 'var(--text)', margin: 0 }}>Reportes</h1>
           <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>
             Análisis de alertas y rendimiento clínico
           </p>
@@ -291,7 +303,7 @@ export default function ReportesPage() {
                 style={{
                   padding: '9px 18px', borderRadius: 12, fontSize: 13, fontWeight: 600,
                   cursor: 'pointer', border: 'none',
-                  background: rango === d ? 'rgba(0,201,167,0.15)' : 'var(--glass)',
+                  background: rango === d ? 'rgba(0,214,178,0.15)' : 'var(--glass)',
                   backdropFilter: 'blur(20px)',
                   borderWidth: 1, borderStyle: 'solid',
                   borderColor: rango === d ? 'var(--primary)' : 'var(--border)',
@@ -310,8 +322,8 @@ export default function ReportesPage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px',
               borderRadius: 12, fontSize: 13, fontWeight: 600,
-              background: 'rgba(0,201,167,0.1)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(0,201,167,0.3)', color: '#00C9A7', cursor: 'pointer',
+              background: 'rgba(0,214,178,0.1)', backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(0,214,178,0.3)', color: '#00D6B2', cursor: 'pointer',
             }}
           >
             <DownloadIcon /> Alertas CSV
@@ -325,18 +337,18 @@ export default function ReportesPage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px',
               borderRadius: 12, fontSize: 13, fontWeight: 600,
-              background: 'rgba(0,201,167,0.1)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(0,201,167,0.3)', color: 'var(--primary)',
+              background: 'rgba(0,214,178,0.1)', backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(0,214,178,0.3)', color: 'var(--primary)',
               cursor: exportandoGenerador ? 'not-allowed' : 'pointer',
               opacity: exportandoGenerador ? 0.6 : 1,
             }}
           >
             {exportandoGenerador
               ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  style={{ width: 14, height: 14, border: '2px solid rgba(0,201,167,0.3)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
+                  style={{ width: 14, height: 14, border: '2px solid rgba(0,214,178,0.3)', borderTopColor: 'var(--primary)', borderRadius: '50%' }} />
               : <DownloadIcon />
             }
-            {exportandoGenerador ? 'Calculando...' : 'Generador + IA'}
+            {exportandoGenerador ? 'Calculando...' : tieneIA ? 'Datos HIS + IA' : '🔒 Datos HIS + IA'}
           </motion.button>
           {/* Imprimir */}
           <motion.button
@@ -366,12 +378,12 @@ export default function ReportesPage() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
             {[
-              { value: stats.total, label: 'Total alertas', color: '#00C9A7', display: <CountUp to={stats.total} /> },
-              { value: stats.porcentajeResueltas, label: 'Resueltas', color: '#00C9A7', display: <><CountUp to={stats.porcentajeResueltas} />%</> },
+              { value: stats.total, label: 'Total alertas', color: '#00D6B2', display: <CountUp to={stats.total} /> },
+              { value: stats.porcentajeResueltas, label: 'Resueltas', color: '#00D6B2', display: <><CountUp to={stats.porcentajeResueltas} />%</> },
               { value: stats.criticas, label: 'Críticas', color: '#FF6B6B', display: <CountUp to={stats.criticas} /> },
               { value: 0, label: 'KPI crítico', color: '#4A9EF0', display: <span style={{ fontSize: 22 }}>{stats.kpiMasProblematico?.kpi || '—'}</span> },
             ].map((s, i) => (
-              <ScrollReveal key={i} delay={i * 0.08} direction="up">
+              <div key={s.label ?? i}>
                 <TiltedCard tiltAmount={6} scaleOnHover={1.03}>
                   <div style={{ padding: '28px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
                     <p className="font-display" style={{ fontSize: 48, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 10, textTransform: 'capitalize' }}>
@@ -383,15 +395,15 @@ export default function ReportesPage() {
                     )}
                   </div>
                 </TiltedCard>
-              </ScrollReveal>
+              </div>
             ))}
           </div>
         )}
 
         {/* BAR CHART: Alertas por día */}
-        <ScrollReveal delay={0.2} direction="up">
+        <div>
         <div style={{ marginBottom: 36 }}>
-          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="bottom">
+          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,214,178,0.12)" from="bottom">
             <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
               Alertas por día
             </h2>
@@ -407,23 +419,23 @@ export default function ReportesPage() {
                   <YAxis tick={{ fill: 'var(--muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend wrapperStyle={{ fontSize: 12, color: 'var(--muted)' }} />
-                  <Bar dataKey="baja" name="Baja" stackId="a" fill="#00C9A7" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="baja" name="Baja" stackId="a" fill="#00D6B2" radius={[0, 0, 0, 0]} />
                   <Bar dataKey="media" name="Media" stackId="a" fill="#4A9EF0" />
-                  <Bar dataKey="alta" name="Alta" stackId="a" fill="#00C9A7" />
+                  <Bar dataKey="alta" name="Alta" stackId="a" fill="#00D6B2" />
                   <Bar dataKey="critica" name="Crítica" stackId="a" fill="#FF6B6B" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </SpotlightCard>
         </div>
-        </ScrollReveal>
+        </div>
 
         {/* GRID: Ranking médicos + KPIs tabla */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 36 }}
         >
           {/* Ranking médicos */}
-          <ScrollReveal delay={0.1} direction="up">
-          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="left">
+          <div>
+          <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,214,178,0.12)" from="left">
             <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
               Top médicos por alertas
             </h2>
@@ -448,9 +460,9 @@ export default function ReportesPage() {
                           <p style={{ fontSize: 12, color: 'var(--muted)' }}>{m.especialidad || ''}</p>
                         </div>
                       </div>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#00C9A7' }}>{m.alertas}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#00D6B2' }}>{m.alertas}</span>
                     </div>
-                    <div style={{ height: 4, borderRadius: 4, background: 'rgba(0,201,167,0.12)' }}>
+                    <div style={{ height: 4, borderRadius: 4, background: 'rgba(0,214,178,0.12)' }}>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${(m.alertas / maxAlertas) * 100}%` }}
@@ -463,10 +475,10 @@ export default function ReportesPage() {
               </div>
             )}
           </SpotlightCard>
-          </ScrollReveal>
+          </div>
 
           {/* KPIs tabla */}
-          <ScrollReveal delay={0.2} direction="up">
+          <div>
           <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(176,110,245,0.12)" from="right">
             <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
               KPIs — resumen
@@ -517,7 +529,7 @@ export default function ReportesPage() {
               </div>
             )}
           </SpotlightCard>
-          </ScrollReveal>
+          </div>
         </div>
       </div>
     </>

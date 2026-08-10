@@ -10,10 +10,10 @@ import TiltedCard from '../../../components/reactbits/TiltedCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import CountUp from '../../../components/reactbits/CountUp'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
+import { SortControl, Paginacion } from '../../../components/ui/ListControls'
+import { useSortPaginate } from '../../../lib/useSortPaginate'
 import SedeSelector from '../../../components/ui/SedeSelector'
 import SpotlightCard from '../../../components/reactbits/SpotlightCard'
-import ScrollReveal from '../../../components/reactbits/ScrollReveal'
-import GradientText from '../../../components/reactbits/GradientText'
 import Magnet from '../../../components/reactbits/Magnet'
 import StarBorder from '../../../components/reactbits/StarBorder'
 import GlareHover from '../../../components/reactbits/GlareHover'
@@ -42,7 +42,7 @@ const especialidades = [
   'Oftalmología', 'Odontología', 'Endocrinología', 'Urología', 'Reumatología',
 ]
 
-const colores = ['#00C9A7','#FF6B6B','#00C9A7','#4A9EF0','#00A88A','#B06EF5','#00C9A7','#FFD166']
+const colores = ['#00D6B2','#FF6B6B','#00D6B2','#4A9EF0','#00A88A','#B06EF5','#00D6B2','#FFD166']
 
 const EditIcon = () => (
   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -193,12 +193,22 @@ const abrirEditar = (m: Medico) => {
     return coincide && esp && m.activo
   })
 
+  const sp = useSortPaginate(medicosFiltrados, {
+    pageSize: 12,
+    initialSort: 'nombre',
+    sortOptions: [
+      { key: 'nombre', label: 'Nombre', get: m => `${m.nombre} ${m.apellido}` },
+      { key: 'especialidad', label: 'Especialidad', get: m => m.especialidad || '' },
+      { key: 'citas', label: 'N.º de citas', get: m => (m as any).n_citas || 0 },
+    ],
+  })
+
   const especialidadesUnicas = [...new Set(medicos.filter(m => m.activo).map(m => m.especialidad))]
 
   const stats = [
-    { label: 'Total médicos', value: medicos.filter(m => m.activo).length, color: '#00C9A7' },
+    { label: 'Total médicos', value: medicos.filter(m => m.activo).length, color: '#00D6B2' },
     { label: 'Especialidades', value: especialidadesUnicas.length, color: '#4A9EF0' },
-    { label: 'Medicina General', value: medicos.filter(m => m.especialidad === 'Medicina General' && m.activo).length, color: '#00C9A7' },
+    { label: 'Medicina General', value: medicos.filter(m => m.especialidad === 'Medicina General' && m.activo).length, color: '#00D6B2' },
     { label: 'Otras especialidades', value: medicos.filter(m => m.especialidad !== 'Medicina General' && m.activo).length, color: '#FF6B6B' },
   ]
 
@@ -208,7 +218,8 @@ const abrirEditar = (m: Medico) => {
         <FadeContent direction="down" duration={0.5}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
             <div>
-              <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}><GradientText text="Médicos" className="font-display" /></h1>
+              <span className="eyebrow" style={{ marginBottom: 10, display: 'inline-flex' }}>Equipo de la clínica</span>
+              <h1 className="display-md" style={{ color: 'var(--text)', margin: 0 }}>Médicos</h1>
               <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>{user?.clinica_nombre} · {medicosFiltrados.length} activos</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -220,7 +231,7 @@ const abrirEditar = (m: Medico) => {
         {/* STATS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
           {stats.map((s, i) => (
-            <ScrollReveal key={i} delay={i * 0.09} direction="up">
+            <div key={s.label ?? i}>
               <TiltedCard tiltAmount={7} scaleOnHover={1.03}>
                 <div style={{ padding: '24px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
                   <p className="font-display" style={{ fontSize: 40, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 8 }}>
@@ -229,7 +240,7 @@ const abrirEditar = (m: Medico) => {
                   <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
                 </div>
               </TiltedCard>
-            </ScrollReveal>
+            </div>
           ))}
         </div>
 
@@ -259,6 +270,9 @@ const abrirEditar = (m: Medico) => {
                 </motion.button>
               ))}
             </div>
+            <div style={{ marginTop: 14 }}>
+              <SortControl sortOptions={sp.sortOptions} sortKey={sp.sortKey} setSortKey={sp.setSortKey} dir={sp.dir} toggleDir={sp.toggleDir} />
+            </div>
           </div>
         </FadeContent>
 
@@ -278,7 +292,7 @@ const abrirEditar = (m: Medico) => {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
             <AnimatePresence>
-              {medicosFiltrados.map((m, i) => {
+              {sp.paged.map((m, i) => {
                 const color = getColor(m.nombre + m.apellido)
                 return (
                   <FadeContent key={m.id} direction="up" delay={i * 0.05} duration={0.4}>
@@ -302,7 +316,7 @@ const abrirEditar = (m: Medico) => {
                                   {m.especialidad}
                                 </span>
                                 {m.sede_nombre && (
-                                  <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20, background: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: '1px solid rgba(0,201,167,0.3)' }}>
+                                  <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20, background: 'rgba(0,214,178,0.15)', color: '#00D6B2', border: '1px solid rgba(0,214,178,0.3)' }}>
                                     {m.sede_nombre}
                                   </span>
                                 )}
@@ -311,7 +325,7 @@ const abrirEditar = (m: Medico) => {
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
                             <motion.button onClick={() => abrirEditar(m)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(0,201,167,0.12)', border: '1px solid rgba(0,201,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
+                              style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(0,214,178,0.12)', border: '1px solid rgba(0,214,178,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
                               <EditIcon />
                             </motion.button>
                             <motion.button onClick={() => setConfirmDelete({ open: true, id: m.id, name: `Dr. ${m.nombre} ${m.apellido}` })} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
@@ -342,6 +356,10 @@ const abrirEditar = (m: Medico) => {
               })}
             </AnimatePresence>
           </div>
+        )}
+        {!loading && (
+          <Paginacion from={sp.from} to={sp.to} total={sp.total} page={sp.page} totalPages={sp.totalPages}
+            setPage={sp.setPage} pageSize={sp.pageSize} setPageSize={sp.setPageSize} />
         )}
 
       {/* MODAL */}
@@ -376,7 +394,7 @@ const abrirEditar = (m: Medico) => {
                       )}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 18px', borderRadius: 12, cursor: 'pointer', background: 'rgba(0,201,167,0.1)', border: '1px dashed rgba(0,201,167,0.4)', color: 'var(--primary)', fontSize: 14, fontWeight: 500 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 18px', borderRadius: 12, cursor: 'pointer', background: 'rgba(0,214,178,0.1)', border: '1px dashed rgba(0,214,178,0.4)', color: 'var(--primary)', fontSize: 14, fontWeight: 500 }}>
                         <UploadIcon />
                         {fotoPreview ? 'Cambiar foto' : 'Subir foto'}
                         <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,image/gif" style={{ display: 'none' }} onChange={handleFoto} />

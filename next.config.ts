@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Imagen Docker mínima: Next copia solo lo necesario a .next/standalone.
+  output: 'standalone',
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['framer-motion', 'gsap'],

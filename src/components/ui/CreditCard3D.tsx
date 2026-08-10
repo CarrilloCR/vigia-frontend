@@ -86,15 +86,16 @@ export default function CreditCard3D({ data, flipped = false, className = '' }: 
         style={{ width: '100%', height: '100%', transformStyle: 'preserve-3d', position: 'relative' }}
       >
         {/* ── FRONT ─────────────────────────────────────────── */}
+        {/* Outer = 3D face plane. backface-visibility hides the far face, but an ancestor
+            overflow:hidden can flatten the 3D — so we also toggle opacity at mid-flip as a backstop. */}
+        <motion.div animate={{ opacity: flipped ? 0 : 1 }} transition={{ duration: 0, delay: 0.18 }}
+          style={{ position: 'absolute', inset: 0, WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden', borderRadius: 20 }}>
         <div style={{
-          position: 'absolute', inset: 0,
-          WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden',
-          borderRadius: 20,
+          position: 'absolute', inset: 0, borderRadius: 20, overflow: 'hidden',
           background: 'linear-gradient(135deg, #1c1148 0%, #3b1e96 42%, #1a0f46 80%, #0d0826 100%)',
           boxShadow: hovered
             ? '0 32px 64px rgba(90,50,220,0.55), 0 0 0 1px rgba(255,255,255,0.12)'
             : '0 20px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.07)',
-          overflow: 'hidden',
           padding: '26px 28px 24px',
           display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
           transition: 'box-shadow 0.3s',
@@ -133,16 +134,15 @@ export default function CreditCard3D({ data, flipped = false, className = '' }: 
             </div>
           </div>
         </div>
+        </motion.div>
 
         {/* ── BACK ──────────────────────────────────────────── */}
+        <motion.div animate={{ opacity: flipped ? 1 : 0 }} transition={{ duration: 0, delay: 0.18 }}
+          style={{ position: 'absolute', inset: 0, WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', borderRadius: 20 }}>
         <div style={{
-          position: 'absolute', inset: 0,
-          WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden',
-          transform: 'rotateY(180deg)',
-          borderRadius: 20,
+          position: 'absolute', inset: 0, borderRadius: 20, overflow: 'hidden',
           background: 'linear-gradient(135deg, #1a1040 0%, #2c1870 45%, #110830 100%)',
           boxShadow: '0 20px 48px rgba(0,0,0,0.55)',
-          overflow: 'hidden',
         }}>
           {/* magnetic stripe */}
           <div style={{ width: '100%', height: 50, marginTop: 28, background: 'linear-gradient(to bottom, #111 0%, #0a0a0a 50%, #111 100%)' }} />
@@ -165,6 +165,7 @@ export default function CreditCard3D({ data, flipped = false, className = '' }: 
             Esta tarjeta es propiedad del banco emisor. Si la encuentra, devuélvala a la sucursal más cercana.
           </p>
         </div>
+        </motion.div>
       </motion.div>
     </div>
   )

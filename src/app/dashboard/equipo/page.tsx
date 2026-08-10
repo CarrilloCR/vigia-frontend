@@ -6,8 +6,6 @@ import { useAuthStore } from '../../../store/auth'
 import { useToastStore } from '../../../store/toast'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import SpotlightCard from '../../../components/reactbits/SpotlightCard'
-import ScrollReveal from '../../../components/reactbits/ScrollReveal'
-import GradientText from '../../../components/reactbits/GradientText'
 import Magnet from '../../../components/reactbits/Magnet'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
 import StarBorder from '../../../components/reactbits/StarBorder'
@@ -25,7 +23,7 @@ const ROLES: { key: Rol; label: string; desc: string }[] = [
 
 const ROL_STYLE: Record<Rol, { bg: string; color: string; border: string }> = {
   superadmin: { bg: 'rgba(232,160,100,0.15)', color: '#E8A064', border: 'rgba(232,160,100,0.35)' },
-  admin:   { bg: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: 'rgba(0,201,167,0.3)' },
+  admin:   { bg: 'rgba(0,214,178,0.15)', color: '#00D6B2', border: 'rgba(0,214,178,0.3)' },
   gerente: { bg: 'rgba(74,158,240,0.12)', color: '#4A9EF0', border: 'rgba(74,158,240,0.25)' },
   medico:  { bg: 'rgba(100,196,160,0.12)', color: '#64C4A0', border: 'rgba(100,196,160,0.3)' },
   user:    { bg: 'rgba(180,180,200,0.10)', color: '#B0B0C8', border: 'rgba(180,180,200,0.25)' },
@@ -71,10 +69,19 @@ export default function EquipoPage() {
   const toast = useToastStore()
   const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
   const esAdmin = user?.rol === 'admin' || user?.rol === 'gerente' || user?.rol === 'superadmin'
-  const puedeAprobar = user?.rol === 'admin' || user?.rol === 'superadmin'
+  const puedeAprobar = user?.rol === 'admin' || user?.rol === 'gerente' || user?.rol === 'superadmin'
 
   const [usuarios, setUsuarios] = useState<any[]>([])
   const [sedes, setSedes] = useState<any[]>([])
+  const [planClinica, setPlanClinica] = useState<string>('gratis')
+  const PLAN_LIMITES: Record<string, { usuarios: number; sedes: number; label: string }> = {
+    gratis: { usuarios: 5, sedes: 1, label: 'Gratis' },
+    basico: { usuarios: 20, sedes: 2, label: 'Básico' },
+    profesional: { usuarios: 100, sedes: 4, label: 'Profesional' },
+    enterprise: { usuarios: 100000, sedes: 100000, label: 'Enterprise' },
+  }
+  const cupo = PLAN_LIMITES[planClinica] ?? PLAN_LIMITES.gratis
+  const miembrosAprobados = usuarios.filter(u => u.aprobado).length
   const [aprobarForm, setAprobarForm] = useState<Record<number, { rol: Rol; sede_id: number | null }>>({})
   const [solicitudes, setSolicitudes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -92,6 +99,7 @@ export default function EquipoPage() {
     fetchUsuarios()
     fetchSolicitudes()
     fetchSedes()
+    api.get(`/clinicas/${clinicaId}/`).then(res => setPlanClinica(res.data?.plan || 'gratis')).catch(() => {})
   }, [clinicaId])
 
   const fetchSedes = async () => {
@@ -238,8 +246,14 @@ export default function EquipoPage() {
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}
       >
         <div>
-          <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}><GradientText text="Equipo" className="font-display" /></h1>
-          <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>Gestiona los usuarios con acceso a la plataforma</p>
+          <h1 className="display-md" style={{ color: 'var(--text)', margin: 0 }}>Equipo</h1>
+          <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>
+            Gestiona los usuarios con acceso a la plataforma ·{' '}
+            <span style={{ color: miembrosAprobados >= cupo.usuarios ? 'var(--danger)' : 'var(--primary)', fontWeight: 600 }}>
+              {miembrosAprobados}/{cupo.usuarios > 9999 ? '∞' : cupo.usuarios} miembros
+            </span>{' '}
+            <span style={{ opacity: 0.7 }}>(plan {cupo.label})</span>
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           {!esAdmin && (
@@ -264,7 +278,7 @@ export default function EquipoPage() {
                   display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px',
                   borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))',
                   color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
-                  boxShadow: '0 4px 20px rgba(0,201,167,0.3)',
+                  boxShadow: '0 4px 20px rgba(0,214,178,0.3)',
                 }}
               >
                 <PlusIcon /> Invitar miembro
@@ -279,7 +293,7 @@ export default function EquipoPage() {
         {tempPassword && (
           <motion.div
             initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-            style={{ marginBottom: 24, padding: '20px 24px', borderRadius: 20, background: 'rgba(0,201,167,0.1)', border: '1px solid rgba(0,201,167,0.3)' }}
+            style={{ marginBottom: 24, padding: '20px 24px', borderRadius: 20, background: 'rgba(0,214,178,0.1)', border: '1px solid rgba(0,214,178,0.3)' }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
               <div>
@@ -345,7 +359,7 @@ export default function EquipoPage() {
                         <motion.button
                           onClick={() => handleAprobarUsuario(u.id)}
                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                          style={{ padding: '9px 14px', borderRadius: 10, background: 'rgba(0,201,167,0.18)', border: '1px solid rgba(0,201,167,0.4)', color: '#00C9A7', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                          style={{ padding: '9px 14px', borderRadius: 10, background: 'rgba(0,214,178,0.18)', border: '1px solid rgba(0,214,178,0.4)', color: '#00D6B2', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
                         >
                           <CheckIcon /> Aprobar
                         </motion.button>
@@ -414,7 +428,7 @@ export default function EquipoPage() {
                         <motion.button
                           onClick={() => handleAprobar(s.id)}
                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(0,201,167,0.15)', border: '1px solid rgba(0,201,167,0.3)', color: '#00C9A7', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(0,214,178,0.15)', border: '1px solid rgba(0,214,178,0.3)', color: '#00D6B2', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
                         >
                           <CheckIcon /> Aprobar
                         </motion.button>
@@ -574,11 +588,11 @@ export default function EquipoPage() {
       </AnimatePresence>
 
       {/* Users list */}
-      <ScrollReveal delay={0.2} direction="up">
-        <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="bottom">
+      <div>
+        <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,214,178,0.12)" from="bottom">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
             <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Miembros del equipo</h2>
-            <span style={{ fontSize: 14, fontWeight: 500, padding: '6px 16px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
+            <span style={{ fontSize: 14, fontWeight: 500, padding: '6px 16px', borderRadius: 20, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)' }}>
               {usuarios.length} usuarios
             </span>
           </div>
@@ -614,7 +628,7 @@ export default function EquipoPage() {
                         display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
                         padding: '16px 20px', borderRadius: 18,
                         background: 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${esYo ? 'rgba(0,201,167,0.3)' : 'var(--border)'}`,
+                        border: `1px solid ${esYo ? 'rgba(0,214,178,0.3)' : 'var(--border)'}`,
                       }}
                     >
                       {/* Avatar */}
@@ -633,7 +647,7 @@ export default function EquipoPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
                           <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{nombre}</p>
                           {esYo && (
-                            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>Tú</span>
+                            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)' }}>Tú</span>
                           )}
                         </div>
                         <p style={{ fontSize: 13, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</p>
@@ -700,7 +714,7 @@ export default function EquipoPage() {
             </div>
           )}
         </SpotlightCard>
-      </ScrollReveal>
+      </div>
 
       {/* Confirm deactivate modal */}
       <ConfirmModal

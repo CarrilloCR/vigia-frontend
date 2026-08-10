@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
@@ -7,21 +8,21 @@ import { useToastStore } from '../../../store/toast'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import CountUp from '../../../components/reactbits/CountUp'
 import SpotlightCard from '../../../components/reactbits/SpotlightCard'
-import ScrollReveal from '../../../components/reactbits/ScrollReveal'
 import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import SedeSelector from '../../../components/ui/SedeSelector'
+import HisMirror from '../../../components/HisMirror'
 import StarBorder from '../../../components/reactbits/StarBorder'
 import GlareHover from '../../../components/reactbits/GlareHover'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
   tasa_cancelacion:  { label: 'Cancelación',  color: '#FF6B6B', unit: '%' },
   tasa_noshow:       { label: 'No-Show',      color: '#4A9EF0', unit: '%' },
-  ingresos_dia:      { label: 'Ingresos',     color: '#00C9A7', unit: '$' },
+  ingresos_dia:      { label: 'Ingresos',     color: '#00D6B2', unit: '$' },
   ocupacion_agenda:  { label: 'Ocupación',    color: '#B06EF5', unit: '%' },
-  ticket_promedio:   { label: 'Ticket',       color: '#00C9A7', unit: '$' },
+  ticket_promedio:   { label: 'Ticket',       color: '#00D6B2', unit: '$' },
   pacientes_nuevos:  { label: 'Pac. Nuevos',  color: '#00A88A', unit: '' },
-  retencion_90:      { label: 'Retención',    color: '#00C9A7', unit: '%' },
+  retencion_90:      { label: 'Retención',    color: '#00D6B2', unit: '%' },
   nps:               { label: 'NPS',          color: '#4A9EF0', unit: '' },
   citas_reagendadas: { label: 'Reagendadas',  color: '#FFD166', unit: '' },
 }
@@ -36,7 +37,7 @@ interface RegistroKPI {
   periodo: string
 }
 
-const PulseDot = ({ color = '#00C9A7' }: { color?: string }) => (
+const PulseDot = ({ color = '#00D6B2' }: { color?: string }) => (
   <motion.div
     animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
     transition={{ duration: 1.6, repeat: Infinity }}
@@ -95,7 +96,14 @@ function formatValor(tipo: string, valor: number) {
 export default function GeneradorPage() {
   const { user } = useAuthStore()
   const toast = useToastStore()
+  const router = useRouter()
   const { activeClinicaId } = useAuthStore(); const clinicaId = activeClinicaId || 1
+  const [hisConn, setHisConn] = useState<any>(null)
+  useEffect(() => {
+    api.get(`/integraciones/?clinica=${clinicaId}`)
+      .then(res => setHisConn((res.data.results || res.data).find((i: any) => i.tipo === 'his') || null))
+      .catch(() => {})
+  }, [clinicaId])
   const [selectedSede, setSelectedSede] = useState<number | null>(null)
 
   const [registros, setRegistros] = useState<RegistroKPI[]>([])
@@ -185,20 +193,60 @@ export default function GeneradorPage() {
 
   const ultimoRegistro = registros[0]
 
+  // Integración real: con un HIS conectado, la página es el ESPEJO en vivo del HIS
+  // dentro de Vigía (solo lectura), no el generador de datos falsos.
+  if (hisConn) {
+    return (
+      <div>
+        <HisMirror clinicaId={clinicaId} />
+      </div>
+    )
+  }
+
   return (
     <div>
+      {/* Fuentes de datos — reemplaza al generador en producción */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        style={{ marginBottom: 24, padding: '18px 22px', borderRadius: 18, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+        <div style={{ maxWidth: 560 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <h2 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Fuente de datos</h2>
+            <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 600,
+              background: hisConn ? 'rgba(0,214,178,0.12)' : 'rgba(245,197,24,0.12)',
+              color: hisConn ? 'var(--primary)' : '#E8C490',
+              border: `1px solid ${hisConn ? 'rgba(0,214,178,0.25)' : 'rgba(245,197,24,0.25)'}` }}>
+              {hisConn ? 'HIS conectado' : 'Sin fuente real'}
+            </span>
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--muted)', margin: 0, lineHeight: 1.6 }}>
+            {hisConn
+              ? <>Los datos provienen de tu sistema externo <strong>{hisConn.nombre}</strong>. El generador de abajo es solo para pruebas.</>
+              : <>En producción los datos vienen de tu <strong>sistema HIS/ERP</strong> o de <strong>CSV</strong>, no del generador. Conecta una fuente para analizar datos reales.</>}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <motion.button onClick={() => router.push('/dashboard/configuracion')}
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+            style={{ padding: '11px 20px', borderRadius: 12, border: 'none', color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer', background: 'linear-gradient(135deg, var(--primary), var(--accent))', whiteSpace: 'nowrap' }}>
+            {hisConn ? 'Gestionar integración' : 'Conectar fuente de datos'}
+          </motion.button>
+        </div>
+      </motion.div>
+
       {/* Encabezado de página */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-            <PulseDot color={generadorActivo ? '#00C9A7' : '#FF6B6B'} />
+            <PulseDot color={generadorActivo ? '#00D6B2' : '#FF6B6B'} />
             <h1 className="font-display" style={{ fontSize: 32, fontWeight: 800 }}>
-              <GradientText text="Generador en Vivo" className="font-display" />
+              <GradientText text={hisConn ? 'Datos en Vivo' : 'Generador en Vivo'} className="font-display" />
             </h1>
           </div>
           <p style={{ fontSize: 14, color: 'var(--muted)' }}>
-            Flujo de datos producido por <code style={{ background: 'rgba(0,201,167,0.1)', padding: '2px 8px', borderRadius: 6, color: 'var(--primary)' }}>generador.py</code> cada 5 minutos en Celery Beat
+            {hisConn
+              ? <>Flujo de KPIs desde tu sistema externo <strong style={{ color: 'var(--primary)' }}>{hisConn.nombre}</strong>, mapeados por IA a Vigía y sincronizados automáticamente.</>
+              : <>Flujo de datos producido por <code style={{ background: 'rgba(0,214,178,0.1)', padding: '2px 8px', borderRadius: 6, color: 'var(--primary)' }}>generador.py</code> cada 5 minutos en Celery Beat</>}
           </p>
         </div>
 
@@ -213,8 +261,8 @@ export default function GeneradorPage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500,
-              background: generadorActivo ? 'rgba(0,201,167,0.15)' : 'rgba(255,107,107,0.1)',
-              border: `1px solid ${generadorActivo ? 'rgba(0,201,167,0.35)' : 'rgba(255,107,107,0.3)'}`,
+              background: generadorActivo ? 'rgba(0,214,178,0.15)' : 'rgba(255,107,107,0.1)',
+              border: `1px solid ${generadorActivo ? 'rgba(0,214,178,0.35)' : 'rgba(255,107,107,0.3)'}`,
               color: generadorActivo ? 'var(--success)' : 'var(--danger)',
               cursor: togglingGenerador || generadorActivo === null ? 'not-allowed' : 'pointer',
               backdropFilter: 'blur(20px)',
@@ -233,8 +281,8 @@ export default function GeneradorPage() {
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '10px 16px', borderRadius: 12, fontSize: 13, fontWeight: 500,
-              background: live ? 'rgba(0,201,167,0.15)' : 'var(--glass)',
-              border: `1px solid ${live ? 'rgba(0,201,167,0.3)' : 'var(--border)'}`,
+              background: live ? 'rgba(0,214,178,0.15)' : 'var(--glass)',
+              border: `1px solid ${live ? 'rgba(0,214,178,0.3)' : 'var(--border)'}`,
               color: live ? 'var(--primary)' : 'var(--muted)',
               cursor: 'pointer', backdropFilter: 'blur(20px)',
             }}>
@@ -258,12 +306,12 @@ export default function GeneradorPage() {
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
         {[
-          { label: `Registros (${horas}h)`, value: registros.length, color: '#00C9A7', icon: <DatabaseIcon /> },
+          { label: `Registros (${horas}h)`, value: registros.length, color: '#00D6B2', icon: <DatabaseIcon /> },
           { label: 'Tipos de KPI', value: tiposPresentes.length, color: '#4A9EF0', icon: <ActivityIcon /> },
-          { label: 'Último registro', text: ultimoRegistro ? relativeTime(ultimoRegistro.fecha_hora) : '—', color: '#00C9A7', icon: <ClockIcon /> },
+          { label: 'Último registro', text: ultimoRegistro ? relativeTime(ultimoRegistro.fecha_hora) : '—', color: '#00D6B2', icon: <ClockIcon /> },
           { label: 'Actualizado', text: ultimaActualizacion ? ultimaActualizacion.toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—', color: '#FF6B6B', icon: <RefreshIcon /> },
         ].map((s, i) => (
-          <ScrollReveal key={i} delay={i * 0.07} direction="up">
+          <div key={s.label ?? i}>
             <TiltedCard tiltAmount={6} scaleOnHover={1.03}>
               <div style={{
                 padding: 20, borderRadius: 20,
@@ -279,7 +327,7 @@ export default function GeneradorPage() {
                 </p>
               </div>
             </TiltedCard>
-          </ScrollReveal>
+          </div>
         ))}
       </div>
 
@@ -311,9 +359,9 @@ export default function GeneradorPage() {
             style={{
               padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
               cursor: 'pointer', border: '1px solid',
-              background: filtroTipo === 'todos' ? 'rgba(0,201,167,0.2)' : 'rgba(255,255,255,0.03)',
+              background: filtroTipo === 'todos' ? 'rgba(0,214,178,0.2)' : 'rgba(255,255,255,0.03)',
               color: filtroTipo === 'todos' ? 'var(--primary)' : 'var(--muted)',
-              borderColor: filtroTipo === 'todos' ? 'rgba(0,201,167,0.4)' : 'var(--border)',
+              borderColor: filtroTipo === 'todos' ? 'rgba(0,214,178,0.4)' : 'var(--border)',
             }}>
             Todos ({registros.length})
           </motion.button>
@@ -340,8 +388,8 @@ export default function GeneradorPage() {
       </div>
 
       {/* Lista de registros */}
-      <ScrollReveal delay={0.2} direction="up">
-      <SpotlightCard className="p-4 sm:p-6" spotlightColor="rgba(0,201,167,0.12)" from="top">
+      <div>
+      <SpotlightCard className="p-4 sm:p-6" spotlightColor="rgba(0,214,178,0.12)" from="top">
         {loading ? (
           <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--muted)' }}>
             Cargando registros...
@@ -364,7 +412,7 @@ export default function GeneradorPage() {
                     initial={esNuevo ? { opacity: 0, y: -20, scale: 0.95 } : { opacity: 0 }}
                     animate={{
                       opacity: 1, y: 0, scale: 1,
-                      backgroundColor: esNuevo ? `${cfg?.color || '#00C9A7'}1A` : 'rgba(255,255,255,0.02)',
+                      backgroundColor: esNuevo ? `${cfg?.color || '#00D6B2'}1A` : 'rgba(255,255,255,0.02)',
                     }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.4 }}
@@ -373,7 +421,7 @@ export default function GeneradorPage() {
                       gridTemplateColumns: '120px 1fr 140px 110px',
                       alignItems: 'center', gap: 16,
                       padding: '14px 18px', borderRadius: 14,
-                      border: `1px solid ${esNuevo ? (cfg?.color || '#00C9A7') + '40' : 'var(--border)'}`,
+                      border: `1px solid ${esNuevo ? (cfg?.color || '#00D6B2') + '40' : 'var(--border)'}`,
                     }}>
                     {/* Timestamp */}
                     <div>
@@ -389,8 +437,8 @@ export default function GeneradorPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{
                         width: 10, height: 10, borderRadius: '50%',
-                        background: cfg?.color || '#00C9A7',
-                        boxShadow: `0 0 10px ${cfg?.color || '#00C9A7'}`,
+                        background: cfg?.color || '#00D6B2',
+                        boxShadow: `0 0 10px ${cfg?.color || '#00D6B2'}`,
                       }} />
                       <div>
                         <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
@@ -406,7 +454,7 @@ export default function GeneradorPage() {
                     <div style={{ textAlign: 'right' }}>
                       <p className="font-display" style={{
                         fontSize: 20, fontWeight: 800,
-                        color: cfg?.color || '#00C9A7',
+                        color: cfg?.color || '#00D6B2',
                       }}>
                         {formatValor(r.tipo, r.valor)}
                       </p>
@@ -415,10 +463,10 @@ export default function GeneradorPage() {
                     {/* Relativo */}
                     <div style={{ textAlign: 'right' }}>
                       <span style={{
-                        fontSize: 11, color: esNuevo ? (cfg?.color || '#00C9A7') : 'var(--muted)',
+                        fontSize: 11, color: esNuevo ? (cfg?.color || '#00D6B2') : 'var(--muted)',
                         padding: '4px 10px', borderRadius: 12,
-                        background: esNuevo ? `${cfg?.color || '#00C9A7'}1A` : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${esNuevo ? (cfg?.color || '#00C9A7') + '40' : 'var(--border)'}`,
+                        background: esNuevo ? `${cfg?.color || '#00D6B2'}1A` : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${esNuevo ? (cfg?.color || '#00D6B2') + '40' : 'var(--border)'}`,
                         fontWeight: 500,
                       }}>
                         {esNuevo ? '· nuevo' : relativeTime(r.fecha_hora)}
@@ -431,7 +479,7 @@ export default function GeneradorPage() {
           </div>
         )}
       </SpotlightCard>
-      </ScrollReveal>
+      </div>
     </div>
   )
 }

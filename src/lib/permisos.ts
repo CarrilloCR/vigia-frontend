@@ -14,7 +14,7 @@ export const NAV_PERMISOS: Record<string, Rol[]> = {
   '/dashboard':                ['superadmin', 'admin', 'gerente', 'medico', 'user'],
   '/dashboard/kpis':           ['superadmin', 'admin', 'gerente', 'medico', 'user'],
   '/dashboard/notificaciones': ['superadmin', 'admin', 'gerente', 'medico', 'user'],
-  '/dashboard/equipo':         ['superadmin', 'admin', 'gerente', 'medico', 'user'],
+  '/dashboard/equipo':         ['superadmin', 'admin', 'gerente'],
   '/dashboard/medicos':        ['superadmin', 'admin', 'gerente', 'medico', 'user'],
   '/dashboard/reportes':       ['superadmin', 'admin', 'gerente', 'medico', 'user'],
   '/dashboard/pacientes':      ['superadmin', 'admin', 'gerente', 'medico'],
@@ -50,11 +50,12 @@ export function puedeEditar(rol: string | undefined, recurso: string): boolean {
     notificaciones: ['admin', 'gerente'],
     kpis:           ['admin', 'gerente'],
     reportes:       ['admin', 'gerente', 'medico'],
-    equipo:         ['admin'],
+    equipo:         ['admin', 'gerente'],
     correos:        ['admin', 'gerente'],
     clinica:        ['admin'],
     sede:           ['admin'],
     generador:      ['admin'],
+    integraciones:  ['admin', 'gerente'],
     configuracion:  ['admin', 'gerente'],
   }
   const list = matrix[recurso]

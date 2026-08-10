@@ -8,17 +8,15 @@ import { useAuthStore } from '../../../store/auth'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import SedeSelector from '../../../components/ui/SedeSelector'
 import SpotlightCard from '../../../components/reactbits/SpotlightCard'
-import ScrollReveal from '../../../components/reactbits/ScrollReveal'
-import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import StarBorder from '../../../components/reactbits/StarBorder'
 import GlareHover from '../../../components/reactbits/GlareHover'
 
 const estadoConfig: Record<string, { color: string; bg: string; label: string }> = {
   pendiente:  { color: '#4A9EF0', bg: 'rgba(176,110,245,0.12)', label: 'Pendiente' },
-  enviada:    { color: '#00C9A7', bg: 'rgba(0,201,167,0.12)', label: 'Enviada' },
-  entregada:  { color: '#00C9A7', bg: 'rgba(0,201,167,0.12)', label: 'Entregada' },
-  leida:      { color: '#00C9A7', bg: 'rgba(0,201,167,0.12)', label: 'Leída' },
+  enviada:    { color: '#00D6B2', bg: 'rgba(0,214,178,0.12)', label: 'Enviada' },
+  entregada:  { color: '#00D6B2', bg: 'rgba(0,214,178,0.12)', label: 'Entregada' },
+  leida:      { color: '#00D6B2', bg: 'rgba(0,214,178,0.12)', label: 'Leída' },
   fallida:    { color: '#FF6B6B', bg: 'rgba(255,107,107,0.12)', label: 'Fallida' },
 }
 
@@ -107,9 +105,9 @@ export default function NotificacionesPage() {
     .filter(n => filtroKpi === '' || (n as any).alerta_tipo_kpi === filtroKpi)
 
   const stats = [
-    { label: 'Total',      value: notificaciones.length,                                          color: '#00C9A7' },
+    { label: 'Total',      value: notificaciones.length,                                          color: '#00D6B2' },
     { label: 'Pendientes', value: notificaciones.filter(n => n.estado === 'pendiente').length,    color: '#4A9EF0' },
-    { label: 'Enviadas',   value: notificaciones.filter(n => n.estado === 'enviada').length,      color: '#00C9A7' },
+    { label: 'Enviadas',   value: notificaciones.filter(n => n.estado === 'enviada').length,      color: '#00D6B2' },
     { label: 'Fallidas',   value: notificaciones.filter(n => n.estado === 'fallida').length,      color: '#FF6B6B' },
   ]
 
@@ -124,9 +122,8 @@ export default function NotificacionesPage() {
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}
         >
           <div>
-            <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
-              <GradientText text="Notificaciones" className="font-display" />
-            </h1>
+            <span className="eyebrow" style={{ marginBottom: 10, display: 'inline-flex' }}>Bandeja de envíos</span>
+            <h1 className="display-md" style={{ color: 'var(--text)', margin: 0 }}>Notificaciones</h1>
             <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>
               Historial completo de notificaciones enviadas
             </p>
@@ -137,7 +134,7 @@ export default function NotificacionesPage() {
               onClick={marcarTodasLeidas}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              style={{ padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white' }}
+              style={{ padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '1px solid rgba(0,214,178,0.5)', background: 'linear-gradient(135deg, var(--jade), #06B79B)', color: '#03130F' }}
             >
               Marcar leídas
             </motion.button>
@@ -164,7 +161,7 @@ export default function NotificacionesPage() {
         {/* STATS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
           {stats.map((s, i) => (
-            <ScrollReveal key={i} delay={i * 0.08} direction="up">
+            <div key={s.label}>
               <TiltedCard tiltAmount={6} scaleOnHover={1.03}>
                 <motion.div
                   onClick={() => setFiltro(i === 0 ? 'todos' : ['todos', 'pendiente', 'enviada', 'fallida'][i])}
@@ -190,7 +187,7 @@ export default function NotificacionesPage() {
                   </div>
                 </motion.div>
               </TiltedCard>
-            </ScrollReveal>
+            </div>
           ))}
         </div>
 
@@ -226,7 +223,7 @@ export default function NotificacionesPage() {
         </motion.div>
 
         {/* LISTA */}
-        <ScrollReveal delay={0.2} direction="up">
+        <div>
           <GlowingCard className="p-6 sm:p-8 lg:p-10">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
               <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
@@ -234,8 +231,8 @@ export default function NotificacionesPage() {
               </h2>
               <span style={{
                 fontSize: 14, fontWeight: 500, padding: '6px 16px', borderRadius: 20,
-                background: 'rgba(0,201,167,0.12)', color: 'var(--primary)',
-                border: '1px solid rgba(0,201,167,0.2)',
+                background: 'rgba(0,214,178,0.12)', color: 'var(--primary)',
+                border: '1px solid rgba(0,214,178,0.2)',
               }}>
                 {filtradas.length} registros
               </span>
@@ -350,7 +347,7 @@ export default function NotificacionesPage() {
               </div>
             )}
           </GlowingCard>
-        </ScrollReveal>
+        </div>
     </>
   )
 }

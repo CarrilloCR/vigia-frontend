@@ -6,7 +6,9 @@ import { useAuthStore } from '../../store/auth'
 import PageLoader from '../../components/ui/PageLoader'
 import DashboardHeader from '../../components/DashboardHeader'
 import KpiMiniChart from '../../components/KpiMiniChart'
-import Aurora from '../../components/reactbits/Aurora'
+import AuroraMesh from '../../components/reactbits/AuroraMesh'
+import TerminosGate from '../../components/TerminosGate'
+import CopilotoOrb from '../../components/CopilotoOrb'
 import { NAV_PERMISOS, ROL_LABELS } from '../../lib/permisos'
 
 function AccesoRestringido({ rol }: { rol: string }) {
@@ -17,8 +19,8 @@ function AccesoRestringido({ rol }: { rol: string }) {
       animate={{ opacity: 1, scale: 1 }}
       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 20, textAlign: 'center' }}
     >
-      <div style={{ width: 64, height: 64, borderRadius: 20, background: 'rgba(0,201,167,0.1)', border: '1px solid rgba(0,201,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <svg width="28" height="28" fill="none" stroke="rgba(0,201,167,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <div style={{ width: 64, height: 64, borderRadius: 20, background: 'rgba(0,214,178,0.1)', border: '1px solid rgba(0,214,178,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="28" height="28" fill="none" stroke="rgba(0,214,178,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
@@ -32,7 +34,7 @@ function AccesoRestringido({ rol }: { rol: string }) {
         <motion.button
           onClick={() => router.push('/dashboard/equipo')}
           whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          style={{ padding: '10px 20px', borderRadius: 12, background: 'rgba(0,201,167,0.15)', border: '1px solid rgba(0,201,167,0.35)', color: '#00C9A7', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '10px 20px', borderRadius: 12, background: 'rgba(0,214,178,0.15)', border: '1px solid rgba(0,214,178,0.35)', color: '#00D6B2', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
         >
           Solicitar rol
         </motion.button>
@@ -86,6 +88,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter()
   const pathname = usePathname()
   const [checked, setChecked] = useState(false)
+  // Wait for the persisted auth store to rehydrate from localStorage before
+  // deciding to redirect — otherwise a hard-refresh / deep-link on a sub-page
+  // reads default (unauthenticated) state and bounces to '/', then back to /dashboard.
+  const [hydrated, setHydrated] = useState(false)
   const isMainDashboard = pathname === '/dashboard'
 
   const rol = user?.rol ?? 'viewer'
@@ -93,6 +99,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pendiente = !aprobado || rol === 'viewer'
 
   useEffect(() => {
+    const p = useAuthStore.persist
+    if (!p) { setHydrated(true); return }
+    setHydrated(p.hasHydrated())
+    return p.onFinishHydration(() => setHydrated(true))
+  }, [])
+
+  useEffect(() => {
+    if (!hydrated) return
     if (!isAuthenticated) {
       router.replace('/')
     } else {
@@ -104,7 +118,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }).catch(() => {})
       })
     }
-  }, [isAuthenticated, router, setUser, pathname])
+  }, [hydrated, isAuthenticated, router, setUser, pathname])
 
   // While pendiente, poll /me every 10s to detect approval
   useEffect(() => {
@@ -119,7 +133,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => clearInterval(id)
   }, [pendiente, isAuthenticated, setUser])
 
-  if (!checked) return <PageLoader />
+  if (!hydrated || !checked) return <PageLoader />
 
   // Check route permission (skip for main dashboard - always accessible)
   const permisos = NAV_PERMISOS[pathname]
@@ -129,9 +143,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Pending approval gate: show wait screen everywhere
   if (pendiente) {
     return (
-      <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ width: '100%', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-          <Aurora colorStops={['#F5C518', '#FF6B6B', '#B06EF5']} amplitude={0.3} speed={0.1} />
+          <AuroraMesh colors={['#FFD166', '#FF6B6B', '#B06EF5', '#FFD166']} intensity={0.4} />
         </div>
         <div style={{ position: 'relative', zIndex: 10 }}>
           <PendienteAprobacion />
@@ -143,16 +157,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Dashboard principal maneja su propio layout completo
   if (isMainDashboard) return (
     <>
+      <TerminosGate />
       {children}
       <KpiMiniChart />
+      <CopilotoOrb />
     </>
   )
 
   // Sub-páginas usan layout compartido con header de navegación
   return (
-    <div style={{ width: '100vw', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ width: '100%', minHeight: '100vh', backgroundColor: 'var(--void)', position: 'relative', overflow: 'hidden' }}>
+      <TerminosGate />
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <Aurora colorStops={['#00C9A7', '#4A9EF0', '#B06EF5']} amplitude={0.5} speed={0.15} />
+        <AuroraMesh intensity={0.35} />
       </div>
 
       <div className="px-5 sm:px-8 lg:px-12 xl:px-14 pt-8 sm:pt-10 pb-10 sm:pb-12" style={{ position: 'relative', zIndex: 10, maxWidth: 1600, margin: '0 auto' }}>
@@ -160,6 +177,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {sinAcceso ? <AccesoRestringido rol={rol} /> : children}
       </div>
       <KpiMiniChart />
+      <CopilotoOrb />
     </div>
   )
 }

@@ -9,10 +9,10 @@ import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import CountUp from '../../../components/reactbits/CountUp'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
+import { SortControl, Paginacion } from '../../../components/ui/ListControls'
+import { useSortPaginate } from '../../../lib/useSortPaginate'
 import SedeSelector from '../../../components/ui/SedeSelector'
 import SpotlightCard from '../../../components/reactbits/SpotlightCard'
-import ScrollReveal from '../../../components/reactbits/ScrollReveal'
-import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import Magnet from '../../../components/reactbits/Magnet'
 import StarBorder from '../../../components/reactbits/StarBorder'
@@ -34,8 +34,8 @@ interface Medico { id: number; nombre: string; apellido: string; especialidad: s
 interface Paciente { id: number; nombre: string; apellido: string }
 
 const estadoConfig: Record<string, { label: string; color: string }> = {
-  agendada:   { label: 'Agendada',   color: '#00C9A7' },
-  completada: { label: 'Completada', color: '#00C9A7' },
+  agendada:   { label: 'Agendada',   color: '#00D6B2' },
+  completada: { label: 'Completada', color: '#00D6B2' },
   cancelada:  { label: 'Cancelada',  color: '#FF6B6B' },
   no_show:    { label: 'No Show',    color: '#4A9EF0' },
   reagendada: { label: 'Reagendada', color: '#FFD166' },
@@ -89,7 +89,6 @@ export default function CitasPage() {
   const [editEstado, setEditEstado] = useState('')
   const [mostrarCanceladas, setMostrarCanceladas] = useState(false)
   const [confirmLimpiar, setConfirmLimpiar] = useState(false)
-  const [displayLimit, setDisplayLimit] = useState(25)
   const [form, setForm] = useState({
     paciente: '', medico: '', fecha_hora_agendada: '', estado: 'agendada',
   })
@@ -161,7 +160,7 @@ export default function CitasPage() {
   const handleGuardarEstado = async () => {
     if (!editModal.cita) return
     try {
-      await api.patch(`/citas/${editModal.cita.id}/`, { estado: editEstado })
+      await api.patch(`/citas/${editModal.cita.id}/marcar_estado/`, { estado: editEstado })
       await fetchData()
       setEditModal({ open: false, cita: null })
       toast.success('Estado actualizado', 'El estado de la cita fue actualizado.')
@@ -188,9 +187,22 @@ export default function CitasPage() {
     return coincide && estado && medico && canceladaOk
   })
 
+  const sp = useSortPaginate(citasFiltradas, {
+    pageSize: 25,
+    initialSort: 'fecha',
+    initialDir: 'desc',
+    sortOptions: [
+      { key: 'fecha', label: 'Fecha', get: c => c.fecha_hora_agendada || '' },
+      { key: 'paciente', label: 'Paciente', get: c => c.paciente_nombre || '' },
+      { key: 'medico', label: 'Médico', get: c => c.medico_nombre || '' },
+      { key: 'estado', label: 'Estado', get: c => c.estado || '' },
+      { key: 'ingreso', label: 'Ingreso', get: c => parseFloat(c.ingreso_generado || '0') },
+    ],
+  })
+
   const stats = [
-    { label: 'Total citas', value: citas.length, color: '#00C9A7' },
-    { label: 'Completadas', value: citas.filter(c => c.estado === 'completada').length, color: '#00C9A7' },
+    { label: 'Total citas', value: citas.length, color: '#00D6B2' },
+    { label: 'Completadas', value: citas.filter(c => c.estado === 'completada').length, color: '#00D6B2' },
     { label: 'Agendadas', value: citas.filter(c => c.estado === 'agendada').length, color: '#4A9EF0' },
     { label: 'Canceladas', value: citas.filter(c => c.estado === 'cancelada').length, color: '#FF6B6B' },
   ]
@@ -211,7 +223,8 @@ export default function CitasPage() {
         <FadeContent direction="down" duration={0.5}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
             <div>
-              <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}><GradientText text="Citas" className="font-display" /></h1>
+              <span className="eyebrow" style={{ marginBottom: 10, display: 'inline-flex' }}>Agenda y estados</span>
+              <h1 className="display-md" style={{ color: 'var(--text)', margin: 0 }}>Citas</h1>
               <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>{citasFiltradas.length} registros</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -219,7 +232,7 @@ export default function CitasPage() {
               <Magnet strength={0.3}>
                 <motion.button onClick={() => { setShowModal(true); setError('') }}
                   whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,201,167,0.3)' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg, var(--jade), #06B79B)', color: '#03130F', fontSize: 15, fontWeight: 700, border: '1px solid rgba(0,214,178,0.5)', cursor: 'pointer', boxShadow: 'var(--shadow-brand)' }}>
                   <PlusIcon /> Agendar cita
                 </motion.button>
               </Magnet>
@@ -230,7 +243,7 @@ export default function CitasPage() {
         {/* STATS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
           {stats.map((s, i) => (
-            <ScrollReveal key={i} delay={i * 0.09} direction="up">
+            <div key={s.label ?? i}>
               <TiltedCard tiltAmount={7} scaleOnHover={1.03}>
                 <div style={{ padding: '24px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
                   <p className="font-display" style={{ fontSize: 40, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 8 }}>
@@ -239,7 +252,7 @@ export default function CitasPage() {
                   <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
                 </div>
               </TiltedCard>
-            </ScrollReveal>
+            </div>
           ))}
         </div>
 
@@ -325,11 +338,14 @@ export default function CitasPage() {
 
             <FadeContent direction="up" delay={0.25} duration={0.4}>
               <GlowingCard className="p-6 sm:p-8 lg:p-10">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, gap: 14, flexWrap: 'wrap' }}>
                   <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Historial de citas</h2>
-                  <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
-                    {citasFiltradas.length} citas
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <SortControl sortOptions={sp.sortOptions} sortKey={sp.sortKey} setSortKey={sp.setSortKey} dir={sp.dir} toggleDir={sp.toggleDir} />
+                    <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)' }}>
+                      {citasFiltradas.length} citas
+                    </span>
+                  </div>
                 </div>
 
                 {loading ? (
@@ -350,7 +366,7 @@ export default function CitasPage() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 560, overflowY: 'auto', paddingRight: 4 }}>
                     <AnimatePresence>
-                      {citasFiltradas.slice(0, displayLimit).map((c, i) => {
+                      {sp.paged.map((c, i) => {
                         const cfg = estadoConfig[c.estado] || estadoConfig.agendada
                         const ingreso = parseFloat(c.ingreso_generado || '0')
                         return (
@@ -382,7 +398,7 @@ export default function CitasPage() {
 
                             {/* Ingreso */}
                             {ingreso > 0 && (
-                              <span style={{ fontSize: 13, fontWeight: 600, color: '#00C9A7', flexShrink: 0 }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: '#00D6B2', flexShrink: 0 }}>
                                 ${ingreso.toFixed(2)}
                               </span>
                             )}
@@ -395,7 +411,7 @@ export default function CitasPage() {
                             {/* Editar estado */}
                             <motion.button onClick={() => abrirEditarCita(c)}
                               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(0,201,167,0.08)', border: '1px solid rgba(0,201,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', flexShrink: 0 }}>
+                              style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(0,214,178,0.08)', border: '1px solid rgba(0,214,178,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)', flexShrink: 0 }}>
                               <EditIcon />
                             </motion.button>
 
@@ -411,15 +427,10 @@ export default function CitasPage() {
                         )
                       })}
                     </AnimatePresence>
-                    {displayLimit < citasFiltradas.length && (
-                      <motion.button onClick={() => setDisplayLimit(v => v + 50)}
-                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                        style={{ marginTop: 8, padding: '12px', borderRadius: 14, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer', width: '100%' }}>
-                        Ver más ({citasFiltradas.length - displayLimit} restantes)
-                      </motion.button>
-                    )}
                   </div>
                 )}
+                <Paginacion from={sp.from} to={sp.to} total={sp.total} page={sp.page} totalPages={sp.totalPages}
+                  setPage={sp.setPage} pageSize={sp.pageSize} setPageSize={sp.setPageSize} />
               </GlowingCard>
             </FadeContent>
           </div>
@@ -441,7 +452,7 @@ export default function CitasPage() {
                       transition={{ delay: 0.3 + i * 0.06 }}
                       onClick={() => router.push(`/dashboard/medico/${m.medico.id}`)}
                       style={{ cursor: 'pointer', padding: '16px 18px', borderRadius: 18, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', transition: 'all 0.2s' }}
-                      whileHover={{ background: 'rgba(0,201,167,0.08)' } as any}
+                      whileHover={{ background: 'rgba(0,214,178,0.08)' } as any}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                         <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 12, fontWeight: 700 }}>
@@ -460,7 +471,7 @@ export default function CitasPage() {
                       </div>
 
                       {/* Barra progreso */}
-                      <div style={{ height: 4, borderRadius: 2, background: 'rgba(0,201,167,0.12)', overflow: 'hidden' }}>
+                      <div style={{ height: 4, borderRadius: 2, background: 'rgba(0,214,178,0.12)', overflow: 'hidden' }}>
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
@@ -471,8 +482,8 @@ export default function CitasPage() {
 
                       {/* Stats rápidos */}
                       <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
-                        <span style={{ fontSize: 11, color: '#00C9A7' }}>✓ {m.completadas} completadas</span>
-                        <span style={{ fontSize: 11, color: '#00C9A7' }}>$ {m.ingresos.toFixed(0)}</span>
+                        <span style={{ fontSize: 11, color: '#00D6B2' }}>✓ {m.completadas} completadas</span>
+                        <span style={{ fontSize: 11, color: '#00D6B2' }}>$ {m.ingresos.toFixed(0)}</span>
                       </div>
                     </motion.div>
                   )

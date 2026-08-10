@@ -15,23 +15,22 @@ import { useKpiPipStore } from '../../../store/kpiPip'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import CountUp from '../../../components/reactbits/CountUp'
 import FadeContent from '../../../components/reactbits/FadeContent'
-import ShinyText from '../../../components/reactbits/ShinyText'
 import SpotlightCard from '../../../components/reactbits/SpotlightCard'
-import ScrollReveal from '../../../components/reactbits/ScrollReveal'
-import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import SedeSelector from '../../../components/ui/SedeSelector'
+import Sparkline from '../../../components/ui/Sparkline'
 import StarBorder from '../../../components/reactbits/StarBorder'
 import GlareHover from '../../../components/reactbits/GlareHover'
+import IaInsights from '../../../components/IaInsights'
 
 const kpiConfig: Record<string, { label: string; color: string; unit: string }> = {
   tasa_cancelacion:  { label: 'Cancelación',  color: '#FF6B6B', unit: '%' },
   tasa_noshow:       { label: 'No-Show',       color: '#4A9EF0', unit: '%' },
-  ingresos_dia:      { label: 'Ingresos',      color: '#00C9A7', unit: '$' },
-  ticket_promedio:   { label: 'Ticket Prom',   color: '#00C9A7', unit: '$' },
+  ingresos_dia:      { label: 'Ingresos',      color: '#00D6B2', unit: '$' },
+  ticket_promedio:   { label: 'Ticket Prom',   color: '#00D6B2', unit: '$' },
   pacientes_nuevos:  { label: 'Pac. Nuevos',   color: '#00A88A', unit: '%' },
   retencion_90:      { label: 'Retención',     color: '#B06EF5', unit: '%' },
-  nps:               { label: 'NPS',           color: '#00C9A7', unit: ''  },
+  nps:               { label: 'NPS',           color: '#00D6B2', unit: ''  },
   citas_reagendadas: { label: 'Reagendadas',   color: '#FFD166', unit: '%' },
 }
 
@@ -74,13 +73,27 @@ const MinimizeIcon = () => (
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
+  const anom = payload[0]?.payload?._anom
+  const sevColor: Record<string, string> = { critica: '#E85D5D', alta: '#E8A064', media: '#F5C518', baja: '#4A9EF0' }
   return (
     <div style={{
       background: 'rgba(18,14,36,0.97)', backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(0,201,167,0.3)', borderRadius: 14,
-      padding: '12px 16px', fontSize: 13, minWidth: 160,
+      border: `1px solid ${anom ? sevColor[anom.sev] || '#E85D5D' : 'rgba(0,214,178,0.3)'}`, borderRadius: 14,
+      padding: '12px 16px', fontSize: 13, minWidth: 160, maxWidth: 280,
     }}>
       <p style={{ color: 'var(--muted)', marginBottom: 8, fontSize: 11 }}>{label}</p>
+      {anom && (
+        <div style={{ marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 10, background: `${sevColor[anom.sev] || '#E85D5D'}22`, color: sevColor[anom.sev] || '#E85D5D', textTransform: 'uppercase' }}>⚠ {anom.sev}</span>
+            <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>{anom.metodos.join(' · ')}</span>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text)', margin: '0 0 3px' }}>
+            Detectado <strong style={{ color: '#E85D5D' }}>{anom.detectado}</strong> · esperado <strong style={{ color: '#00D6B2' }}>{anom.esperado}</strong> · desv. <strong>{anom.desviacion}%</strong>
+          </p>
+          {anom.recomendacion && <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '4px 0 0', lineHeight: 1.4, fontStyle: 'italic' }}>💡 {anom.recomendacion}</p>}
+        </div>
+      )}
       {payload.map((p: any, i: number) => {
         if (p.value == null) return null
         return (
@@ -101,7 +114,7 @@ const NormalizedTooltip = ({ active, payload, label }: any) => {
   return (
     <div style={{
       background: 'rgba(18,14,36,0.97)', backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(0,201,167,0.3)', borderRadius: 14,
+      border: '1px solid rgba(0,214,178,0.3)', borderRadius: 14,
       padding: '12px 16px', fontSize: 12, minWidth: 180,
     }}>
       <p style={{ color: 'var(--muted)', marginBottom: 8, fontSize: 11 }}>{label}</p>
@@ -112,7 +125,7 @@ const NormalizedTooltip = ({ active, payload, label }: any) => {
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
             <p style={{ color: 'var(--text)', fontWeight: 600 }}>
-              {p.name}: <span style={{ color: p.value >= 0 ? '#00C9A7' : '#FF6B6B' }}>
+              {p.name}: <span style={{ color: p.value >= 0 ? '#00D6B2' : '#FF6B6B' }}>
                 {sign}{p.value.toFixed(1)}%
               </span>
             </p>
@@ -168,6 +181,14 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
 
   // chartData must be declared BEFORE any computation that references it
   const chartData = useMemo(() => datos.slice(-24), [datos])
+  // Umbral relativo a la media (±20%) + dominio del eje que lo incluye → visible.
+  const valsMini = chartData.map((d: any) => d.valor).filter((v: any) => Number.isFinite(v))
+  const meanMini = valsMini.length ? valsMini.reduce((a: number, b: number) => a + b, 0) / valsMini.length : 0
+  const umbralMiniY = umbralCfg ? (umbralCfg.direccion === 'arriba' ? meanMini * 1.2 : meanMini * 0.8) : 0
+  const miniMin = Math.min(umbralMiniY, ...(valsMini.length ? valsMini : [0]))
+  const miniMax = Math.max(umbralMiniY, ...(valsMini.length ? valsMini : [1]))
+  const miniPad = (miniMax - miniMin) * 0.12 || 1
+  const miniDomain: [number, number] = [Math.max(0, miniMin - miniPad), miniMax + miniPad]
 
   // Match alert → closest data point (6h tolerance)
   const matchMiniIdx = (iso: string) => {
@@ -247,15 +268,15 @@ function MiniKpiChart({ tipo, datos, alertas, overlays }: {
               </linearGradient>
             </defs>
             <XAxis dataKey="fecha" hide />
-            <YAxis hide domain={['auto', 'auto']} />
+            <YAxis hide domain={miniDomain} />
             <Tooltip
               contentStyle={{ background: 'rgba(18,14,36,0.97)', border: `1px solid ${cfg.color}30`, borderRadius: 10, fontSize: 11, padding: '4px 8px' }}
               labelStyle={{ color: 'var(--muted)', fontSize: 10 }}
               formatter={(v: any) => [`${cfg.unit}${Number(v).toFixed(1)}`, cfg.label]}
             />
-            {/* Umbral reference */}
+            {/* Umbral reference (relativo a la media) */}
             {overlays.umbral && umbralCfg && (
-              <ReferenceLine y={umbralCfg.umbral} stroke="#FF6B6B" strokeDasharray="4 3" strokeWidth={1} strokeOpacity={0.6} />
+              <ReferenceLine y={umbralMiniY} stroke="#FF6B6B" strokeDasharray="4 3" strokeWidth={1} strokeOpacity={0.6} />
             )}
             {/* Prophet band */}
             {overlays.prophet && prophetData && (
@@ -323,7 +344,12 @@ export default function KPIsPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [kpiSeleccionado, setKpiSeleccionado] = useState('ingresos_dia')
   const [vista, setVista] = useState<Vista>('individual')
-  const [horas, setHoras] = useState(24)
+  // "días" = KPIs diarios del HIS (con anomalías). "horas" = volumen de citas
+  // por hora (métrica intradía real derivada de las citas).
+  const [unidad, setUnidad] = useState<'dias' | 'horas'>('dias')
+  const [horas, setHoras] = useState(30)
+  const rangos = unidad === 'dias' ? [7, 30, 90] : [6, 12, 24]
+  const [volumenHoras, setVolumenHoras] = useState<{ fecha: string; valor: number }[]>([])
   const [chartSize, setChartSize] = useState<'normal' | 'grande' | 'completo'>('grande')
   const [alertasKpi, setAlertasKpi] = useState<Alerta[]>([])
   const [overlays, setOverlays] = useState<Overlays>({ prophet: true, pyod: true, umbral: true, anomalias: true })
@@ -342,11 +368,14 @@ export default function KPIsPage() {
   useEffect(() => { pipStore.hide() }, [])
 
   useEffect(() => {
-    fetchKPIs()
-    fetchAlertasKpi()
-    const interval = setInterval(() => { fetchKPIs(); fetchAlertasKpi() }, 30000)
+    const cargar = () => {
+      if (unidad === 'horas') { fetchVolumen() }
+      else { fetchKPIs(); fetchAlertasKpi() }
+    }
+    cargar()
+    const interval = setInterval(cargar, 30000)
     return () => clearInterval(interval)
-  }, [clinicaId, horas, selectedSede])
+  }, [clinicaId, horas, unidad, selectedSede])
 
   const fetchAlertasKpi = async () => {
     try {
@@ -355,23 +384,37 @@ export default function KPIsPage() {
     } catch { /* silent */ }
   }
 
+  const fetchVolumen = async () => {
+    try {
+      const res = await api.get(`/citas/volumen_horario/?clinica=${clinicaId}&horas=${horas}${selectedSede ? `&sede=${selectedSede}` : ''}`)
+      const data = res.data.results || res.data
+      setVolumenHoras((data as any[]).map(d => ({
+        fecha: new Date(d.fecha_hora).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' }),
+        valor: d.valor,
+      })))
+    } catch { /* silent */ }
+    finally { setLoading(false) }
+  }
+
   const fetchKPIs = async (manual = false) => {
     if (manual) setRefreshing(true)
     try {
-      const res = await api.get(`/kpis/?clinica=${clinicaId}&horas=${horas}${selectedSede ? `&sede=${selectedSede}` : ''}`)
+      const res = await api.get(`/kpis/?clinica=${clinicaId}&${unidad}=${horas}${selectedSede ? `&sede=${selectedSede}` : ''}`)
       const data = res.data.results || res.data
 
       const agrupado: Record<string, KPIData[]> = {}
       data.forEach((kpi: any) => {
         if (!agrupado[kpi.tipo]) agrupado[kpi.tipo] = []
         agrupado[kpi.tipo].push({
-          fecha: new Date(kpi.fecha_hora).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' }),
+          // Datos del HIS son diarios → etiqueta por FECHA (no hora). Con hora
+          // (todos a mediodía) el eje X colapsaba todos los puntos en uno.
+          fecha: new Date(kpi.fecha_hora).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit' }),
           fechaISO: kpi.fecha_hora,
           valor: Math.round(kpi.valor * 100) / 100,
           tipo: kpi.tipo,
         })
       })
-      Object.keys(agrupado).forEach(k => { agrupado[k] = agrupado[k].slice(-24) })
+      Object.keys(agrupado).forEach(k => { agrupado[k] = agrupado[k].slice(-90) })
       setKpiData(agrupado)
     } catch {
       toast.error('Error al cargar KPIs', 'No se pudieron obtener los datos de indicadores.')
@@ -432,7 +475,7 @@ export default function KPIsPage() {
       if (diff < bestDiff) { bestDiff = diff; bestIdx = idx }
     })
     // tolerance = horas window + 30min buffer so alerts slightly outside window still match
-    return bestDiff < (horas + 0.5) * 60 * 60 * 1000 ? bestIdx : -1
+    return bestDiff < 26 * 60 * 60 * 1000 ? bestIdx : -1
   }
 
   // All alerts in the chart's time range (active + revisadas — so dots persist after review)
@@ -456,6 +499,29 @@ export default function KPIsPage() {
 
   const cfg = kpiConfig[kpiSeleccionado]
   const umbralActual = kpiUmbrales[kpiSeleccionado] || null
+  // Umbral y dominio del eje RELATIVOS a los datos (media ±20%, igual que el motor)
+  // → la línea de límite/mínimo siempre queda cerca de la curva, no al fondo.
+  const valsChart = chartData.map((d: any) => d.valor).filter((v: any) => Number.isFinite(v))
+  const meanChart = valsChart.length ? valsChart.reduce((a: number, b: number) => a + b, 0) / valsChart.length : 0
+  const umbralY = umbralActual ? Math.round((umbralActual.direccion === 'arriba' ? meanChart * 1.2 : meanChart * 0.8) * 100) / 100 : 0
+  const yMin = Math.min(umbralY, ...(valsChart.length ? valsChart : [0]))
+  const yMax = Math.max(umbralY, ...(valsChart.length ? valsChart : [1]))
+  const yPad = (yMax - yMin) * 0.12 || 1
+  const yDomain: [number, number] = [Math.max(0, Math.round(yMin - yPad)), Math.round(yMax + yPad)]
+
+  // Inyecta el detalle de anomalía en el punto correspondiente → tooltip muestra qué pasó.
+  const anomByIdx = new Map<number, any>()
+  anomalyPoints.forEach((a: any) => {
+    const metodos: string[] = []
+    if (a.detalle_deteccion?.pyod?.es_anomalia) metodos.push('PyOD')
+    if (a.detalle_deteccion?.prophet?.yhat != null) metodos.push('Prophet')
+    if (metodos.length === 0 || (a.metodo_deteccion || '').includes('estad')) metodos.push('Estadístico')
+    anomByIdx.set(a.dataIdx, {
+      sev: a.severidad, detectado: a.valor_detectado, esperado: a.valor_esperado,
+      desviacion: a.desviacion, metodos, recomendacion: a.recomendacion,
+    })
+  })
+  const chartDataE = chartData.map((d: any, idx: number) => anomByIdx.has(idx) ? { ...d, _anom: anomByIdx.get(idx) } : d)
   const ultimoValor = rawData.length > 0 ? rawData[rawData.length - 1].valor : 0
   const primerValor = rawData.length > 0 ? rawData[0].valor : 0
   const cambio = primerValor !== 0 ? ((ultimoValor - primerValor) / primerValor * 100).toFixed(1) : '0'
@@ -518,23 +584,32 @@ export default function KPIsPage() {
       <FadeContent direction="down" duration={0.5}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
-              <ShinyText text="Análisis de KPIs" speed={4} className="font-display" />
-            </h1>
-            <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>Actualización cada 30s</p>
+            <span className="eyebrow" style={{ marginBottom: 10, display: 'inline-flex' }}>Indicadores en tiempo real</span>
+            <h1 className="display-md" style={{ color: 'var(--text)', margin: 0 }}>Análisis de KPIs</h1>
+            <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 8 }}>Actualización automática cada 30s</p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <SedeSelector clinicaId={clinicaId} value={selectedSede} onChange={setSelectedSede} compact />
-            {/* Time range */}
+            {/* Unidad: días (KPIs diarios) / horas (volumen de citas intradía) */}
             <div style={{ display: 'flex', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 14, padding: 4 }}>
-              {[2, 6, 12, 24].map(h => (
+              {(['dias', 'horas'] as const).map(u => (
+                <motion.button key={u} onClick={() => { setUnidad(u); setHoras(u === 'dias' ? 30 : 24); setLoading(true) }} whileTap={{ scale: 0.97 }}
+                  style={{ padding: '10px 14px', borderRadius: 11, fontSize: 12.5, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: unidad === u ? '#03130F' : 'var(--muted)', fontWeight: unidad === u ? 700 : 500 }}>
+                  {unidad === u && <motion.div layoutId="unidadTab" style={{ position: 'absolute', inset: 0, borderRadius: 11, background: 'linear-gradient(135deg, var(--jade), #06B79B)' }} transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />}
+                  <span style={{ position: 'relative', zIndex: 1 }}>{u === 'dias' ? 'Días' : 'Horas'}</span>
+                </motion.button>
+              ))}
+            </div>
+            {/* Rango */}
+            <div style={{ display: 'flex', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 14, padding: 4 }}>
+              {rangos.map(h => (
                 <motion.button key={h} onClick={() => setHoras(h)} whileTap={{ scale: 0.97 }}
-                  style={{ padding: '10px 16px', borderRadius: 11, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: horas === h ? 'white' : 'var(--muted)' }}>
+                  style={{ padding: '10px 16px', borderRadius: 11, fontSize: 13, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: horas === h ? '#03130F' : 'var(--muted)', fontWeight: horas === h ? 700 : 500 }}>
                   {horas === h && (
-                    <motion.div layoutId="horasTab" style={{ position: 'absolute', inset: 0, borderRadius: 11, background: 'linear-gradient(135deg, var(--primary), var(--accent))' }} transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
+                    <motion.div layoutId="horasTab" style={{ position: 'absolute', inset: 0, borderRadius: 11, background: 'linear-gradient(135deg, var(--jade), #06B79B)' }} transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
                   )}
-                  <span style={{ position: 'relative', zIndex: 1 }}>{h}h</span>
+                  <span style={{ position: 'relative', zIndex: 1 }}>{h}{unidad === 'dias' ? 'd' : 'h'}</span>
                 </motion.button>
               ))}
             </div>
@@ -543,9 +618,9 @@ export default function KPIsPage() {
             <div style={{ display: 'flex', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', borderRadius: 14, padding: 4 }}>
               {([['individual', 'Individual'], ['grid', 'Grid'], ['todas', 'Todas']] as [Vista, string][]).map(([v, lbl]) => (
                 <motion.button key={v} onClick={() => setVista(v)} whileTap={{ scale: 0.97 }}
-                  style={{ padding: '10px 16px', borderRadius: 11, fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: vista === v ? 'white' : 'var(--muted)' }}>
+                  style={{ padding: '10px 16px', borderRadius: 11, fontSize: 13, cursor: 'pointer', border: 'none', position: 'relative', overflow: 'hidden', background: 'transparent', color: vista === v ? '#03130F' : 'var(--muted)', fontWeight: vista === v ? 700 : 500 }}>
                   {vista === v && (
-                    <motion.div layoutId="vistaTab" style={{ position: 'absolute', inset: 0, borderRadius: 11, background: 'linear-gradient(135deg, var(--primary), var(--accent))' }} transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
+                    <motion.div layoutId="vistaTab" style={{ position: 'absolute', inset: 0, borderRadius: 11, background: 'linear-gradient(135deg, var(--jade), #06B79B)' }} transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
                   )}
                   <span style={{ position: 'relative', zIndex: 1 }}>{lbl}</span>
                 </motion.button>
@@ -563,47 +638,108 @@ export default function KPIsPage() {
         </div>
       </FadeContent>
 
+      {/* ── IA: Predicción de saturación + Análisis de tendencias ── */}
+      <div style={{ marginBottom: 28 }}>
+        <IaInsights clinicaId={clinicaId} />
+      </div>
+
+      {/* ── VOLUMEN POR HORA (modo horas) ── */}
+      {unidad === 'horas' && (
+        <FadeContent direction="up" delay={0.1} duration={0.4}>
+          <div style={{ padding: 28, borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
+              <div>
+                <h3 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Volumen de citas por hora</h3>
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>Últimas {horas} horas · {volumenHoras.reduce((a, b) => a + b.valor, 0)} citas</p>
+              </div>
+              <motion.button onClick={fetchVolumen} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                style={{ width: 46, height: 46, borderRadius: 14, background: 'var(--glass)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text)' }}>
+                <RefreshIcon />
+              </motion.button>
+            </div>
+            {loading ? (
+              <div style={{ height: 320, borderRadius: 16, background: 'rgba(255,255,255,0.04)' }} />
+            ) : volumenHoras.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--muted)' }}>
+                <p className="font-display" style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>Sin citas en el periodo</p>
+                <p style={{ fontSize: 14 }}>No hay citas registradas en las últimas {horas} horas.</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={340}>
+                <AreaChart data={volumenHoras} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="volGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#00D6B2" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="#00D6B2" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="fecha" stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
+                  <YAxis stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 13 }}
+                    labelStyle={{ color: 'var(--muted)' }} formatter={(v: any) => [`${v} citas`, 'Volumen']} />
+                  <Area type="monotone" dataKey="valor" stroke="#00D6B2" strokeWidth={2.5} fill="url(#volGrad)" dot={{ r: 3, fill: '#00D6B2' }} activeDot={{ r: 6 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </FadeContent>
+      )}
+
       {/* ── INDIVIDUAL VIEW ── */}
-      {vista === 'individual' && (
+      {unidad === 'dias' && vista === 'individual' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-          {/* KPI Selector */}
+          {/* KPI tiles — value + sparkline + delta (Tremor-style) */}
           <FadeContent direction="up" delay={0.1} duration={0.4}>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              {Object.entries(kpiConfig).map(([tipo, c]) => {
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 14 }}>
+              {Object.entries(kpiConfig).map(([tipo, c], idx) => {
                 const datos = kpiData[tipo] || []
-                const ultimo = datos.length > 0 ? datos[datos.length - 1].valor : null
-                const penultimo = datos.length > 1 ? datos[datos.length - 2].valor : null
+                const serie = datos.map(d => d.valor)
+                const ultimo = serie.length ? serie[serie.length - 1] : null
+                const primero = serie.length ? serie[0] : null
                 const isSelected = kpiSeleccionado === tipo
-                const trending = ultimo !== null && penultimo !== null ? ultimo >= penultimo : null
                 const hasAlerts = alertasKpi.some(a => a.tipo_kpi === tipo && a.estado === 'activa')
+                const deltaPct = primero != null && primero !== 0 && ultimo != null ? ((ultimo - primero) / Math.abs(primero)) * 100 : null
+                const upIsBad = kpiUmbrales[tipo]?.direccion === 'arriba'
+                const good = deltaPct == null || deltaPct === 0 ? null : (deltaPct > 0 ? !upIsBad : upIsBad)
+                const deltaColor = good === null ? 'var(--muted)' : good ? 'var(--jade)' : 'var(--coral)'
+                const arrow = deltaPct == null || deltaPct === 0 ? '→' : deltaPct > 0 ? '↑' : '↓'
 
                 return (
-                  <motion.button key={tipo} onClick={() => setKpiSeleccionado(tipo)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  <motion.button
+                    key={tipo}
+                    onClick={() => setKpiSeleccionado(tipo)}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: idx * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ y: -3 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="glass"
                     style={{
-                      padding: '11px 18px', borderRadius: 14, fontSize: 14, fontWeight: 500, cursor: 'pointer',
-                      border: 'none', position: 'relative', overflow: 'hidden',
-                      background: isSelected ? 'transparent' : 'var(--glass)', backdropFilter: 'blur(20px)',
-                      borderWidth: 1, borderStyle: 'solid',
-                      borderColor: isSelected ? c.color : hasAlerts ? 'rgba(255,107,107,0.3)' : 'var(--border)',
-                      color: isSelected ? 'white' : 'var(--muted)', transition: 'all 0.2s',
-                      boxShadow: isSelected ? `0 4px 20px ${c.color}40` : 'none',
+                      position: 'relative', overflow: 'hidden', textAlign: 'left', cursor: 'pointer',
+                      padding: '16px 18px', borderRadius: 'var(--r-lg)',
+                      border: `1px solid ${isSelected ? c.color : hasAlerts ? 'rgba(255,107,107,0.35)' : 'var(--border)'}`,
+                      boxShadow: isSelected ? `0 0 0 1px ${c.color}66, 0 10px 30px ${c.color}22` : 'var(--shadow-sm)',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
                     }}>
-                    {isSelected && (
-                      <motion.div layoutId="kpiSelected"
-                        style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${c.color}CC, ${c.color}88)` }}
-                        transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-                      />
-                    )}
-                    <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {hasAlerts && !isSelected && (
+                    {isSelected && <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: c.color }} />}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                      <span className="eyebrow" style={{ color: isSelected ? c.color : 'var(--sub)' }}>{c.label}</span>
+                      {hasAlerts && (
                         <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
-                          style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF6B6B', flexShrink: 0 }} />
+                          style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--coral)', boxShadow: '0 0 8px var(--coral)', flexShrink: 0 }} />
                       )}
-                      {c.label}
-                      {ultimo !== null && <span style={{ opacity: 0.85, fontSize: 13 }}>{c.unit}{ultimo}</span>}
-                      {trending !== null && <span style={{ fontSize: 11, color: isSelected ? 'rgba(255,255,255,0.8)' : trending ? '#00C9A7' : '#FF6B6B' }}>{trending ? '↑' : '↓'}</span>}
-                    </span>
+                    </div>
+                    <div className="tnum" style={{ fontFamily: 'Syne, sans-serif', fontSize: 26, fontWeight: 800, color: 'var(--text)', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                      {ultimo != null ? `${c.unit}${ultimo}` : '—'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8, marginTop: 10 }}>
+                      <span className="tnum" style={{ fontSize: 12, fontWeight: 600, color: deltaColor, display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap' }}>
+                        {arrow}{deltaPct != null ? `${Math.abs(deltaPct).toFixed(1)}%` : '—'}
+                      </span>
+                      <Sparkline data={serie} color={c.color} width={90} height={30} />
+                    </div>
                   </motion.button>
                 )
               })}
@@ -611,13 +747,14 @@ export default function KPIsPage() {
           </FadeContent>
 
           {/* Main chart */}
-          <ScrollReveal delay={0.2} direction="up">
-            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="top">
+          <div>
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,214,178,0.12)" from="top">
               {/* Chart header */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>{cfg?.label}</h2>
-                  <p style={{ fontSize: 13, color: 'var(--muted)' }}>Últimas {horas}h · {rawData.length} registros</p>
+                  <span className="eyebrow" style={{ marginBottom: 6, display: 'inline-flex' }}>Indicador</span>
+                  <h2 className="display-md" style={{ color: 'var(--text)', margin: 0 }}>{cfg?.label}</h2>
+                  <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>Últim{unidad === 'dias' ? 'os' : 'as'} {horas} {unidad === 'dias' ? 'días' : 'horas'} · {rawData.length} registros</p>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -633,7 +770,7 @@ export default function KPIsPage() {
                   <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10, padding: 3 }}>
                     {(['normal', 'grande', 'completo'] as const).map(s => (
                       <motion.button key={s} onClick={() => setChartSize(s)} whileTap={{ scale: 0.95 }}
-                        style={{ padding: '8px 14px', borderRadius: 8, fontSize: 11, fontWeight: 500, cursor: 'pointer', border: 'none', background: chartSize === s ? 'rgba(0,201,167,0.2)' : 'transparent', color: chartSize === s ? 'var(--primary)' : 'var(--muted)' }}>
+                        style={{ padding: '8px 14px', borderRadius: 8, fontSize: 11, fontWeight: 500, cursor: 'pointer', border: 'none', background: chartSize === s ? 'rgba(0,214,178,0.2)' : 'transparent', color: chartSize === s ? 'var(--primary)' : 'var(--muted)' }}>
                         {s === 'normal' ? 'S' : s === 'grande' ? 'M' : 'L'}
                       </motion.button>
                     ))}
@@ -715,7 +852,7 @@ export default function KPIsPage() {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={chartHeight}>
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <AreaChart data={chartDataE} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorKpi" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor={cfg?.color} stopOpacity={0.35}/>
@@ -726,28 +863,26 @@ export default function KPIsPage() {
                         <stop offset="95%" stopColor="#4A9EF0" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,201,167,0.08)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,214,178,0.08)" />
                     <XAxis dataKey="fecha" stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
-                    <YAxis stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
+                    <YAxis stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} domain={yDomain} allowDataOverflow={false} />
                     <Tooltip content={<CustomTooltip />} />
 
                     {/* ── Stable DOM overlays — visibility via fill/stroke, not conditional mount ── */}
 
-                    {/* Umbral zone — always rendered, opacity controlled */}
+                    {/* Umbral (línea de límite/mínimo) — relativo a la media, siempre visible */}
                     <ReferenceLine
-                      y={umbralActual?.umbral ?? 0}
+                      y={umbralY}
                       stroke="#FF6B6B"
                       strokeDasharray="6 4" strokeWidth={1.5}
                       strokeOpacity={overlays.umbral && umbralActual ? 1 : 0}
-                      ifOverflow="extendDomain"
                       label={overlays.umbral && umbralActual ? { value: umbralActual.label, position: 'insideTopRight', fill: '#FF6B6B', fontSize: 11, fontWeight: 600 } : undefined}
                     />
                     <ReferenceArea
-                      y1={umbralActual?.direccion === 'arriba' ? (umbralActual.umbral ?? 0) : 0}
-                      y2={umbralActual?.direccion === 'arriba' ? (umbralActual.max ?? 0) : (umbralActual?.umbral ?? 0)}
+                      y1={umbralActual?.direccion === 'arriba' ? umbralY : yDomain[0]}
+                      y2={umbralActual?.direccion === 'arriba' ? yDomain[1] : umbralY}
                       fill={overlays.umbral && umbralActual ? '#FF6B6B' : 'transparent'}
                       fillOpacity={0.06}
-                      ifOverflow="extendDomain"
                     />
 
                     {/* Prophet confidence band — always rendered, opacity controlled */}
@@ -770,10 +905,10 @@ export default function KPIsPage() {
                     {/* "Ahora" separator */}
                     <ReferenceLine
                       x={ahoraLabel ?? undefined}
-                      stroke="rgba(0,201,167,0.5)"
+                      stroke="rgba(0,214,178,0.5)"
                       strokeDasharray="4 3" strokeWidth={1.5}
                       strokeOpacity={overlays.prophet && hayFuturos ? 1 : 0}
-                      label={overlays.prophet && hayFuturos ? { value: 'Ahora', position: 'insideTopRight', fill: 'rgba(0,201,167,0.8)', fontSize: 10, fontWeight: 700 } : undefined}
+                      label={overlays.prophet && hayFuturos ? { value: 'Ahora', position: 'insideTopRight', fill: 'rgba(0,214,178,0.8)', fontSize: 10, fontWeight: 700 } : undefined}
                     />
 
                     {/* Future zone highlight */}
@@ -807,7 +942,7 @@ export default function KPIsPage() {
                     {anomalyPoints.map(ap => {
                       const d = chartData[ap.dataIdx]
                       if (!d || d.valor == null) return null
-                      const sevColor = ap.severidad === 'critica' ? '#FF6B6B' : ap.severidad === 'alta' ? '#00C9A7' : '#4A9EF0'
+                      const sevColor = ap.severidad === 'critica' ? '#FF6B6B' : ap.severidad === 'alta' ? '#00D6B2' : '#4A9EF0'
                       return (
                         <ReferenceDot key={`anom-${ap.id}`} x={d.fecha} y={d.valor} r={7}
                           fill={overlays.anomalias ? sevColor : 'transparent'}
@@ -901,15 +1036,15 @@ export default function KPIsPage() {
                 </div>
               )}
             </SpotlightCard>
-          </ScrollReveal>
+          </div>
 
           {/* Detection alerts for this KPI */}
           {overlays.anomalias && alertasDelKpi.length > 0 && (
-            <ScrollReveal delay={0.15} direction="up">
+            <div>
               <SpotlightCard className="p-5 sm:p-6" spotlightColor="rgba(255,107,107,0.1)" from="bottom">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00C9A7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00D6B2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                     </svg>
                     <h3 className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
@@ -922,7 +1057,7 @@ export default function KPIsPage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 320, overflowY: 'auto' }}>
                   {alertasDelKpi.slice(0, 5).map(a => {
-                    const sevColor = a.severidad === 'critica' ? '#FF6B6B' : a.severidad === 'alta' ? '#00C9A7' : a.severidad === 'media' ? '#4A9EF0' : '#00C9A7'
+                    const sevColor = a.severidad === 'critica' ? '#FF6B6B' : a.severidad === 'alta' ? '#00D6B2' : a.severidad === 'media' ? '#4A9EF0' : '#00D6B2'
                     const d = a.detalle_deteccion
                     const isExpanded = alertaDetalleId === a.id
                     return (
@@ -935,7 +1070,7 @@ export default function KPIsPage() {
                             <div style={{ display: 'flex', gap: 4 }}>
                               {d.ensemble.metodos_disponibles.map(m => {
                                 const voted = d.ensemble!.metodos_que_flaggearon.includes(m)
-                                const mColor = m === 'estadistico' ? '#00C9A7' : m === 'prophet' ? '#4A9EF0' : '#FFD166'
+                                const mColor = m === 'estadistico' ? '#00D6B2' : m === 'prophet' ? '#4A9EF0' : '#FFD166'
                                 return (
                                   <span key={m} title={`${m}: ${voted ? 'anomalía' : 'normal'}`} style={{ fontSize: 9, fontWeight: 700, width: 18, height: 18, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', background: voted ? `${mColor}25` : 'rgba(255,255,255,0.03)', color: voted ? mColor : 'var(--muted)', border: `1px solid ${voted ? mColor + '40' : 'var(--border)'}` }}>
                                     {m === 'estadistico' ? 'σ' : m === 'prophet' ? 'P' : 'F'}
@@ -945,7 +1080,7 @@ export default function KPIsPage() {
                             </div>
                           )}
                           <motion.button onClick={() => setAlertaDetalleId(isExpanded ? null : a.id)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                            style={{ marginLeft: 'auto', width: 22, height: 22, borderRadius: 11, background: isExpanded ? 'rgba(0,201,167,0.2)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isExpanded ? '#00C9A7' : 'var(--muted)' }}>
+                            style={{ marginLeft: 'auto', width: 22, height: 22, borderRadius: 11, background: isExpanded ? 'rgba(0,214,178,0.2)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isExpanded ? '#00D6B2' : 'var(--muted)' }}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                             </svg>
@@ -960,10 +1095,10 @@ export default function KPIsPage() {
                         {isExpanded && d && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {d.estadistico && (
-                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(0,201,167,0.08)', border: '1px solid rgba(0,201,167,0.2)', fontSize: 12 }}>
-                                <p style={{ fontWeight: 700, color: '#00C9A7', marginBottom: 3 }}>σ Estadístico — {d.estadistico.es_anomalia ? '⚠ Anomalía' : '✓ Normal'}</p>
+                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(0,214,178,0.08)', border: '1px solid rgba(0,214,178,0.2)', fontSize: 12 }}>
+                                <p style={{ fontWeight: 700, color: '#00D6B2', marginBottom: 3 }}>σ Estadístico — {d.estadistico.es_anomalia ? '⚠ Anomalía' : '✓ Normal'}</p>
                                 <p style={{ color: 'var(--muted)', lineHeight: 1.5 }}>
-                                  Desviación: <strong style={{ color: '#00C9A7' }}>{d.estadistico.desviacion}%</strong> (umbral: {d.estadistico.umbral}%) ·{' '}
+                                  Desviación: <strong style={{ color: '#00D6B2' }}>{d.estadistico.desviacion}%</strong> (umbral: {d.estadistico.umbral}%) ·{' '}
                                   Esperado: {d.estadistico.valor_esperado} · {d.estadistico.datos_usados} datos hist.
                                 </p>
                               </div>
@@ -982,13 +1117,13 @@ export default function KPIsPage() {
                               <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(255,209,102,0.08)', border: '1px solid rgba(255,209,102,0.2)', fontSize: 12 }}>
                                 <p style={{ fontWeight: 700, color: '#FFD166', marginBottom: 3 }}>F Isolation Forest — {d.pyod.es_anomalia ? '⚠ Outlier' : '✓ Normal'}</p>
                                 <p style={{ color: 'var(--muted)', lineHeight: 1.5 }}>
-                                  Score: <strong style={{ color: d.pyod.es_outlier ? '#FF6B6B' : '#00C9A7' }}>{d.pyod.anomaly_score}</strong> (umbral: {d.pyod.threshold}) ·
+                                  Score: <strong style={{ color: d.pyod.es_outlier ? '#FF6B6B' : '#00D6B2' }}>{d.pyod.anomaly_score}</strong> (umbral: {d.pyod.threshold}) ·
                                   Media hist.: {d.pyod.media_historica} ± {d.pyod.std_historica?.toFixed(1)}
                                 </p>
                               </div>
                             )}
                             {a.recomendacion && (
-                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(0,201,167,0.08)', border: '1px solid rgba(0,201,167,0.2)', fontSize: 12 }}>
+                              <div style={{ padding: '10px 16px', borderRadius: 10, background: 'rgba(0,214,178,0.08)', border: '1px solid rgba(0,214,178,0.2)', fontSize: 12 }}>
                                 <p style={{ fontWeight: 700, color: '#4A9EF0', fontSize: 11, marginBottom: 4 }}>Recomendación IA</p>
                                 <p style={{ color: 'var(--text)', opacity: 0.85, lineHeight: 1.6 }}>{a.recomendacion}</p>
                               </div>
@@ -1000,43 +1135,14 @@ export default function KPIsPage() {
                   })}
                 </div>
               </SpotlightCard>
-            </ScrollReveal>
+            </div>
           )}
 
-          {/* Stats grid */}
-          {chartSize !== 'completo' && (
-            <ScrollReveal delay={0.1} direction="up">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                {Object.entries(kpiConfig).map(([tipo, c], i) => {
-                  const datos = kpiData[tipo] || []
-                  const ultimo = datos.length > 0 ? datos[datos.length - 1].valor : 0
-                  const penultimo = datos.length > 1 ? datos[datos.length - 2].valor : 0
-                  const diff = penultimo !== 0 ? ((ultimo - penultimo) / penultimo * 100).toFixed(1) : '0'
-                  const up = ultimo >= penultimo
-                  const isSelected = kpiSeleccionado === tipo
-                  const hasAlert = alertasKpi.some(a => a.tipo_kpi === tipo && a.estado === 'activa')
-                  return (
-                    <motion.div key={tipo} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.03 }}
-                      onClick={() => setKpiSeleccionado(tipo)} whileHover={{ scale: 1.03 }}
-                      style={{ padding: '14px 16px', borderRadius: 16, cursor: 'pointer', background: isSelected ? `${c.color}15` : 'var(--glass)', backdropFilter: 'blur(20px)', border: `1px solid ${isSelected ? c.color + '40' : hasAlert ? 'rgba(255,107,107,0.25)' : 'var(--border)'}`, transition: 'all 0.2s' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500 }}>{c.label}</p>
-                        <p style={{ fontSize: 11, color: up ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>{up ? '↑' : '↓'}{Math.abs(Number(diff))}%</p>
-                      </div>
-                      <p className="font-display" style={{ fontSize: 20, fontWeight: 700, color: c.color }}>
-                        {c.unit}<CountUp to={ultimo} decimals={1} duration={0.8} />
-                      </p>
-                    </motion.div>
-                  )
-                })}
-              </div>
-            </ScrollReveal>
-          )}
         </div>
       )}
 
       {/* ── GRID VIEW ── */}
-      {vista === 'grid' && (
+      {unidad === 'dias' && vista === 'grid' && (
         <FadeContent direction="up" delay={0.1} duration={0.4}>
           <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <p style={{ fontSize: 13, color: 'var(--muted)' }}>Overlays activos:</p>
@@ -1072,16 +1178,17 @@ export default function KPIsPage() {
       )}
 
       {/* ── TODAS VIEW (normalized) ── */}
-      {vista === 'todas' && (
+      {unidad === 'dias' && vista === 'todas' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <ScrollReveal delay={0.1} direction="up">
-            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,201,167,0.12)" from="bottom">
+          <div>
+            <SpotlightCard className="p-6 sm:p-8 lg:p-10" spotlightColor="rgba(0,214,178,0.12)" from="bottom">
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-                    Todos los KPIs — Vista normalizada
+                  <span className="eyebrow" style={{ marginBottom: 8, display: 'inline-flex' }}>Vista normalizada</span>
+                  <h2 className="display-md" style={{ color: 'var(--text)', margin: 0, marginBottom: 8 }}>
+                    Todos los KPIs
                   </h2>
-                  <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>
+                  <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, maxWidth: 560 }}>
                     Cada KPI se normaliza como <strong style={{ color: 'var(--text)' }}>% de desviación respecto a su propia media</strong>.
                     Permite comparar tendencias independientemente de la escala ($, %, puntos).
                     La línea 0% es el promedio histórico de cada KPI.
@@ -1097,15 +1204,15 @@ export default function KPIsPage() {
               ) : (
                 <ResponsiveContainer width="100%" height={460}>
                   <LineChart data={datosNormalizados} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,201,167,0.08)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,214,178,0.08)" />
                     <XAxis dataKey="fecha" stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false} />
                     <YAxis stroke="var(--muted)" tick={{ fontSize: 11, fill: 'var(--muted)' }} axisLine={false} tickLine={false}
                       tickFormatter={(v) => `${v > 0 ? '+' : ''}${v}%`} />
                     <Tooltip content={<NormalizedTooltip />} />
                     <Legend wrapperStyle={{ color: 'var(--muted)', fontSize: 12, paddingTop: 20 }} />
                     {/* Zero reference line */}
-                    <ReferenceLine y={0} stroke="rgba(0,201,167,0.3)" strokeWidth={1.5} strokeDasharray="6 3"
-                      label={{ value: 'Media base', position: 'insideLeft', fill: 'rgba(0,201,167,0.6)', fontSize: 10 }} />
+                    <ReferenceLine y={0} stroke="rgba(0,214,178,0.3)" strokeWidth={1.5} strokeDasharray="6 3"
+                      label={{ value: 'Media base', position: 'insideLeft', fill: 'rgba(0,214,178,0.6)', fontSize: 10 }} />
                     {/* Alert zones */}
                     <ReferenceArea y1={35} y2={200} fill="rgba(255,107,107,0.05)" fillOpacity={1} />
                     <ReferenceArea y1={-200} y2={-35} fill="rgba(255,107,107,0.05)" fillOpacity={1} />
@@ -1122,7 +1229,7 @@ export default function KPIsPage() {
                 </ResponsiveContainer>
               )}
 
-              <div style={{ marginTop: 14, padding: '10px 16px', borderRadius: 12, background: 'rgba(0,201,167,0.05)', border: '1px solid rgba(0,201,167,0.12)', display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 11 }}>
+              <div style={{ marginTop: 14, padding: '10px 16px', borderRadius: 12, background: 'rgba(0,214,178,0.05)', border: '1px solid rgba(0,214,178,0.12)', display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 11 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--muted)' }}>
                   <div style={{ width: 14, height: 8, borderRadius: 2, background: 'rgba(255,107,107,0.15)' }} />
                   Zona de alerta (&gt;35% desviación)
@@ -1132,7 +1239,7 @@ export default function KPIsPage() {
                 </span>
               </div>
             </SpotlightCard>
-          </ScrollReveal>
+          </div>
 
           {/* KPI summary row */}
           <FadeContent direction="up" delay={0.15} duration={0.4}>

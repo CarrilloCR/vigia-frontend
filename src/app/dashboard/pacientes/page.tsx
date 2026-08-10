@@ -9,10 +9,10 @@ import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
 import CountUp from '../../../components/reactbits/CountUp'
 import ConfirmModal from '../../../components/ui/ConfirmModal'
+import { SortControl, Paginacion } from '../../../components/ui/ListControls'
+import { useSortPaginate } from '../../../lib/useSortPaginate'
 import SedeSelector from '../../../components/ui/SedeSelector'
 import SpotlightCard from '../../../components/reactbits/SpotlightCard'
-import ScrollReveal from '../../../components/reactbits/ScrollReveal'
-import GradientText from '../../../components/reactbits/GradientText'
 import TiltedCard from '../../../components/reactbits/TiltedCard'
 import Magnet from '../../../components/reactbits/Magnet'
 import StarBorder from '../../../components/reactbits/StarBorder'
@@ -34,7 +34,7 @@ interface Paciente {
 
 interface Sede { id: number; nombre: string }
 
-const colores = ['#00C9A7','#FF6B6B','#00C9A7','#4A9EF0','#00A88A','#B06EF5','#00C9A7','#FFD166']
+const colores = ['#00D6B2','#FF6B6B','#00D6B2','#4A9EF0','#00A88A','#B06EF5','#00D6B2','#FFD166']
 
 function getColor(nombre: string) {
   let hash = 0
@@ -96,7 +96,6 @@ export default function PacientesPage() {
   const [error, setError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: number; name: string }>({ open: false, id: 0, name: '' })
   const [mostrarInactivos, setMostrarInactivos] = useState(false)
-  const [displayLimit, setDisplayLimit] = useState(25)
   const [confirmLimpiarInactivos, setConfirmLimpiarInactivos] = useState(false)
   const [form, setForm] = useState({
     nombre: '', apellido: '', telefono: '', email: '', fecha_nacimiento: '',
@@ -197,9 +196,20 @@ export default function PacientesPage() {
     `${p.nombre} ${p.apellido} ${p.email}`.toLowerCase().includes(busqueda.toLowerCase())
   )
 
+  const sp = useSortPaginate(pacientesFiltrados, {
+    pageSize: 25,
+    initialSort: 'nombre',
+    sortOptions: [
+      { key: 'nombre', label: 'Nombre', get: p => `${p.nombre} ${p.apellido}` },
+      { key: 'citas', label: 'N.º de citas', get: p => citas[p.id] || 0 },
+      { key: 'primera_visita', label: 'Primera visita', get: p => p.primera_visita || '' },
+      { key: 'sede', label: 'Sede', get: p => p.sede_nombre || '' },
+    ],
+  })
+
   const stats = [
-    { label: 'Total pacientes', value: pacientes.length, color: '#00C9A7' },
-    { label: 'Con citas', value: Object.keys(citas).length, color: '#00C9A7' },
+    { label: 'Total pacientes', value: pacientes.length, color: '#00D6B2' },
+    { label: 'Con citas', value: Object.keys(citas).length, color: '#00D6B2' },
     { label: 'Sin citas', value: pacientes.filter(p => !citas[p.id]).length, color: '#FF6B6B' },
     { label: 'Nuevos este mes', value: pacientes.filter(p => {
       const d = new Date(p.primera_visita)
@@ -214,7 +224,8 @@ export default function PacientesPage() {
         <FadeContent direction="down" duration={0.5}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
             <div>
-              <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}><GradientText text="Pacientes" className="font-display" /></h1>
+              <span className="eyebrow" style={{ marginBottom: 10, display: 'inline-flex' }}>Gestión de pacientes</span>
+              <h1 className="display-md" style={{ color: 'var(--text)', margin: 0 }}>Pacientes</h1>
               <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>{pacientesFiltrados.length} registrados</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -246,7 +257,7 @@ export default function PacientesPage() {
               )}
               <Magnet strength={0.3}>
                 <motion.button onClick={abrirCrear} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,201,167,0.3)' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 22px', borderRadius: 'var(--r-md)', background: 'linear-gradient(135deg, var(--jade), #06B79B)', color: '#03130F', fontSize: 15, fontWeight: 700, border: '1px solid rgba(0,214,178,0.5)', cursor: 'pointer', boxShadow: 'var(--shadow-brand)' }}>
                   <PlusIcon /> Agregar paciente
                 </motion.button>
               </Magnet>
@@ -257,7 +268,7 @@ export default function PacientesPage() {
         {/* STATS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
           {stats.map((s, i) => (
-            <ScrollReveal key={i} delay={i * 0.09} direction="up">
+            <div key={s.label ?? i}>
               <TiltedCard tiltAmount={7} scaleOnHover={1.03}>
                 <div style={{ padding: '24px', borderRadius: 24, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
                   <p className="font-display" style={{ fontSize: 40, fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: 8 }}>
@@ -266,7 +277,7 @@ export default function PacientesPage() {
                   <p style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 500 }}>{s.label}</p>
                 </div>
               </TiltedCard>
-            </ScrollReveal>
+            </div>
           ))}
         </div>
 
@@ -285,11 +296,14 @@ export default function PacientesPage() {
         {/* TABLA */}
         <FadeContent direction="up" delay={0.25} duration={0.4}>
           <GlowingCard className="p-6 sm:p-8 lg:p-10">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, gap: 14, flexWrap: 'wrap' }}>
               <h2 className="font-display" style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>Lista de pacientes</h2>
-              <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
-                {pacientesFiltrados.length} pacientes
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <SortControl sortOptions={sp.sortOptions} sortKey={sp.sortKey} setSortKey={sp.setSortKey} dir={sp.dir} toggleDir={sp.toggleDir} />
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)' }}>
+                  {pacientesFiltrados.length} pacientes
+                </span>
+              </div>
             </div>
 
             {loading ? (
@@ -319,7 +333,7 @@ export default function PacientesPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <AnimatePresence>
-                  {pacientesFiltrados.slice(0, displayLimit).map((p, i) => {
+                  {sp.paged.map((p, i) => {
                     const color = getColor(p.nombre + p.apellido)
                     const edad = calcularEdad(p.fecha_nacimiento)
                     const numCitas = citas[p.id] || 0
@@ -346,7 +360,7 @@ export default function PacientesPage() {
                             {p.telefono && <p style={{ fontSize: 12, color: 'var(--muted)' }}>📞 {p.telefono}</p>}
                             {edad !== null && <p style={{ fontSize: 12, color: 'var(--muted)' }}>🎂 {edad} años</p>}
                             {p.sede_nombre && (
-                              <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 20, background: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: '1px solid rgba(0,201,167,0.3)' }}>
+                              <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 20, background: 'rgba(0,214,178,0.15)', color: '#00D6B2', border: '1px solid rgba(0,214,178,0.3)' }}>
                                 {p.sede_nombre}
                               </span>
                             )}
@@ -372,9 +386,14 @@ export default function PacientesPage() {
                           {!p.activo && (
                             <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: 'rgba(255,107,107,0.12)', color: '#FF6B6B', border: '1px solid rgba(255,107,107,0.3)' }}>Inactivo</span>
                           )}
+                          <motion.button onClick={() => router.push(`/dashboard/paciente/${p.id}`)}
+                            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Ver detalle"
+                            style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(176,110,245,0.12)', border: '1px solid rgba(176,110,245,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#B06EF5', fontSize: 15 }}>
+                            →
+                          </motion.button>
                           <motion.button onClick={() => abrirEditar(p)}
                             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                            style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(0,201,167,0.12)', border: '1px solid rgba(0,201,167,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
+                            style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(0,214,178,0.12)', border: '1px solid rgba(0,214,178,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--primary)' }}>
                             <EditIcon />
                           </motion.button>
                           {p.activo ? (
@@ -386,7 +405,7 @@ export default function PacientesPage() {
                           ) : (
                             <motion.button onClick={async () => { await api.patch(`/pacientes/${p.id}/`, { activo: true }); fetchData() }}
                               whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(0,201,167,0.12)', border: '1px solid rgba(0,201,167,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#00C9A7', fontSize: 16, fontWeight: 700 }}>
+                              style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(0,214,178,0.12)', border: '1px solid rgba(0,214,178,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#00D6B2', fontSize: 16, fontWeight: 700 }}>
                               ↩
                             </motion.button>
                           )}
@@ -395,13 +414,8 @@ export default function PacientesPage() {
                     )
                   })}
                 </AnimatePresence>
-                {displayLimit < pacientesFiltrados.length && (
-                  <motion.button onClick={() => setDisplayLimit(v => v + 50)}
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    style={{ marginTop: 8, padding: '12px', borderRadius: 14, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer', width: '100%' }}>
-                    Ver más ({pacientesFiltrados.length - displayLimit} restantes)
-                  </motion.button>
-                )}
+                <Paginacion from={sp.from} to={sp.to} total={sp.total} page={sp.page} totalPages={sp.totalPages}
+                  setPage={sp.setPage} pageSize={sp.pageSize} setPageSize={sp.setPageSize} />
               </div>
             )}
           </GlowingCard>

@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../lib/axios'
 import { useAuthStore } from '../../../store/auth'
 import { useThemeStore } from '../../../store/theme'
+import { usePrefsStore } from '../../../store/prefs'
+import { IDIOMAS } from '../../../lib/i18n'
 import { useToastStore } from '../../../store/toast'
 import GlowingCard from '../../../components/reactbits/GlowingCard'
 import FadeContent from '../../../components/reactbits/FadeContent'
@@ -156,9 +158,9 @@ const EQUIPO_ROLES: { key: EquipoRol; label: string; desc: string }[] = [
   { key: 'viewer',  label: 'Visualizador',   desc: 'Solo lectura del dashboard' },
 ]
 const EQUIPO_ROL_STYLE: Record<EquipoRol, { bg: string; color: string; border: string }> = {
-  admin:   { bg: 'rgba(0,201,167,0.15)', color: '#00C9A7', border: 'rgba(0,201,167,0.3)' },
+  admin:   { bg: 'rgba(0,214,178,0.15)', color: '#00D6B2', border: 'rgba(0,214,178,0.3)' },
   gerente: { bg: 'rgba(74,158,240,0.12)', color: '#4A9EF0', border: 'rgba(74,158,240,0.25)' },
-  medico:  { bg: 'rgba(0,201,167,0.12)', color: '#00C9A7', border: 'rgba(0,201,167,0.25)' },
+  medico:  { bg: 'rgba(0,214,178,0.12)', color: '#00D6B2', border: 'rgba(0,214,178,0.25)' },
   viewer:  { bg: 'rgba(139,137,160,0.1)',  color: '#8B89A0', border: 'rgba(139,137,160,0.2)' },
 }
 
@@ -201,48 +203,57 @@ const SECTIONS: { key: Section; label: string; icon: React.ReactNode; desc: stri
   { key: 'notificaciones', label: 'Notificaciones', icon: <BellIcon />, desc: 'Alertas y correos', roles: ['superadmin', 'admin', 'gerente'] },
   { key: 'automatizacion', label: 'Automatización', icon: <AutoIcon />, desc: 'Motor y análisis IA', roles: ['superadmin', 'admin'] },
   { key: 'alertas', label: 'Reglas de Alertas', icon: <SlidersIcon />, desc: 'Umbrales por KPI', roles: ['superadmin', 'admin', 'gerente'] },
-  { key: 'integraciones', label: 'Integraciones', icon: <LinkIcon />, desc: 'Conexiones externas', roles: ['superadmin', 'admin'] },
+  { key: 'integraciones', label: 'Integraciones', icon: <LinkIcon />, desc: 'Conexiones externas', roles: ['superadmin', 'admin', 'gerente'] },
   { key: 'facturacion', label: 'Facturación', icon: <CreditCardIcon />, desc: 'Plan y pagos', roles: ['superadmin', 'admin'] },
   { key: 'equipo', label: 'Equipo', icon: <TeamIcon />, desc: 'Usuarios y roles de acceso', roles: ['superadmin', 'admin', 'gerente'] },
   { key: 'superadmin', label: 'Super Admin', icon: <BuildingIcon />, desc: 'Gestión global de clínicas', superadminOnly: true },
+]
+
+const SECTION_GROUPS: { label: string; keys: Section[] }[] = [
+  { label: 'Cuenta',  keys: ['perfil', 'seguridad', 'apariencia'] },
+  { label: 'Clínica', keys: ['clinica', 'notificaciones', 'automatizacion', 'alertas'] },
+  { label: 'Sistema', keys: ['integraciones', 'facturacion', 'equipo'] },
+  { label: 'Global',  keys: ['superadmin'] },
 ]
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '13px 16px',
-  borderRadius: 12,
-  background: 'rgba(255,255,255,0.04)',
+  padding: '13px 15px',
+  borderRadius: 'var(--r-md)',
+  background: 'var(--sunken)',
   border: '1px solid var(--border)',
   color: 'var(--text)',
-  fontSize: 15,
+  fontSize: 14.5,
   outline: 'none',
-  transition: 'border-color 0.2s',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
 }
 
 const labelStyle: React.CSSProperties = {
-  fontSize: 12,
-  color: 'var(--muted)',
-  marginBottom: 6,
-  fontWeight: 500,
+  fontSize: 11,
+  color: 'var(--sub)',
+  marginBottom: 7,
+  fontWeight: 600,
   textTransform: 'uppercase',
-  letterSpacing: '0.5px',
+  letterSpacing: '0.09em',
   display: 'block',
 }
 
 const sectionTitle: React.CSSProperties = {
-  fontSize: 22,
+  fontFamily: 'Syne, sans-serif',
+  fontSize: 16,
   fontWeight: 700,
   color: 'var(--text)',
-  marginBottom: 8,
+  marginBottom: 6,
+  letterSpacing: '-0.01em',
 }
 
 const sectionDesc: React.CSSProperties = {
-  fontSize: 14,
+  fontSize: 13.5,
   color: 'var(--muted)',
-  marginBottom: 28,
-  lineHeight: 1.5,
+  marginBottom: 24,
+  lineHeight: 1.6,
 }
 
 // ─── Sub-components (defined outside to prevent remount on parent re-render) ──
@@ -252,7 +263,7 @@ function Skeleton({ h = 52, count = 3 }: { h?: number; count?: number }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {Array.from({ length: count }).map((_, i) => (
         <motion.div key={i} animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-          style={{ height: h, borderRadius: 14, background: 'rgba(255,255,255,0.04)' }} />
+          style={{ height: h, borderRadius: 14, background: 'var(--sunken)' }} />
       ))}
     </div>
   )
@@ -263,16 +274,16 @@ function SaveButton({ onClick, loading, label = 'Guardar cambios' }: { onClick: 
     <motion.button onClick={onClick} disabled={loading}
       whileHover={{ scale: loading ? 1 : 1.02 }} whileTap={{ scale: loading ? 1 : 0.98 }}
       style={{
-        padding: '13px 32px', borderRadius: 14,
-        background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-        color: 'white', fontSize: 14, fontWeight: 600, border: 'none',
+        padding: '13px 30px', borderRadius: 'var(--r-md)',
+        background: 'linear-gradient(135deg, var(--jade), #06B79B)',
+        color: '#03130F', fontSize: 14, fontWeight: 700, border: '1px solid rgba(0,214,178,0.5)',
         cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
         display: 'flex', alignItems: 'center', gap: 8,
-        boxShadow: '0 4px 20px rgba(0,201,167,0.3)',
+        boxShadow: 'var(--shadow-brand)',
       }}>
       {loading
         ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-            style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%' }} />
+            style={{ width: 16, height: 16, border: '2px solid rgba(3,19,15,0.35)', borderTopColor: '#03130F', borderRadius: '50%' }} />
         : <CheckIcon />}
       {loading ? 'Guardando...' : label}
     </motion.button>
@@ -281,7 +292,7 @@ function SaveButton({ onClick, loading, label = 'Guardar cambios' }: { onClick: 
 
 function SettingRow({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--sunken)' }}>
       <div>
         <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{label}</p>
         {desc && <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{desc}</p>}
@@ -332,7 +343,8 @@ export default function ConfiguracionPage() {
   const [clinica, setClinica] = useState<Clinica | null>(null)
   const [sedes, setSedes] = useState<Sede[]>([])
   const [loadingClinica, setLoadingClinica] = useState(true)
-  const [editClinica, setEditClinica] = useState({ nombre: '', email: '' })
+  const [miembrosCount, setMiembrosCount] = useState(0)
+  const [editClinica, setEditClinica] = useState({ nombre: '', email: '', descripcion: '', ciudad: '', especialidad: '', color_acento: '', logo: '' })
   const [savingClinica, setSavingClinica] = useState(false)
 
   // ─── Sede CRUD state
@@ -355,9 +367,19 @@ export default function ConfiguracionPage() {
     emailAltas: true,
     emailMedias: true,
     emailBajas: false,
-    resumenDiario: true,
-    sonido: true,
   })
+  // Guarda las severidades notificables en la clínica (backend real).
+  const guardarSeveridades = async (next: typeof alertPrefs) => {
+    setAlertPrefs(next)
+    const sev = [
+      next.emailCriticas && 'critica', next.emailAltas && 'alta',
+      next.emailMedias && 'media', next.emailBajas && 'baja',
+    ].filter(Boolean).join(',')
+    try {
+      const res = await api.patch(`/clinicas/${clinicaId}/`, { notif_severidades: sev })
+      setClinica(res.data)
+    } catch { showToast('No se pudo guardar la preferencia', 'error') }
+  }
 
   // ─── WhatsApp state
   const [whatsappNumero, setWhatsappNumero] = useState('')
@@ -378,11 +400,8 @@ export default function ConfiguracionPage() {
 
   // ─── Apariencia state
   const { isDark, toggle: toggleTheme } = useThemeStore()
-  const [apariencia, setApariencia] = useState({
-    animaciones: true,
-    compacto: false,
-    autoRefresh: true,
-  })
+  const { animaciones, compacto, autoRefresh, cursorCustom, sonido, idioma, fontSize, set: setPrefs } = usePrefsStore()
+  const prefs = { animaciones, compacto, autoRefresh, cursorCustom, sonido }
 
   // ─── Integraciones state
   const [integraciones, setIntegraciones] = useState<IntegracionExterna[]>([])
@@ -391,7 +410,7 @@ export default function ConfiguracionPage() {
   // ─── Super Admin state
   const [todasClinicas, setTodasClinicas] = useState<Clinica[]>([])
   const [loadingTodasClinicas, setLoadingTodasClinicas] = useState(false)
-  const [nuevaClinicaForm, setNuevaClinicaForm] = useState({ nombre: '', email: '', plan: 'basico' })
+  const [nuevaClinicaForm, setNuevaClinicaForm] = useState({ nombre: '', email: '', plan: 'gratis' })
   const [savingNuevaClinica, setSavingNuevaClinica] = useState(false)
   const [confirmDeleteClinica, setConfirmDeleteClinica] = useState<{ open: boolean; id: number; nombre: string }>({ open: false, id: 0, nombre: '' })
   const [deletingClinica, setDeletingClinica] = useState(false)
@@ -429,11 +448,50 @@ export default function ConfiguracionPage() {
   const [cardFocused, setCardFocused] = useState<string | null>(null)
   const [procesandoPago, setProcesandoPago] = useState(false)
 
+  // ─── Super admin: solicitudes de administrador pendientes (cross-clínica)
+  const [adminsPend, setAdminsPend] = useState<Array<{ id: number; nombre: string; email: string; clinica_nombre?: string; clinica?: number }>>([])
+  const [loadingAdminsPend, setLoadingAdminsPend] = useState(false)
+  // ─── Super admin: solicitudes de plan Enterprise
+  const [solicitudesPlan, setSolicitudesPlan] = useState<Array<{ id: number; clinica_nombre?: string; solicitante_nombre?: string; solicitante_email?: string; mensaje: string }>>([])
+  // ─── Admin: solicitar Enterprise
+  const [enterpriseModal, setEnterpriseModal] = useState(false)
+  const [enterpriseMsg, setEnterpriseMsg] = useState('')
+  const [enviandoEnterprise, setEnviandoEnterprise] = useState(false)
+  // ─── Cerrar otras sesiones (requiere contraseña)
+  const [cerrarSesModal, setCerrarSesModal] = useState(false)
+  const [cerrarSesPass, setCerrarSesPass] = useState('')
+  const [cerrandoSes, setCerrandoSes] = useState(false)
+  // ─── Sincronización con HIS externo
+  const [syncingHis, setSyncingHis] = useState(false)
+  // ─── Wizard de conexión HIS
+  const [hisModal, setHisModal] = useState(false)
+  const [hisForm, setHisForm] = useState({ nombre: '', url: '', key: '' })
+  const [hisProbando, setHisProbando] = useState(false)
+  const [hisResumen, setHisResumen] = useState<any>(null)
+  const [hisMapeo, setHisMapeo] = useState<Record<string, string> | null>(null)
+  const [hisConectando, setHisConectando] = useState(false)
+  // ─── Abandonar clínica / borrar perfil
+  const [abandonarModal, setAbandonarModal] = useState(false)
+  const [abandonarPass, setAbandonarPass] = useState('')
+  const [abandonando, setAbandonando] = useState(false)
+  const [borrandoPerfil, setBorrandoPerfil] = useState(false)
+
   // ─── Toast helper
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     if (type === 'success') toast.success(msg)
     else toast.error(msg)
   }
+
+  // Solo admin/superadmin editan la info de la clínica y sus sedes.
+  const puedeEditarClinica = user?.rol === 'admin' || user?.rol === 'superadmin'
+  // Límites del plan actual (cupos de miembros/sedes).
+  const PLAN_LIMITES: Record<string, { usuarios: number; sedes: number; label: string }> = {
+    gratis: { usuarios: 5, sedes: 1, label: 'Gratis' },
+    basico: { usuarios: 20, sedes: 2, label: 'Básico' },
+    profesional: { usuarios: 100, sedes: 4, label: 'Profesional' },
+    enterprise: { usuarios: 100000, sedes: 100000, label: 'Enterprise' },
+  }
+  const limitesPlan = PLAN_LIMITES[clinica?.plan ?? 'gratis'] ?? PLAN_LIMITES.gratis
 
   // ─── Data fetching
   useEffect(() => {
@@ -445,8 +503,18 @@ export default function ConfiguracionPage() {
       ]).then(([clinRes, sedesRes]) => {
         if (clinRes?.data) {
           setClinica(clinRes.data)
-          setEditClinica({ nombre: clinRes.data.nombre, email: clinRes.data.email })
+          setEditClinica({
+            nombre: clinRes.data.nombre || '', email: clinRes.data.email || '',
+            descripcion: clinRes.data.descripcion || '', ciudad: clinRes.data.ciudad || '',
+            especialidad: clinRes.data.especialidad || '', color_acento: clinRes.data.color_acento || '',
+            logo: clinRes.data.logo || '',
+          })
           setWhatsappNumero(clinRes.data.whatsapp_numero || '')
+          const sev = String(clinRes.data.notif_severidades || 'critica,alta,media,baja')
+          setAlertPrefs({
+            emailCriticas: sev.includes('critica'), emailAltas: sev.includes('alta'),
+            emailMedias: sev.includes('media'), emailBajas: sev.includes('baja'),
+          })
           setMotorConfig({
             motor_automatico: clinRes.data.motor_automatico ?? false,
             motor_intervalo_horas: clinRes.data.motor_intervalo_horas ?? 1,
@@ -455,6 +523,13 @@ export default function ConfiguracionPage() {
         }
         if (sedesRes?.data) setSedes(sedesRes.data.results || sedesRes.data)
       }).finally(() => setLoadingClinica(false))
+      // Conteo de miembros activos aprobados (cupo del plan)
+      api.get(`/usuarios/?clinica=${clinicaId}&estado=aprobado`)
+        .then(res => {
+          const data = res.data.results || res.data
+          setMiembrosCount((data as any[]).filter(u => !String(u.email || '').startsWith('INACTIVO')).length)
+        })
+        .catch(() => {})
     }
     if (activeSection === 'notificaciones' && loadingEmails) {
       api.get(`/emails-notificacion/?clinica=${clinicaId}`)
@@ -481,6 +556,16 @@ export default function ConfiguracionPage() {
     if (activeSection === 'superadmin' && user?.rol === 'superadmin' && !loadingTodasClinicas && todasClinicas.length === 0) {
       setLoadingTodasClinicas(true)
       api.get('/clinicas/').then(res => setTodasClinicas(res.data.results || res.data)).catch(() => {}).finally(() => setLoadingTodasClinicas(false))
+    }
+    if (activeSection === 'superadmin' && user?.rol === 'superadmin') {
+      setLoadingAdminsPend(true)
+      api.get('/usuarios/?estado=pendiente&rol=admin')
+        .then(res => setAdminsPend(res.data.results || res.data))
+        .catch(() => {})
+        .finally(() => setLoadingAdminsPend(false))
+      api.get('/facturacion/solicitudes-plan/?estado=pendiente')
+        .then(res => setSolicitudesPlan(res.data.results || res.data))
+        .catch(() => {})
     }
     if (activeSection === 'equipo' && loadingEquipo) {
       Promise.all([
@@ -820,7 +905,6 @@ export default function ConfiguracionPage() {
       case 'perfil':
         return (
           <motion.div key="perfil" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <h2 className="font-display" style={sectionTitle}>Perfil del administrador</h2>
             <p style={sectionDesc}>Administra tu información personal y cómo apareces en la plataforma.</p>
 
             <GlowingCard className="p-6 sm:p-8 lg:p-10">
@@ -845,7 +929,7 @@ export default function ConfiguracionPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: 'white', fontSize: 32, fontWeight: 700,
                     cursor: 'pointer', overflow: 'hidden', position: 'relative',
-                    border: '2px solid rgba(0,201,167,0.3)',
+                    border: '2px solid rgba(0,214,178,0.3)',
                   }}
                   title="Cambiar foto"
                 >
@@ -876,15 +960,15 @@ export default function ConfiguracionPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
                     <span style={{
                       fontSize: 12, padding: '4px 14px', borderRadius: 20,
-                      background: 'rgba(0,201,167,0.12)', color: 'var(--primary)',
-                      border: '1px solid rgba(0,201,167,0.2)', fontWeight: 600, textTransform: 'capitalize',
+                      background: 'rgba(0,214,178,0.12)', color: 'var(--primary)',
+                      border: '1px solid rgba(0,214,178,0.2)', fontWeight: 600, textTransform: 'capitalize',
                     }}>
                       {user?.rol || 'Administrador'}
                     </span>
                     <motion.button
                       onClick={() => avatarInputRef.current?.click()}
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                      style={{ fontSize: 12, padding: '4px 14px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--muted)', cursor: 'pointer' }}
+                      style={{ fontSize: 12, padding: '4px 14px', borderRadius: 20, background: 'var(--sunken)', border: '1px solid var(--border)', color: 'var(--muted)', cursor: 'pointer' }}
                     >
                       {avatarBase64 ? 'Cambiar foto' : 'Subir foto'}
                     </motion.button>
@@ -931,6 +1015,90 @@ export default function ConfiguracionPage() {
 
               <SaveButton onClick={handleSavePerfil} loading={savingPerfil} />
             </GlowingCard>
+
+            {/* Zona de peligro */}
+            <div style={{ marginTop: 24 }}>
+              <GlowingCard className="p-6 sm:p-8 lg:p-10" style={{ border: '1px solid rgba(232,93,93,0.25)' }}>
+                <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Zona de peligro</h3>
+                <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>Acciones irreversibles sobre tu cuenta.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '14px 18px', borderRadius: 14, background: 'var(--sunken)', border: '1px solid var(--border)' }}>
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>Borrar datos de perfil</p>
+                      <p style={{ fontSize: 12.5, color: 'var(--muted)', margin: '2px 0 0' }}>Elimina tu foto de perfil. Tu cuenta se conserva.</p>
+                    </div>
+                    <button disabled={borrandoPerfil}
+                      onClick={async () => {
+                        setBorrandoPerfil(true)
+                        try {
+                          await api.post('/auth/borrar-perfil/')
+                          setAvatarBase64('')
+                          useAuthStore.setState(s => ({ user: s.user ? { ...s.user, avatar: undefined } : null }))
+                          showToast('Datos de perfil borrados')
+                        } catch { showToast('No se pudo borrar', 'error') } finally { setBorrandoPerfil(false) }
+                      }}
+                      style={{ padding: '9px 18px', borderRadius: 11, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                      {borrandoPerfil ? 'Borrando…' : 'Borrar'}
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '14px 18px', borderRadius: 14, background: 'rgba(232,93,93,0.06)', border: '1px solid rgba(232,93,93,0.2)' }}>
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--danger)', margin: 0 }}>Abandonar la clínica</p>
+                      <p style={{ fontSize: 12.5, color: 'var(--muted)', margin: '2px 0 0' }}>Sales de la clínica y se elimina tu cuenta. No se puede deshacer.</p>
+                    </div>
+                    <button onClick={() => { setAbandonarPass(''); setAbandonarModal(true) }}
+                      style={{ padding: '9px 18px', borderRadius: 11, background: 'rgba(232,93,93,0.12)', border: '1px solid rgba(232,93,93,0.3)', color: 'var(--danger)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                      Abandonar
+                    </button>
+                  </div>
+                </div>
+              </GlowingCard>
+            </div>
+
+            {/* Modal abandonar clínica */}
+            <AnimatePresence>
+              {abandonarModal && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  onClick={(e) => { if (e.target === e.currentTarget) setAbandonarModal(false) }}
+                  style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(6,4,18,0.82)', backdropFilter: 'blur(12px)', padding: 20 }}>
+                  <motion.div initial={{ opacity: 0, scale: 0.93, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 16 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                    style={{ width: '100%', maxWidth: 440, borderRadius: 22, background: 'var(--bg)', border: '1px solid rgba(232,93,93,0.3)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)', overflow: 'hidden' }}>
+                    <div style={{ padding: '24px 26px 16px' }}>
+                      <h2 className="font-display" style={{ fontSize: 19, fontWeight: 700, color: 'var(--danger)', margin: 0 }}>Abandonar la clínica</h2>
+                      <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>
+                        Esta acción elimina tu cuenta y no se puede deshacer. Confirma tu contraseña.
+                      </p>
+                    </div>
+                    <div style={{ padding: '0 26px 8px' }}>
+                      <input type="password" value={abandonarPass} onChange={e => setAbandonarPass(e.target.value)} placeholder="Tu contraseña" style={inputStyle} autoFocus />
+                    </div>
+                    <div style={{ padding: '14px 26px 22px', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                      <button onClick={() => setAbandonarModal(false)}
+                        style={{ padding: '11px 20px', borderRadius: 12, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                        Cancelar
+                      </button>
+                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                        disabled={!abandonarPass || abandonando}
+                        onClick={async () => {
+                          setAbandonando(true)
+                          try {
+                            await api.post('/auth/abandonar-clinica/', { password: abandonarPass })
+                            useAuthStore.getState().clearAuth()
+                            router.push('/')
+                          } catch (err: any) {
+                            showToast(err.response?.data?.error || 'No se pudo abandonar la clínica', 'error')
+                            setAbandonando(false)
+                          }
+                        }}
+                        style={{ padding: '11px 22px', borderRadius: 12, border: 'none', color: 'white', fontSize: 14, fontWeight: 700, cursor: (!abandonarPass || abandonando) ? 'not-allowed' : 'pointer', opacity: (!abandonarPass || abandonando) ? 0.45 : 1, background: 'linear-gradient(135deg, #E85D5D, #d84a4a)' }}>
+                        {abandonando ? 'Saliendo…' : 'Sí, abandonar'}
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )
 
@@ -940,7 +1108,6 @@ export default function ConfiguracionPage() {
       case 'seguridad':
         return (
           <motion.div key="seguridad" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <h2 className="font-display" style={sectionTitle}>Seguridad</h2>
             <p style={sectionDesc}>Cambia tu contraseña y gestiona la seguridad de tu cuenta.</p>
 
             <GlowingCard className="p-6 sm:p-8 lg:p-10">
@@ -972,31 +1139,81 @@ export default function ConfiguracionPage() {
                 <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
                   Sesión actual
                 </h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,201,167,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', borderRadius: 16, background: 'var(--sunken)', border: '1px solid var(--border)' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,214,178,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', flexShrink: 0 }}>
                     <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                   </div>
                   <div style={{ flex: 1 }}>
                     <p style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>Navegador actual</p>
                     <p style={{ fontSize: 13, color: 'var(--muted)' }}>Sesión activa ahora</p>
                   </div>
-                  <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--success)', border: '1px solid rgba(0,201,167,0.2)' }}>
+                  <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'rgba(0,214,178,0.12)', color: 'var(--success)', border: '1px solid rgba(0,214,178,0.2)' }}>
                     Activa
                   </span>
                 </div>
 
-                <motion.button
-                  onClick={() => { useAuthStore.getState().clearAuth(); router.push('/') }}
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  style={{
-                    marginTop: 20, padding: '12px 24px', borderRadius: 12,
-                    background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)',
-                    color: 'var(--danger)', fontSize: 14, fontWeight: 500, cursor: 'pointer',
-                  }}>
-                  Cerrar todas las sesiones
-                </motion.button>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 20 }}>
+                  <motion.button
+                    onClick={() => { setCerrarSesPass(''); setCerrarSesModal(true) }}
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    style={{ padding: '12px 24px', borderRadius: 12, background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.2)', color: 'var(--danger)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                    Cerrar otras sesiones
+                  </motion.button>
+                  <motion.button
+                    onClick={() => { useAuthStore.getState().clearAuth(); router.push('/') }}
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    style={{ padding: '12px 24px', borderRadius: 12, background: 'var(--sunken)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                    Salir de esta sesión
+                  </motion.button>
+                </div>
               </GlowingCard>
             </div>
+
+            {/* Modal cerrar otras sesiones */}
+            <AnimatePresence>
+              {cerrarSesModal && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  onClick={(e) => { if (e.target === e.currentTarget) setCerrarSesModal(false) }}
+                  style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(6,4,18,0.82)', backdropFilter: 'blur(12px)', padding: 20 }}>
+                  <motion.div initial={{ opacity: 0, scale: 0.93, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 16 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                    style={{ width: '100%', maxWidth: 440, borderRadius: 22, background: 'var(--bg)', border: '1px solid var(--border)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)', overflow: 'hidden' }}>
+                    <div style={{ padding: '24px 26px 16px' }}>
+                      <h2 className="font-display" style={{ fontSize: 19, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Cerrar otras sesiones</h2>
+                      <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>
+                        Esto cerrará la sesión en todos los demás dispositivos. Confirma tu contraseña para continuar.
+                      </p>
+                    </div>
+                    <div style={{ padding: '0 26px 8px' }}>
+                      <input type="password" value={cerrarSesPass} onChange={e => setCerrarSesPass(e.target.value)}
+                        placeholder="Tu contraseña" style={inputStyle} autoFocus />
+                    </div>
+                    <div style={{ padding: '14px 26px 22px', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                      <button onClick={() => setCerrarSesModal(false)}
+                        style={{ padding: '11px 20px', borderRadius: 12, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                        Cancelar
+                      </button>
+                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                        disabled={!cerrarSesPass || cerrandoSes}
+                        onClick={async () => {
+                          setCerrandoSes(true)
+                          try {
+                            const keep = useAuthStore.getState().refreshToken || ''
+                            const res = await api.post('/auth/cerrar-sesiones/', { password: cerrarSesPass, keep_refresh: keep })
+                            setCerrarSesModal(false)
+                            showToast(res.data?.message || 'Sesiones cerradas')
+                          } catch (err: any) {
+                            showToast(err.response?.data?.error || 'No se pudieron cerrar las sesiones', 'error')
+                          } finally { setCerrandoSes(false) }
+                        }}
+                        style={{ padding: '11px 22px', borderRadius: 12, border: 'none', color: 'white', fontSize: 14, fontWeight: 700, cursor: (!cerrarSesPass || cerrandoSes) ? 'not-allowed' : 'pointer', opacity: (!cerrarSesPass || cerrandoSes) ? 0.45 : 1, background: 'linear-gradient(135deg, #E85D5D, #d84a4a)' }}>
+                        {cerrandoSes ? 'Cerrando…' : 'Cerrar sesiones'}
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )
 
@@ -1006,42 +1223,109 @@ export default function ConfiguracionPage() {
       case 'clinica':
         return (
           <motion.div key="clinica" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <h2 className="font-display" style={sectionTitle}>Clínica</h2>
             <p style={sectionDesc}>Información general de tu clínica y sedes registradas.</p>
 
             {loadingClinica ? <Skeleton count={2} h={80} /> : (
               <>
+                {/* ── Identidad de la clínica (resumen vivo) ── */}
+                <GlowingCard className="p-6 sm:p-8 lg:p-10" style={{ marginBottom: 24 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+                    <div style={{ width: 64, height: 64, borderRadius: 18, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: editClinica.logo ? 'transparent' : `linear-gradient(135deg, ${editClinica.color_acento || 'var(--primary)'}, var(--accent))`, border: '1px solid var(--border)' }}>
+                      {editClinica.logo
+                        ? <img src={editClinica.logo} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <span className="font-display" style={{ fontSize: 26, fontWeight: 800, color: '#fff' }}>{(editClinica.nombre || 'V').charAt(0).toUpperCase()}</span>}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <h3 className="font-display" style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', margin: 0 }}>{editClinica.nombre || 'Tu clínica'}</h3>
+                      <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
+                        {[editClinica.especialidad, editClinica.ciudad].filter(Boolean).join(' · ') || 'Sin especialidad ni ciudad definidas'}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      {[
+                        { k: limitesPlan.label, v: 'Plan' },
+                        { k: `${miembrosCount}/${limitesPlan.usuarios > 9999 ? '∞' : limitesPlan.usuarios}`, v: 'Miembros' },
+                        { k: `${sedes.length}/${limitesPlan.sedes > 9999 ? '∞' : limitesPlan.sedes}`, v: 'Sedes' },
+                      ].map(chip => (
+                        <div key={chip.v} style={{ textAlign: 'center', padding: '8px 16px', borderRadius: 14, background: 'var(--sunken)', border: '1px solid var(--border)' }}>
+                          <p className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{chip.k}</p>
+                          <p style={{ fontSize: 11, color: 'var(--muted)', margin: '2px 0 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{chip.v}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </GlowingCard>
+
                 <GlowingCard className="p-6 sm:p-8 lg:p-10">
-                  <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 24 }}>
-                    Datos generales
-                  </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
+                    <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Perfil de la clínica</h3>
+                    {!puedeEditarClinica && (
+                      <span style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: 'var(--sunken)', color: 'var(--muted)', border: '1px solid var(--border)' }}>
+                        Solo lectura · edita el administrador
+                      </span>
+                    )}
+                  </div>
+                  <fieldset disabled={!puedeEditarClinica} style={{ border: 'none', padding: 0, margin: 0, opacity: puedeEditarClinica ? 1 : 0.7 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                     <div>
                       <label style={labelStyle}>Nombre de la clínica</label>
-                      <input value={editClinica.nombre} onChange={e => setEditClinica({ ...editClinica, nombre: e.target.value })}
-                        style={inputStyle} />
+                      <input value={editClinica.nombre} onChange={e => setEditClinica({ ...editClinica, nombre: e.target.value })} style={inputStyle} />
                     </div>
                     <div>
                       <label style={labelStyle}>Email de contacto</label>
-                      <input type="email" value={editClinica.email} onChange={e => setEditClinica({ ...editClinica, email: e.target.value })}
-                        style={inputStyle} />
+                      <input type="email" value={editClinica.email} onChange={e => setEditClinica({ ...editClinica, email: e.target.value })} style={inputStyle} />
                     </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 32 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                     <div>
-                      <label style={labelStyle}>Plan actual</label>
-                      <input value={clinica?.plan || 'Básico'} disabled
-                        style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }} />
+                      <label style={labelStyle}>Especialidad</label>
+                      <input value={editClinica.especialidad} onChange={e => setEditClinica({ ...editClinica, especialidad: e.target.value })} placeholder="Ej: Medicina general" style={inputStyle} />
                     </div>
                     <div>
-                      <label style={labelStyle}>Estado</label>
-                      <div style={{ ...inputStyle, display: 'flex', alignItems: 'center', gap: 8, opacity: 0.5, cursor: 'not-allowed' }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: clinica?.activa ? 'var(--success)' : 'var(--danger)' }} />
-                        {clinica?.activa ? 'Activa' : 'Inactiva'}
+                      <label style={labelStyle}>Ciudad</label>
+                      <input value={editClinica.ciudad} onChange={e => setEditClinica({ ...editClinica, ciudad: e.target.value })} placeholder="Ej: San José, CR" style={inputStyle} />
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={labelStyle}>Descripción</label>
+                    <textarea value={editClinica.descripcion} onChange={e => setEditClinica({ ...editClinica, descripcion: e.target.value })}
+                      placeholder="Breve descripción o misión de la clínica" rows={3}
+                      style={{ ...inputStyle, resize: 'vertical', minHeight: 80, fontFamily: 'inherit' }} />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28, alignItems: 'end' }}>
+                    <div>
+                      <label style={labelStyle}>Color de acento</label>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        <input type="color" value={editClinica.color_acento || '#00D6B2'} onChange={e => setEditClinica({ ...editClinica, color_acento: e.target.value })}
+                          style={{ width: 48, height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--sunken)', cursor: puedeEditarClinica ? 'pointer' : 'not-allowed', padding: 2 }} />
+                        <input value={editClinica.color_acento} onChange={e => setEditClinica({ ...editClinica, color_acento: e.target.value })} placeholder="#00D6B2" style={{ ...inputStyle, flex: 1 }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Logo de la clínica</label>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        <label style={{ padding: '10px 16px', borderRadius: 10, background: 'var(--sunken)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: puedeEditarClinica ? 'pointer' : 'not-allowed' }}>
+                          Subir imagen
+                          <input type="file" accept="image/*" style={{ display: 'none' }} disabled={!puedeEditarClinica}
+                            onChange={e => {
+                              const file = e.target.files?.[0]; if (!file) return
+                              if (file.size > 1024 * 1024) return showToast('El logo no puede superar 1 MB', 'error')
+                              const reader = new FileReader()
+                              reader.onload = () => setEditClinica(c => ({ ...c, logo: String(reader.result) }))
+                              reader.readAsDataURL(file)
+                            }} />
+                        </label>
+                        {editClinica.logo && (
+                          <button onClick={() => setEditClinica(c => ({ ...c, logo: '' }))}
+                            style={{ padding: '10px 14px', borderRadius: 10, background: 'var(--sunken)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 13, cursor: 'pointer' }}>
+                            Quitar
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
-                  <SaveButton onClick={handleSaveClinica} loading={savingClinica} />
+                  {puedeEditarClinica && <SaveButton onClick={handleSaveClinica} loading={savingClinica} />}
+                  </fieldset>
                 </GlowingCard>
 
                 {/* Sedes */}
@@ -1052,20 +1336,25 @@ export default function ConfiguracionPage() {
                         Sedes
                       </h3>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
-                          {sedes.length} {sedes.length === 1 ? 'sede' : 'sedes'}
+                        <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)' }}>
+                          {sedes.length} / {limitesPlan.sedes > 9999 ? '∞' : limitesPlan.sedes} {sedes.length === 1 ? 'sede' : 'sedes'}
                         </span>
-                        <motion.button
-                          onClick={() => { setShowNuevaSede(v => !v); setEditandoSede(null) }}
-                          whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
-                            borderRadius: 10, background: showNuevaSede ? 'rgba(0,201,167,0.2)' : 'rgba(0,201,167,0.1)',
-                            border: '1px solid rgba(0,201,167,0.3)', color: 'var(--primary)',
-                            fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                          }}>
-                          <PlusIcon /> Nueva sede
-                        </motion.button>
+                        {puedeEditarClinica && (
+                          <motion.button
+                            onClick={() => {
+                              if (sedes.length >= limitesPlan.sedes) { showToast(`Tu plan ${limitesPlan.label} permite ${limitesPlan.sedes} sede(s). Mejora el plan para agregar más.`, 'error'); return }
+                              setShowNuevaSede(v => !v); setEditandoSede(null)
+                            }}
+                            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+                              borderRadius: 10, background: showNuevaSede ? 'rgba(0,214,178,0.2)' : 'rgba(0,214,178,0.1)',
+                              border: '1px solid rgba(0,214,178,0.3)', color: 'var(--primary)',
+                              fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                            }}>
+                            <PlusIcon /> Nueva sede
+                          </motion.button>
+                        )}
                       </div>
                     </div>
 
@@ -1075,7 +1364,7 @@ export default function ConfiguracionPage() {
                         <motion.div
                           initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                           style={{ overflow: 'hidden', marginBottom: 20 }}>
-                          <div style={{ padding: '20px', borderRadius: 16, background: 'rgba(0,201,167,0.06)', border: '1px solid rgba(0,201,167,0.2)', marginBottom: 4 }}>
+                          <div style={{ padding: '20px', borderRadius: 16, background: 'rgba(0,214,178,0.06)', border: '1px solid rgba(0,214,178,0.2)', marginBottom: 4 }}>
                             <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', marginBottom: 16 }}>Nueva sede</p>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 16 }}>
                               <div>
@@ -1102,7 +1391,7 @@ export default function ConfiguracionPage() {
                               </motion.button>
                               <motion.button onClick={() => setShowNuevaSede(false)}
                                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                                style={{ padding: '9px 20px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)' }}>
+                                style={{ padding: '9px 20px', borderRadius: 10, background: 'var(--lift)', color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)' }}>
                                 Cancelar
                               </motion.button>
                             </div>
@@ -1122,10 +1411,10 @@ export default function ConfiguracionPage() {
                             <motion.div key={s.id}
                               initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }}
                               transition={{ delay: i * 0.04 }}
-                              style={{ borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                              style={{ borderRadius: 16, background: 'var(--sunken)', border: '1px solid var(--border)', overflow: 'hidden' }}>
                               {/* Row */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px' }}>
-                                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,201,167,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,214,178,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
                                   <MapPinIcon />
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1135,22 +1424,23 @@ export default function ConfiguracionPage() {
                                   </p>
                                 </div>
                                 {/* Status toggle */}
-                                <motion.button onClick={() => handleToggleActiva(s)}
-                                  whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                                  title={s.activa ? 'Desactivar sede' : 'Activar sede'}
+                                <motion.button onClick={() => { if (puedeEditarClinica) handleToggleActiva(s) }}
+                                  whileHover={puedeEditarClinica ? { scale: 1.04 } : {}} whileTap={puedeEditarClinica ? { scale: 0.96 } : {}}
+                                  title={s.activa ? 'Sede activa' : 'Sede inactiva'}
                                   style={{
-                                    fontSize: 12, padding: '4px 12px', borderRadius: 20, cursor: 'pointer',
-                                    background: s.activa ? 'rgba(0,201,167,0.12)' : 'rgba(255,107,107,0.1)',
+                                    fontSize: 12, padding: '4px 12px', borderRadius: 20, cursor: puedeEditarClinica ? 'pointer' : 'default',
+                                    background: s.activa ? 'rgba(0,214,178,0.12)' : 'rgba(255,107,107,0.1)',
                                     color: s.activa ? 'var(--success)' : 'var(--danger)',
-                                    border: s.activa ? '1px solid rgba(0,201,167,0.2)' : '1px solid rgba(255,107,107,0.2)',
+                                    border: s.activa ? '1px solid rgba(0,214,178,0.2)' : '1px solid rgba(255,107,107,0.2)',
                                   }}>
                                   {s.activa ? 'Activa' : 'Inactiva'}
                                 </motion.button>
+                                {puedeEditarClinica && <>
                                 {/* Edit */}
                                 <motion.button
                                   onClick={() => { setEditandoSede(editandoSede === s.id ? null : s.id); setEditSedeForm({ nombre: s.nombre, direccion: s.direccion || '', telefono: s.telefono || '' }); setShowNuevaSede(false) }}
                                   whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                                  style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: editandoSede === s.id ? 'rgba(0,201,167,0.2)' : 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--primary)', cursor: 'pointer' }}>
+                                  style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: editandoSede === s.id ? 'rgba(0,214,178,0.2)' : 'var(--lift)', border: '1px solid var(--border)', color: 'var(--primary)', cursor: 'pointer' }}>
                                   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 </motion.button>
                                 {/* Delete */}
@@ -1160,6 +1450,7 @@ export default function ConfiguracionPage() {
                                   style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,107,107,0.08)', border: '1px solid rgba(255,107,107,0.15)', color: 'var(--danger)', cursor: 'pointer' }}>
                                   <TrashIcon />
                                 </motion.button>
+                                </>}
                               </div>
 
                               {/* Inline edit form */}
@@ -1167,7 +1458,7 @@ export default function ConfiguracionPage() {
                                 {editandoSede === s.id && (
                                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                                     style={{ overflow: 'hidden' }}>
-                                    <div style={{ padding: '16px 20px 20px', borderTop: '1px solid var(--border)', background: 'rgba(0,201,167,0.04)' }}>
+                                    <div style={{ padding: '16px 20px 20px', borderTop: '1px solid var(--border)', background: 'rgba(0,214,178,0.04)' }}>
                                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
                                         <div>
                                           <label style={labelStyle}>Nombre *</label>
@@ -1190,7 +1481,7 @@ export default function ConfiguracionPage() {
                                         </motion.button>
                                         <motion.button onClick={() => setEditandoSede(null)}
                                           whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                                          style={{ padding: '8px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)' }}>
+                                          style={{ padding: '8px 18px', borderRadius: 10, background: 'var(--lift)', color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer', border: '1px solid var(--border)' }}>
                                           Cancelar
                                         </motion.button>
                                       </div>
@@ -1227,8 +1518,29 @@ export default function ConfiguracionPage() {
       case 'notificaciones':
         return (
           <motion.div key="notificaciones" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <h2 className="font-display" style={sectionTitle}>Notificaciones</h2>
             <p style={sectionDesc}>Configura qué alertas recibes y los correos que reciben notificaciones.</p>
+
+            {/* Estado del correo según el plan */}
+            {(() => {
+              const correoActivo = clinica?.plan && clinica.plan !== 'gratis'
+              return (
+                <div style={{ marginBottom: 20, padding: '14px 18px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                  background: correoActivo ? 'rgba(0,214,178,0.08)' : 'rgba(245,197,24,0.08)',
+                  border: `1px solid ${correoActivo ? 'rgba(0,214,178,0.22)' : 'rgba(245,197,24,0.25)'}` }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: correoActivo ? 'var(--primary)' : '#E8C490' }}>
+                    {correoActivo ? '✓ Notificaciones por correo activas' : '⚠ Correo desactivado en plan Gratis'}
+                  </span>
+                  <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+                    · {emails.length} correo(s) configurado(s) · plan {limitesPlan.label}
+                  </span>
+                  {!correoActivo && (
+                    <span style={{ fontSize: 12.5, color: 'var(--muted)', marginLeft: 'auto' }}>
+                      Mejora a Básico para enviar alertas por correo.
+                    </span>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Alert preferences */}
             <GlowingCard className="p-6 sm:p-8 lg:p-10">
@@ -1238,23 +1550,20 @@ export default function ConfiguracionPage() {
               <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
                 Selecciona qué tipos de alertas deseas recibir por correo electrónico.
               </p>
-              <SettingRow label="Alertas críticas" desc="Recibir email inmediato cuando se detectan alertas críticas">
-                <ToggleSwitch checked={alertPrefs.emailCriticas} onChange={v => setAlertPrefs({ ...alertPrefs, emailCriticas: v })} />
+              <SettingRow label="Alertas críticas" desc="Enviar por correo las alertas de severidad crítica">
+                <ToggleSwitch checked={alertPrefs.emailCriticas} onChange={v => guardarSeveridades({ ...alertPrefs, emailCriticas: v })} />
               </SettingRow>
-              <SettingRow label="Alertas altas" desc="Notificaciones para alertas de severidad alta">
-                <ToggleSwitch checked={alertPrefs.emailAltas} onChange={v => setAlertPrefs({ ...alertPrefs, emailAltas: v })} />
+              <SettingRow label="Alertas altas" desc="Enviar por correo las alertas de severidad alta">
+                <ToggleSwitch checked={alertPrefs.emailAltas} onChange={v => guardarSeveridades({ ...alertPrefs, emailAltas: v })} />
               </SettingRow>
-              <SettingRow label="Alertas medias" desc="Incluir alertas de severidad media">
-                <ToggleSwitch checked={alertPrefs.emailMedias} onChange={v => setAlertPrefs({ ...alertPrefs, emailMedias: v })} />
+              <SettingRow label="Alertas medias" desc="Enviar por correo las alertas de severidad media">
+                <ToggleSwitch checked={alertPrefs.emailMedias} onChange={v => guardarSeveridades({ ...alertPrefs, emailMedias: v })} />
               </SettingRow>
-              <SettingRow label="Alertas bajas" desc="Incluir alertas informativas de baja severidad">
-                <ToggleSwitch checked={alertPrefs.emailBajas} onChange={v => setAlertPrefs({ ...alertPrefs, emailBajas: v })} />
+              <SettingRow label="Alertas bajas" desc="Enviar por correo las alertas informativas de baja severidad">
+                <ToggleSwitch checked={alertPrefs.emailBajas} onChange={v => guardarSeveridades({ ...alertPrefs, emailBajas: v })} />
               </SettingRow>
-              <SettingRow label="Resumen diario" desc="Recibir un resumen por correo con las alertas del día">
-                <ToggleSwitch checked={alertPrefs.resumenDiario} onChange={v => setAlertPrefs({ ...alertPrefs, resumenDiario: v })} />
-              </SettingRow>
-              <SettingRow label="Sonido de notificación" desc="Reproducir sonido al recibir alertas en el dashboard">
-                <ToggleSwitch checked={alertPrefs.sonido} onChange={v => setAlertPrefs({ ...alertPrefs, sonido: v })} />
+              <SettingRow label="Sonido de notificación" desc="Reproducir un sonido al recibir alertas nuevas en el dashboard">
+                <ToggleSwitch checked={prefs.sonido} onChange={v => setPrefs({ sonido: v })} />
               </SettingRow>
             </GlowingCard>
 
@@ -1282,7 +1591,7 @@ export default function ConfiguracionPage() {
                   {showEmailForm && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                       style={{ overflow: 'hidden', marginBottom: 20 }}>
-                      <div style={{ padding: '20px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+                      <div style={{ padding: '20px', borderRadius: 16, background: 'var(--sunken)', border: '1px solid var(--border)' }}>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                           <div>
                             <label style={labelStyle}>Correo electrónico *</label>
@@ -1300,7 +1609,7 @@ export default function ConfiguracionPage() {
                         <div style={{ display: 'flex', gap: 12 }}>
                           <motion.button onClick={() => setShowEmailForm(false)}
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                            style={{ padding: '10px 20px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 13, cursor: 'pointer' }}>
+                            style={{ padding: '10px 20px', borderRadius: 10, background: 'var(--sunken)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 13, cursor: 'pointer' }}>
                             Cancelar
                           </motion.button>
                           <motion.button onClick={handleAddEmail} disabled={savingEmail}
@@ -1323,7 +1632,7 @@ export default function ConfiguracionPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {emails.map((e, i) => (
                       <motion.div key={e.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                        style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 14, background: 'var(--sunken)', border: '1px solid var(--border)' }}>
                         <div style={{ width: 38, height: 38, borderRadius: 12, background: 'linear-gradient(135deg, var(--primary), var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>
                           {(e.nombre || e.email)[0].toUpperCase()}
                         </div>
@@ -1331,7 +1640,7 @@ export default function ConfiguracionPage() {
                           {e.nombre && <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{e.nombre}</p>}
                           <p style={{ fontSize: 13, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.email}</p>
                         </div>
-                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--success)', border: '1px solid rgba(0,201,167,0.2)' }}>
+                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'rgba(0,214,178,0.12)', color: 'var(--success)', border: '1px solid rgba(0,214,178,0.2)' }}>
                           Activo
                         </span>
                         <motion.button onClick={() => setConfirmDelete({ open: true, id: e.id, label: e.email })} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
@@ -1378,18 +1687,22 @@ export default function ConfiguracionPage() {
       case 'automatizacion':
         return (
           <motion.div key="automatizacion" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <h2 className="font-display" style={sectionTitle}>Automatización</h2>
             <p style={sectionDesc}>
               Controla si el motor de análisis corre automáticamente y si Claude genera recomendaciones.
               Desactiva cuando no necesites monitoreo activo para evitar costos innecesarios.
             </p>
 
+            {(clinica?.plan === 'gratis') && (
+              <div style={{ marginBottom: 20, padding: '12px 16px', borderRadius: 12, background: 'rgba(245,197,24,0.08)', border: '1px solid rgba(245,197,24,0.25)', fontSize: 13, color: '#E8C490' }}>
+                ⚠ El motor automático y las recomendaciones de IA requieren plan Básico o superior. En Gratis puedes ejecutar el análisis manualmente.
+              </div>
+            )}
             {loadingClinica ? <Skeleton count={2} h={80} /> : (
               <>
                 {/* Motor automático */}
                 <GlowingCard className="p-6 sm:p-8 lg:p-10">
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 14, background: motorConfig.motor_automatico ? 'rgba(0,201,167,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${motorConfig.motor_automatico ? 'rgba(0,201,167,0.3)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: motorConfig.motor_automatico ? 'var(--success)' : 'var(--muted)', flexShrink: 0, transition: 'all 0.25s' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 14, background: motorConfig.motor_automatico ? 'rgba(0,214,178,0.15)' : 'var(--sunken)', border: `1px solid ${motorConfig.motor_automatico ? 'rgba(0,214,178,0.3)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: motorConfig.motor_automatico ? 'var(--success)' : 'var(--muted)', flexShrink: 0, transition: 'all 0.25s' }}>
                       <AutoIcon />
                     </div>
                     <div style={{ flex: 1 }}>
@@ -1438,7 +1751,7 @@ export default function ConfiguracionPage() {
                                   padding: '14px 8px',
                                   borderRadius: 14,
                                   background: motorConfig.motor_intervalo_horas === h
-                                    ? 'rgba(0,201,167,0.15)' : 'rgba(255,255,255,0.03)',
+                                    ? 'rgba(0,214,178,0.15)' : 'var(--sunken)',
                                   border: motorConfig.motor_intervalo_horas === h
                                     ? '2px solid var(--primary)' : '1px solid var(--border)',
                                   color: motorConfig.motor_intervalo_horas === h ? 'var(--primary)' : 'var(--muted)',
@@ -1461,7 +1774,7 @@ export default function ConfiguracionPage() {
 
                   {/* Último run */}
                   {clinica?.ultimo_motor_en && (
-                    <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 12, background: 'var(--sunken)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
                       <ClockIcon />
                       <span style={{ fontSize: 13, color: 'var(--muted)' }}>
                         Último análisis:{' '}
@@ -1477,7 +1790,7 @@ export default function ConfiguracionPage() {
                 <div style={{ marginTop: 24 }}>
                   <GlowingCard className="p-6 sm:p-8 lg:p-10">
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 14, background: motorConfig.claude_activo ? 'rgba(74,158,240,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${motorConfig.claude_activo ? 'rgba(74,158,240,0.25)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: motorConfig.claude_activo ? '#4A9EF0' : 'var(--muted)', flexShrink: 0, transition: 'all 0.25s' }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, background: motorConfig.claude_activo ? 'rgba(74,158,240,0.12)' : 'var(--sunken)', border: `1px solid ${motorConfig.claude_activo ? 'rgba(74,158,240,0.25)' : 'var(--border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: motorConfig.claude_activo ? '#4A9EF0' : 'var(--muted)', flexShrink: 0, transition: 'all 0.25s' }}>
                         <SparklesIcon />
                       </div>
                       <div style={{ flex: 1 }}>
@@ -1541,7 +1854,6 @@ export default function ConfiguracionPage() {
       case 'alertas':
         return (
           <motion.div key="alertas" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <h2 className="font-display" style={sectionTitle}>Reglas de Alertas</h2>
             <p style={sectionDesc}>
               Configura qué KPIs generan alertas, la sensibilidad del umbral y el canal de notificación.
               Umbral bajo (10–15%) = más sensible. Umbral alto (40–50%) = solo anomalías graves.
@@ -1568,8 +1880,8 @@ export default function ConfiguracionPage() {
                   showToast('Configuración recomendada aplicada — guarda para conservar los cambios')
                 }}
                 style={{
-                  padding: '10px 18px', borderRadius: 10, border: '1px solid rgba(0,201,167,0.4)',
-                  background: 'rgba(0,201,167,0.1)', color: 'var(--primary)', fontSize: 13, fontWeight: 600,
+                  padding: '10px 18px', borderRadius: 10, border: '1px solid rgba(0,214,178,0.4)',
+                  background: 'rgba(0,214,178,0.1)', color: 'var(--primary)', fontSize: 13, fontWeight: 600,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
                 }}
               >
@@ -1584,7 +1896,8 @@ export default function ConfiguracionPage() {
                 {KPI_TIPOS.map(kpi => {
                   const cfg = configAlertas[kpi.key] || { tipo_kpi: kpi.key, canal: 'email' as const, umbral_sensibilidad: 20, activa: true, clinica: clinicaId }
                   const umbral = cfg.umbral_sensibilidad
-                  const umbralColor = umbral <= 15 ? '#00C9A7' : umbral <= 25 ? '#00C9A7' : '#4A9EF0'
+                  const sens = umbral <= 20 ? { c: '#00D6B2', word: 'Sensible' } : umbral <= 40 ? { c: '#FFD166', word: 'Balanceado' } : { c: '#4A9EF0', word: 'Conservador' }
+                  const umbralColor = sens.c
                   return (
                     <div key={kpi.key} style={{ opacity: cfg.activa ? 1 : 0.5, transition: 'opacity 0.2s' }}>
                     <GlowingCard className="p-0 overflow-hidden">
@@ -1603,12 +1916,14 @@ export default function ConfiguracionPage() {
                           <span style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>Umbral</span>
                           <input
                             type="range" min={5} max={80} step={5}
+                            className="range-jade"
                             value={umbral}
                             disabled={!cfg.activa}
                             onChange={e => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...(prev[kpi.key] || cfg), umbral_sensibilidad: Number(e.target.value) } }))}
-                            style={{ flex: 1, accentColor: 'var(--primary)', cursor: cfg.activa ? 'pointer' : 'not-allowed' }}
+                            style={{ flex: 1, cursor: cfg.activa ? 'pointer' : 'not-allowed' }}
                           />
-                          <span style={{ fontSize: 13, fontWeight: 700, color: umbralColor, minWidth: 38, textAlign: 'right' }}>{umbral}%</span>
+                          <span className="tnum" style={{ fontSize: 13, fontWeight: 700, color: umbralColor, minWidth: 38, textAlign: 'right' }}>{umbral}%</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: umbralColor, background: `${umbralColor}18`, border: `1px solid ${umbralColor}33`, borderRadius: 100, padding: '2px 8px', whiteSpace: 'nowrap' }}>{sens.word}</span>
                         </div>
                         {/* Canal */}
                         <select
@@ -1617,7 +1932,7 @@ export default function ConfiguracionPage() {
                           onChange={e => setConfigAlertas(prev => ({ ...prev, [kpi.key]: { ...(prev[kpi.key] || cfg), canal: e.target.value as 'email' | 'whatsapp' } }))}
                           style={{
                             padding: '7px 10px', borderRadius: 8,
-                            background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)',
+                            background: 'var(--sunken)', border: '1px solid var(--border)',
                             color: 'var(--text)', fontSize: 13, cursor: cfg.activa ? 'pointer' : 'not-allowed',
                             minWidth: 120,
                           }}
@@ -1646,56 +1961,101 @@ export default function ConfiguracionPage() {
       case 'apariencia':
         return (
           <motion.div key="apariencia" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <h2 className="font-display" style={sectionTitle}>Apariencia</h2>
             <p style={sectionDesc}>Personaliza el aspecto visual del dashboard según tus preferencias.</p>
 
             <GlowingCard className="p-6 sm:p-8 lg:p-10">
-              <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>
-                Tema
-              </h3>
+              <h3 className="font-display" style={sectionTitle}>Tema</h3>
+              <p style={sectionDesc}>Vista previa en vivo de cada tema.</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
-                {(['dark', 'light'] as const).map(t => (
-                  <motion.button key={t} onClick={() => { if ((isDark ? 'dark' : 'light') !== t) toggleTheme() }}
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    style={{
-                      padding: '24px', borderRadius: 18,
-                      background: (isDark ? 'dark' : 'light') === t ? 'rgba(0,201,167,0.12)' : 'rgba(255,255,255,0.03)',
-                      border: (isDark ? 'dark' : 'light') === t ? '2px solid var(--primary)' : '1px solid var(--border)',
-                      cursor: 'pointer', textAlign: 'left',
-                    }}>
-                    <div style={{
-                      width: '100%', height: 60, borderRadius: 12, marginBottom: 16,
-                      background: t === 'dark'
-                        ? 'linear-gradient(135deg, #0a0a0f, #1a1a2e)'
-                        : 'linear-gradient(135deg, #f8f8fc, #e8e8f0)',
-                      border: '1px solid var(--border)',
-                    }} />
-                    <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>
-                      {t === 'dark' ? 'Oscuro' : 'Claro'}
-                    </p>
-                    <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-                      {t === 'dark' ? 'Tema oscuro con acentos púrpura' : 'Tema claro para entornos luminosos'}
-                    </p>
-                    {(isDark ? 'dark' : 'light') === t && (
-                      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>
-                        <CheckIcon /> Activo
+                {([
+                  { key: 'dark', label: 'Oscuro', desc: 'Sala de mando, acentos jade', p: { bg: '#05090F', surface: '#0A111B', card: '#0F1926', line: 'rgba(255,255,255,0.07)', sub: '#9CC7C0', accent: '#00D6B2', signal: '#FF6B6B', gold: '#FFD166' } },
+                  { key: 'light', label: 'Claro', desc: 'Entornos luminosos, clínico', p: { bg: '#F2F7F6', surface: '#F8FBFB', card: '#FFFFFF', line: 'rgba(0,40,34,0.10)', sub: '#2A5751', accent: '#009E82', signal: '#E24A4A', gold: '#C88A00' } },
+                ] as const).map(th => {
+                  const active = (isDark ? 'dark' : 'light') === th.key
+                  const p = th.p
+                  return (
+                    <motion.button key={th.key} onClick={() => { if (!active) toggleTheme() }}
+                      whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}
+                      style={{ padding: 14, borderRadius: 'var(--r-lg)', background: active ? 'rgba(0,214,178,0.10)' : 'var(--sunken)', border: `1px solid ${active ? 'var(--jade)' : 'var(--border)'}`, boxShadow: active ? 'var(--shadow-brand)' : 'none', cursor: 'pointer', textAlign: 'left', transition: 'border-color 0.2s, box-shadow 0.2s' }}>
+                      {/* mini UI mock in the target theme palette */}
+                      <div style={{ width: '100%', borderRadius: 10, overflow: 'hidden', border: `1px solid ${p.line}`, background: p.bg, marginBottom: 14 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 9px', background: p.surface, borderBottom: `1px solid ${p.line}` }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.signal }} />
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.gold }} />
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.accent }} />
+                          <span style={{ marginLeft: 8, height: 4, width: 44, borderRadius: 2, background: p.sub, opacity: 0.4 }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: 7, padding: 9 }}>
+                          <div style={{ flex: 1, height: 46, borderRadius: 7, background: p.card, border: `1px solid ${p.line}`, padding: 8, position: 'relative', overflow: 'hidden' }}>
+                            <span style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 2, background: p.accent }} />
+                            <div style={{ width: '38%', height: 8, borderRadius: 2, background: p.accent, marginLeft: 4 }} />
+                            <div style={{ width: '68%', height: 4, borderRadius: 2, background: p.sub, opacity: 0.4, marginTop: 6, marginLeft: 4 }} />
+                            <div style={{ width: '52%', height: 4, borderRadius: 2, background: p.sub, opacity: 0.3, marginTop: 4, marginLeft: 4 }} />
+                          </div>
+                          <div style={{ width: 40, height: 46, borderRadius: 7, background: p.card, border: `1px solid ${p.line}`, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 4 }}>
+                            <span style={{ width: 18, height: 18, borderRadius: '50%', background: `${p.accent}22`, border: `1px solid ${p.accent}` }} />
+                            <span style={{ width: 22, height: 3, borderRadius: 2, background: p.sub, opacity: 0.4 }} />
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </motion.button>
-                ))}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                          <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{th.label}</p>
+                          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{th.desc}</p>
+                        </div>
+                        {active && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: 'var(--jade)' }}><CheckIcon /> Activo</span>}
+                      </div>
+                    </motion.button>
+                  )
+                })}
               </div>
 
               <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
                 Preferencias de interfaz
               </h3>
               <SettingRow label="Animaciones" desc="Activar transiciones y efectos animados en la interfaz">
-                <ToggleSwitch checked={apariencia.animaciones} onChange={v => setApariencia({ ...apariencia, animaciones: v })} />
+                <ToggleSwitch checked={prefs.animaciones} onChange={v => setPrefs({ animaciones: v })} />
               </SettingRow>
               <SettingRow label="Vista compacta" desc="Reducir el espaciado para mostrar más información">
-                <ToggleSwitch checked={apariencia.compacto} onChange={v => setApariencia({ ...apariencia, compacto: v })} />
+                <ToggleSwitch checked={prefs.compacto} onChange={v => setPrefs({ compacto: v })} />
               </SettingRow>
-              <SettingRow label="Auto-refresh" desc="Actualizar las alertas automáticamente cada 5 minutos">
-                <ToggleSwitch checked={apariencia.autoRefresh} onChange={v => setApariencia({ ...apariencia, autoRefresh: v })} />
+              <SettingRow label="Auto-refresh" desc="Actualizar los datos del dashboard automáticamente cada 60s">
+                <ToggleSwitch checked={prefs.autoRefresh} onChange={v => setPrefs({ autoRefresh: v })} />
+              </SettingRow>
+              <SettingRow label="Cursor personalizado" desc="Usar el puntero animado de Vigía (desactívalo para el cursor normal del sistema)">
+                <ToggleSwitch checked={prefs.cursorCustom} onChange={v => setPrefs({ cursorCustom: v })} />
+              </SettingRow>
+              <SettingRow label="Tamaño de fuente" desc="Escala toda la interfaz para mejorar la accesibilidad">
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {([
+                    { id: 'sm', label: 'A', px: 13 },
+                    { id: 'md', label: 'A', px: 15 },
+                    { id: 'lg', label: 'A', px: 18 },
+                    { id: 'xl', label: 'A', px: 22 },
+                  ] as const).map(o => (
+                    <button key={o.id} onClick={() => setPrefs({ fontSize: o.id })} title={o.id.toUpperCase()}
+                      style={{ width: 40, height: 40, borderRadius: 10, fontWeight: 700, cursor: 'pointer', lineHeight: 1,
+                        fontSize: o.px,
+                        background: fontSize === o.id ? 'rgba(0,214,178,0.15)' : 'var(--sunken)',
+                        border: `1px solid ${fontSize === o.id ? 'var(--primary)' : 'var(--border)'}`,
+                        color: fontSize === o.id ? 'var(--primary)' : 'var(--muted)' }}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </SettingRow>
+              <SettingRow label="Idioma" desc="Idioma de la interfaz de Vigía">
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {IDIOMAS.map(l => (
+                    <button key={l.id} onClick={() => setPrefs({ idioma: l.id })}
+                      style={{ padding: '8px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                        background: idioma === l.id ? 'rgba(0,214,178,0.15)' : 'var(--sunken)',
+                        border: `1px solid ${idioma === l.id ? 'var(--primary)' : 'var(--border)'}`,
+                        color: idioma === l.id ? 'var(--primary)' : 'var(--muted)' }}>
+                      {l.flag} {l.label}
+                    </button>
+                  ))}
+                </div>
               </SettingRow>
             </GlowingCard>
           </motion.div>
@@ -1707,8 +2067,211 @@ export default function ConfiguracionPage() {
       case 'integraciones':
         return (
           <motion.div key="integraciones" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <h2 className="font-display" style={sectionTitle}>Integraciones</h2>
             <p style={sectionDesc}>Gestiona las conexiones con sistemas externos como ERP, HIS y otras fuentes de datos.</p>
+
+            {/* Sistema HIS/ERP externo — conectar vs re-sincronizar */}
+            {(() => {
+              const hisConn = (integraciones as any[]).find(i => i.tipo === 'his')
+              return (
+                <GlowingCard className="p-6 sm:p-8 lg:p-10" style={{ marginBottom: 24 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+                    <div style={{ maxWidth: 480 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <h3 className="font-display" style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Sistema HIS/ERP externo</h3>
+                        {hisConn && (() => {
+                          const err = hisConn.estado === 'error'
+                          return (
+                            <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 600,
+                              background: err ? 'rgba(232,93,93,0.12)' : 'rgba(0,214,178,0.12)',
+                              color: err ? 'var(--danger)' : 'var(--primary)',
+                              border: `1px solid ${err ? 'rgba(232,93,93,0.3)' : 'rgba(0,214,178,0.25)'}` }}>
+                              {err ? '● Con error de conexión' : '● Conectado'}
+                            </span>
+                          )
+                        })()}
+                      </div>
+                      {hisConn ? (
+                        <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>
+                          {hisConn.nombre} · {hisConn.api_url}
+                          {hisConn.ultima_sync ? ` · última sync ${new Date(hisConn.ultima_sync).toLocaleString('es')}` : ''}
+                        </p>
+                      ) : (
+                        <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>
+                          Conecta el sistema HIS/ERP de tu clínica para traer datos reales (pacientes, citas, facturación) y reemplazar el generador.
+                        </p>
+                      )}
+                    </div>
+                    {hisConn ? (
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <motion.button
+                          onClick={async () => {
+                            setSyncingHis(true)
+                            try {
+                              const res = await api.post('/integraciones/sync-his/', { clinica_id: clinicaId })
+                              showToast(res.data?.detalle || 'Sincronización completada')
+                              const ir = await api.get(`/integraciones/?clinica=${clinicaId}`)
+                              setIntegraciones(ir.data.results || ir.data)
+                            } catch (err: any) {
+                              showToast(err.response?.data?.error || 'No se pudo sincronizar', 'error')
+                            } finally { setSyncingHis(false) }
+                          }}
+                          disabled={syncingHis}
+                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                          style={{ padding: '12px 22px', borderRadius: 12, border: 'none', color: 'white', fontSize: 14, fontWeight: 700, cursor: syncingHis ? 'not-allowed' : 'pointer', opacity: syncingHis ? 0.6 : 1, background: 'linear-gradient(135deg, var(--primary), var(--accent))', whiteSpace: 'nowrap' }}>
+                          {syncingHis ? 'Sincronizando…' : 'Sincronizar ahora'}
+                        </motion.button>
+                        <motion.button
+                          onClick={async () => {
+                            if (!hisConn?.id) return
+                            try {
+                              await api.delete(`/integraciones/${hisConn.id}/`)
+                              showToast('Integración desconectada')
+                              const ir = await api.get(`/integraciones/?clinica=${clinicaId}`)
+                              setIntegraciones(ir.data.results || ir.data)
+                            } catch { showToast('No se pudo desconectar', 'error') }
+                          }}
+                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                          style={{ padding: '12px 20px', borderRadius: 12, background: 'rgba(232,93,93,0.1)', border: '1px solid rgba(232,93,93,0.25)', color: 'var(--danger)', fontSize: 14, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          Desconectar
+                        </motion.button>
+                      </div>
+                    ) : (
+                      <motion.button
+                        onClick={() => { setHisForm({ nombre: '', url: '', key: '' }); setHisResumen(null); setHisMapeo(null); setHisModal(true) }}
+                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                        style={{ padding: '12px 22px', borderRadius: 12, border: '1px solid rgba(0,214,178,0.3)', color: 'var(--primary)', background: 'rgba(0,214,178,0.1)', fontSize: 14, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        Conectar integración →
+                      </motion.button>
+                    )}
+                  </div>
+                </GlowingCard>
+              )
+            })()}
+
+            {/* ══ WIZARD CONECTAR HIS ══ */}
+            <AnimatePresence>
+              {hisModal && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  onClick={(e) => { if (e.target === e.currentTarget) setHisModal(false) }}
+                  style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(6,4,18,0.82)', backdropFilter: 'blur(12px)', padding: 20 }}>
+                  <motion.div initial={{ opacity: 0, scale: 0.93, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 16 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                    style={{ width: '100%', maxWidth: 560, borderRadius: 24, background: 'var(--bg)', border: '1px solid var(--border)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)', overflow: 'hidden' }}>
+                    <div style={{ padding: '24px 28px 16px', borderBottom: '1px solid var(--border)' }}>
+                      <p className="eyebrow" style={{ color: 'var(--primary)', marginBottom: 8 }}>Sistema externo</p>
+                      <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Conectar HIS/ERP</h2>
+                      <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>
+                        La <strong>URL</strong> y la <strong>clave de acceso</strong> las provee tu sistema HIS/ERP (el proveedor o el área de TI de la clínica). Vigía se conectará a él para traer los datos.
+                      </p>
+                    </div>
+                    <div style={{ padding: '22px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <button
+                        onClick={() => setHisForm({ nombre: 'HIS de demostración', url: 'http://127.0.0.1:8001', key: 'his-demo-key-vigia-2026' })}
+                        style={{ alignSelf: 'flex-start', padding: '7px 14px', borderRadius: 10, background: 'var(--sunken)', border: '1px dashed var(--border)', color: 'var(--muted)', fontSize: 12.5, cursor: 'pointer' }}>
+                        ⚡ Usar el HIS de demostración (rellena los datos)
+                      </button>
+                      <div>
+                        <label style={labelStyle}>Nombre del sistema</label>
+                        <input value={hisForm.nombre} onChange={e => setHisForm({ ...hisForm, nombre: e.target.value })} placeholder="Ej: HIS Clínica Central" style={inputStyle} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Dirección (URL)</label>
+                        <input value={hisForm.url} onChange={e => setHisForm({ ...hisForm, url: e.target.value })} placeholder="http://127.0.0.1:8001" style={inputStyle} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Clave de acceso (API key)</label>
+                        <input value={hisForm.key} onChange={e => setHisForm({ ...hisForm, key: e.target.value })} placeholder="his-demo-key-vigia-2026" style={inputStyle} />
+                      </div>
+
+                      {hisResumen && (
+                        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'rgba(0,214,178,0.07)', border: '1px solid rgba(0,214,178,0.22)' }}>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', margin: 0 }}>✓ Conexión establecida con el sistema externo</p>
+                          <p style={{ fontSize: 12.5, color: 'var(--muted)', margin: '6px 0 0' }}>
+                            Encontrado: {hisResumen.sedes} sedes · {hisResumen.medicos} médicos · {hisResumen.pacientes} pacientes
+                          </p>
+                          {hisResumen.columnas_detectadas?.length > 0 && (
+                            <p style={{ fontSize: 11.5, color: 'var(--muted)', margin: '6px 0 0', opacity: 0.85 }}>
+                              Columnas detectadas: {hisResumen.columnas_detectadas.slice(0, 8).join(', ')}…
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {hisMapeo && Object.keys(hisMapeo).length > 0 && (
+                        <div style={{ padding: '14px 16px', borderRadius: 14, background: 'rgba(176,110,245,0.07)', border: '1px solid rgba(176,110,245,0.25)' }}>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: '#B06EF5', margin: '0 0 8px' }}>✦ La IA adaptó las columnas a Vigía</p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                            {Object.entries(hisMapeo).map(([campo, col]) => (
+                              <div key={campo} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5 }}>
+                                <code style={{ color: 'var(--muted)' }}>{col}</code>
+                                <span style={{ color: '#B06EF5' }}>→</span>
+                                <strong style={{ color: 'var(--text)' }}>{campo}</strong>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ padding: '0 28px 24px', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                      <button onClick={() => setHisModal(false)}
+                        style={{ padding: '11px 20px', borderRadius: 12, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                        Cancelar
+                      </button>
+                      {!hisResumen ? (
+                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                          disabled={!hisForm.url || !hisForm.key || hisProbando}
+                          onClick={async () => {
+                            setHisProbando(true)
+                            try {
+                              const res = await api.post('/integraciones/his/probar/', { url: hisForm.url, key: hisForm.key })
+                              setHisResumen(res.data.resumen)
+                              // La IA mapea las columnas del sistema externo → campos de Vigía
+                              const cols = res.data.resumen?.columnas_detectadas || []
+                              if (cols.length) {
+                                try {
+                                  const m = await api.post('/integraciones/his/mapear/', { columnas: cols })
+                                  setHisMapeo(m.data.mapeo || null)
+                                } catch { /* mapeo opcional */ }
+                              }
+                            } catch (err: any) {
+                              const st = err.response?.status
+                              const msg = st === 401 ? 'Tu sesión venció. Cierra sesión y vuelve a entrar.'
+                                : err.response?.data?.error || err.response?.data?.detail || `No se pudo conectar (${st || 'sin respuesta'})`
+                              showToast(msg, 'error')
+                            } finally { setHisProbando(false) }
+                          }}
+                          style={{ padding: '11px 22px', borderRadius: 12, border: 'none', color: 'white', fontSize: 14, fontWeight: 700, cursor: (!hisForm.url || !hisForm.key || hisProbando) ? 'not-allowed' : 'pointer', opacity: (!hisForm.url || !hisForm.key || hisProbando) ? 0.45 : 1, background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}>
+                          {hisProbando ? 'Probando…' : 'Probar conexión'}
+                        </motion.button>
+                      ) : (
+                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                          disabled={hisConectando}
+                          onClick={async () => {
+                            setHisConectando(true)
+                            try {
+                              const res = await api.post('/integraciones/his/conectar/', { url: hisForm.url, key: hisForm.key, nombre: hisForm.nombre || 'Sistema HIS/ERP', mapeo: hisMapeo, clinica_id: clinicaId })
+                              const nCols = hisMapeo ? Object.keys(hisMapeo).length : 0
+                              toast.success(
+                                nCols ? `Integración conectada · la IA adaptó ${nCols} columnas del sistema externo a Vigía`
+                                      : 'Integración conectada',
+                                res.data?.detalle || undefined
+                              )
+                              const ir = await api.get(`/integraciones/?clinica=${clinicaId}`)
+                              setIntegraciones(ir.data.results || ir.data)
+                              setHisModal(false)
+                            } catch (err: any) {
+                              showToast(err.response?.data?.error || 'No se pudo conectar', 'error')
+                            } finally { setHisConectando(false) }
+                          }}
+                          style={{ padding: '11px 22px', borderRadius: 12, border: 'none', color: 'white', fontSize: 14, fontWeight: 700, cursor: hisConectando ? 'not-allowed' : 'pointer', opacity: hisConectando ? 0.6 : 1, background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}>
+                          {hisConectando ? 'Conectando…' : 'Conectar e importar'}
+                        </motion.button>
+                      )}
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {loadingIntegraciones ? <Skeleton count={3} h={80} /> : (
               <GlowingCard className="p-6 sm:p-8 lg:p-10">
@@ -1724,7 +2287,7 @@ export default function ConfiguracionPage() {
                       Conecta tu clínica con sistemas de información hospitalaria (HIS), ERP u otras fuentes de datos para importar información automáticamente.
                     </p>
                     <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                      style={{ padding: '11px 24px', borderRadius: 12, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
+                      style={{ padding: '11px 24px', borderRadius: 12, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>
                       Solicitar integración
                     </motion.button>
                   </div>
@@ -1733,10 +2296,10 @@ export default function ConfiguracionPage() {
                     {integraciones.map((integ, i) => (
                       <motion.div key={integ.id}
                         initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                        style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', borderRadius: 18, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 22px', borderRadius: 18, background: 'var(--sunken)', border: '1px solid var(--border)' }}>
                         <div style={{
                           width: 48, height: 48, borderRadius: 14,
-                          background: integ.estado === 'activa' ? 'rgba(0,201,167,0.12)' : 'rgba(255,255,255,0.06)',
+                          background: integ.estado === 'activa' ? 'rgba(0,214,178,0.12)' : 'rgba(255,255,255,0.06)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           color: integ.estado === 'activa' ? 'var(--success)' : 'var(--muted)', flexShrink: 0,
                         }}>
@@ -1750,9 +2313,9 @@ export default function ConfiguracionPage() {
                         </div>
                         <span style={{
                           fontSize: 12, padding: '4px 12px', borderRadius: 20,
-                          background: integ.estado === 'activa' ? 'rgba(0,201,167,0.12)' : 'rgba(255,107,107,0.1)',
+                          background: integ.estado === 'activa' ? 'rgba(0,214,178,0.12)' : 'rgba(255,107,107,0.1)',
                           color: integ.estado === 'activa' ? 'var(--success)' : 'var(--danger)',
-                          border: integ.estado === 'activa' ? '1px solid rgba(0,201,167,0.2)' : '1px solid rgba(255,107,107,0.2)',
+                          border: integ.estado === 'activa' ? '1px solid rgba(0,214,178,0.2)' : '1px solid rgba(255,107,107,0.2)',
                         }}>
                           {integ.estado === 'activa' ? 'Conectada' : 'Desconectada'}
                         </span>
@@ -1760,7 +2323,7 @@ export default function ConfiguracionPage() {
                           whileHover={{ scale: 1.1, rotate: 180 }} whileTap={{ scale: 0.9 }}
                           style={{
                             width: 36, height: 36, borderRadius: 10,
-                            background: 'rgba(0,201,167,0.1)', border: '1px solid rgba(0,201,167,0.2)',
+                            background: 'rgba(0,214,178,0.1)', border: '1px solid rgba(0,214,178,0.2)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             cursor: 'pointer', color: 'var(--primary)', flexShrink: 0,
                           }}>
@@ -1793,7 +2356,7 @@ export default function ConfiguracionPage() {
                       style={{
                         padding: '10px 24px', borderRadius: 12, fontSize: 14, fontWeight: 600,
                         cursor: 'pointer', border: 'none',
-                        background: csvTipo === tipo ? 'rgba(0,201,167,0.15)' : 'rgba(255,255,255,0.04)',
+                        background: csvTipo === tipo ? 'rgba(0,214,178,0.15)' : 'var(--sunken)',
                         borderWidth: 2, borderStyle: 'solid',
                         borderColor: csvTipo === tipo ? 'var(--primary)' : 'var(--border)',
                         color: csvTipo === tipo ? 'var(--primary)' : 'var(--muted)',
@@ -1806,7 +2369,7 @@ export default function ConfiguracionPage() {
                 </div>
 
                 {/* Columnas esperadas */}
-                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: 'rgba(0,201,167,0.06)', border: '1px solid rgba(0,201,167,0.15)' }}>
+                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, padding: '10px 14px', borderRadius: 10, background: 'rgba(0,214,178,0.06)', border: '1px solid rgba(0,214,178,0.15)' }}>
                   {csvTipo === 'kpi'
                     ? 'Columnas esperadas: medico_id, tipo, valor, registrado_en'
                     : 'Columnas esperadas: medico_id, paciente_nombre, fecha_hora, tipo, estado'}
@@ -1832,8 +2395,8 @@ export default function ConfiguracionPage() {
                   <label style={{ display: 'block', cursor: 'pointer' }}>
                     <div style={{
                       padding: '32px', borderRadius: 16, textAlign: 'center',
-                      background: csvFile ? 'rgba(0,201,167,0.06)' : 'rgba(255,255,255,0.03)',
-                      border: `2px dashed ${csvFile ? 'rgba(0,201,167,0.4)' : 'var(--border)'}`,
+                      background: csvFile ? 'rgba(0,214,178,0.06)' : 'var(--sunken)',
+                      border: `2px dashed ${csvFile ? 'rgba(0,214,178,0.4)' : 'var(--border)'}`,
                       transition: 'all 0.2s',
                     }}>
                       {csvFile ? (
@@ -1888,8 +2451,8 @@ export default function ConfiguracionPage() {
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                       style={{
                         marginTop: 20, padding: '18px 22px', borderRadius: 16,
-                        background: csvResult.errores.length === 0 ? 'rgba(0,201,167,0.08)' : 'rgba(255,107,107,0.08)',
-                        border: `1px solid ${csvResult.errores.length === 0 ? 'rgba(0,201,167,0.3)' : 'rgba(255,107,107,0.3)'}`,
+                        background: csvResult.errores.length === 0 ? 'rgba(0,214,178,0.08)' : 'rgba(255,107,107,0.08)',
+                        border: `1px solid ${csvResult.errores.length === 0 ? 'rgba(0,214,178,0.3)' : 'rgba(255,107,107,0.3)'}`,
                       }}
                     >
                       <p style={{ fontSize: 15, fontWeight: 600, color: csvResult.errores.length === 0 ? 'var(--success)' : 'var(--danger)', marginBottom: 8 }}>
@@ -1919,32 +2482,34 @@ export default function ConfiguracionPage() {
       case 'facturacion': {
         const PLANES_DEF = [
           {
-            key: 'basico', nombre: 'Básico', precio: 49,
+            key: 'basico', nombre: 'Básico', precio: 29,
             color: '#4A9EF0', colorAlpha: 'rgba(74,158,240,0.18)',
             border: 'rgba(74,158,240,0.28)',
-            features: ['1 sede', 'Hasta 5 médicos', 'Alertas críticas (IA)', 'Historial 30 días', 'Soporte por email'],
+            features: ['1 sede', 'Hasta 3 usuarios', 'Alertas por correo', 'KPIs y reportes básicos', 'Soporte por email'],
           },
           {
-            key: 'profesional', nombre: 'Profesional', precio: 149, popular: true,
-            color: '#00C9A7', colorAlpha: 'rgba(0,201,167,0.2)',
-            border: 'rgba(0,201,167,0.42)',
-            features: ['Hasta 3 sedes', 'Hasta 20 médicos', 'IA: alertas alta + crítica', 'Historial 90 días', '1 integración externa', 'Soporte prioritario'],
+            key: 'profesional', nombre: 'Profesional', precio: 79, popular: true,
+            color: '#00D6B2', colorAlpha: 'rgba(0,214,178,0.2)',
+            border: 'rgba(0,214,178,0.42)',
+            features: ['Hasta 5 sedes', 'Hasta 15 usuarios', 'Alertas por correo y WhatsApp', 'Recomendaciones con IA (Claude)', 'Motor automático programado', 'Soporte prioritario'],
           },
           {
-            key: 'enterprise', nombre: 'Enterprise', precio: 399,
+            key: 'enterprise', nombre: 'Enterprise', precio: 199,
             color: '#E8C490', colorAlpha: 'rgba(232,196,144,0.13)',
             border: 'rgba(232,196,144,0.28)',
-            features: ['Sedes ilimitadas', 'Médicos ilimitados', 'IA en todas las alertas', 'Historial 1 año', 'Integraciones ilimitadas', 'Soporte 24/7 dedicado', 'SLA garantizado'],
+            features: ['Sedes ilimitadas', 'Usuarios ilimitados', 'Alertas por correo y WhatsApp', 'IA en todas las alertas', 'Motor automático y prioridad', 'Soporte 24/7 dedicado'],
           },
         ]
 
-        const planActualKey = plan?.plan ?? null
+        // Plan actual = el de la clínica (siempre definido, incluye Gratis), no el
+        // registro de facturación (que no existe en Gratis).
+        const planActualKey = clinica?.plan ?? 'gratis'
         const estadoBadge = plan
-          ? { activo: { bg: 'rgba(0,201,167,0.12)', color: 'var(--success)', border: 'rgba(0,201,167,0.25)', label: 'Activo' },
+          ? { activo: { bg: 'rgba(0,214,178,0.12)', color: 'var(--success)', border: 'rgba(0,214,178,0.25)', label: 'Activo' },
               prueba:  { bg: 'rgba(232,196,144,0.12)', color: '#E8C490',        border: 'rgba(232,196,144,0.25)', label: 'Prueba' },
               vencido: { bg: 'rgba(232,160,160,0.1)',  color: 'var(--danger)',   border: 'rgba(232,160,160,0.2)',  label: 'Vencido' },
               cancelado: { bg: 'rgba(160,160,160,0.1)', color: 'var(--muted)',   border: 'rgba(160,160,160,0.15)', label: 'Cancelado' },
-            }[plan.estado as string] ?? { bg: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: 'rgba(0,201,167,0.25)', label: plan.estado }
+            }[plan.estado as string] ?? { bg: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: 'rgba(0,214,178,0.25)', label: plan.estado }
           : null
 
         const formatCard = (val: string) =>
@@ -1955,21 +2520,45 @@ export default function ConfiguracionPage() {
           return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d
         }
 
+        const detectarMarca = (num: string): string => {
+          const n = num.replace(/\D/g, '')
+          if (/^4/.test(n)) return 'Visa'
+          if (/^5[1-5]/.test(n) || /^2[2-7]/.test(n)) return 'Mastercard'
+          if (/^3[47]/.test(n)) return 'Amex'
+          return 'Tarjeta'
+        }
+
         const handlePagar = async () => {
           if (!planElegido) return
           setProcesandoPago(true)
           try {
-            const res = await api.post('/facturacion/crear-sesion/', { plan: planElegido })
-            window.location.href = res.data.checkout_url
+            const digits = cardData.numero.replace(/\D/g, '')
+            const res = await api.post('/facturacion/simular-suscripcion/', {
+              plan: planElegido,
+              clinica_id: clinicaId,  // requerido para superadmin (sin clínica fija)
+              ultimos_cuatro: digits.slice(-4) || '4242',
+              marca_tarjeta: detectarMarca(digits),
+            })
+            // Refresca plan y clínica en memoria (sin recargar la página).
+            const [planRes, clinRes] = await Promise.all([
+              api.get(`/planes/?clinica=${clinicaId}`),
+              api.get(`/clinicas/${clinicaId}/`),
+            ])
+            const pd = Array.isArray(planRes.data) ? planRes.data[0] : planRes.data
+            if (pd) setPlan(pd)
+            if (clinRes.data) setClinica(clinRes.data)
+            setPagoModal(false)
+            setProcesandoPago(false)
+            const cfg = PLANES_DEF.find(p => p.key === planElegido)
+            toast.success('Suscripción activada', `Plan ${cfg?.nombre ?? res.data.plan} activo (simulación · sin cobro real).`)
           } catch {
-            toast.error('Error al iniciar el pago', 'Verifica tus datos e inténtalo de nuevo.')
+            toast.error('No se pudo activar el plan', 'Revisa los datos e inténtalo de nuevo.')
             setProcesandoPago(false)
           }
         }
 
         return (
           <motion.div key="facturacion" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <h2 className="font-display" style={sectionTitle}>Facturación</h2>
             <p style={sectionDesc}>Elige el plan perfecto para tu clínica. Cancela cuando quieras.</p>
 
             {loadingPlan ? <Skeleton count={3} h={220} /> : (
@@ -1998,9 +2587,25 @@ export default function ConfiguracionPage() {
                     </div>
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                       onClick={() => { setPlanElegido(plan.plan); setPagoModal(true) }}
-                      style={{ padding: '9px 20px', borderRadius: 11, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.25)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                      style={{ padding: '9px 20px', borderRadius: 11, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.25)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                       Cambiar método de pago
                     </motion.button>
+                  </motion.div>
+                )}
+                {/* Banner plan Gratis (sin registro de facturación) */}
+                {!plan && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    style={{ marginBottom: 32, padding: '18px 24px', borderRadius: 16, display: 'flex', alignItems: 'center', gap: 14, background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--sunken)', border: '1px solid var(--border)', flexShrink: 0 }}>
+                      <CreditCardIcon />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <p className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', textTransform: 'capitalize' }}>{planActualKey}</p>
+                        <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 600, background: 'rgba(156,199,192,0.12)', color: 'var(--muted)', border: '1px solid var(--border)' }}>Plan actual</span>
+                      </div>
+                      <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>Sin costo · sin método de pago. Mejora tu plan para desbloquear IA, integraciones y correo.</p>
+                    </div>
                   </motion.div>
                 )}
 
@@ -2048,13 +2653,14 @@ export default function ConfiguracionPage() {
                         {/* CTA */}
                         {p.key === 'enterprise' ? (
                           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                            onClick={() => { setEnterpriseMsg(''); setEnterpriseModal(true) }}
                             style={{ width: '100%', padding: '13px', borderRadius: 13, background: p.colorAlpha, color: p.color, border: `1px solid ${p.border}`, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                            Contactar ventas
+                            {planActualKey === 'enterprise' ? 'Plan actual' : 'Solicitar acuerdo'}
                           </motion.button>
                         ) : (
                           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                             onClick={() => { setPlanElegido(p.key); setCardData({ numero: '', nombre: '', expiry: '', cvv: '' }); setPagoModal(true) }}
-                            style={{ width: '100%', padding: '13px', borderRadius: 13, fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none', color: 'white', background: isCurrent ? `linear-gradient(135deg, ${p.color}bb, ${p.color}88)` : p.popular ? 'linear-gradient(135deg, var(--primary), var(--accent))' : `linear-gradient(135deg, ${p.color}99, ${p.color}66)`, boxShadow: p.popular && !isCurrent ? '0 4px 20px rgba(0,201,167,0.35)' : 'none' }}>
+                            style={{ width: '100%', padding: '13px', borderRadius: 13, fontSize: 14, fontWeight: 600, cursor: 'pointer', border: 'none', color: 'white', background: isCurrent ? `linear-gradient(135deg, ${p.color}bb, ${p.color}88)` : p.popular ? 'linear-gradient(135deg, var(--primary), var(--accent))' : `linear-gradient(135deg, ${p.color}99, ${p.color}66)`, boxShadow: p.popular && !isCurrent ? '0 4px 20px rgba(0,214,178,0.35)' : 'none' }}>
                             {isCurrent ? 'Plan actual' : 'Suscribirse'}
                           </motion.button>
                         )}
@@ -2108,7 +2714,7 @@ export default function ConfiguracionPage() {
                           </div>
                           <div>
                             <p className="font-display" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>Plan {pd.nombre}</p>
-                            <p style={{ fontSize: 13, color: 'var(--muted)' }}>${pd.precio} USD / mes · se cobra hoy</p>
+                            <p style={{ fontSize: 13, color: 'var(--muted)' }}>${pd.precio} USD / mes · simulación (sin cobro real)</p>
                           </div>
                         </div>
                         <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setPagoModal(false)}
@@ -2124,7 +2730,7 @@ export default function ConfiguracionPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, flex: '0 0 auto' }}>
                           <CreditCard3D data={cardData} flipped={cardFocused === 'cvv'} />
                           <p style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', maxWidth: 300 }}>
-                            Tu información de pago está protegida con cifrado de 256 bits vía Stripe.
+                            Entorno de demostración: la suscripción se activa sin realizar ningún cobro. No ingreses datos de una tarjeta real.
                           </p>
                         </div>
 
@@ -2194,15 +2800,15 @@ export default function ConfiguracionPage() {
                             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                             onClick={handlePagar}
                             disabled={procesandoPago}
-                            style={{ marginTop: 8, width: '100%', padding: '16px', borderRadius: 14, background: procesandoPago ? 'rgba(0,201,167,0.4)' : 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 700, border: 'none', cursor: procesandoPago ? 'not-allowed' : 'pointer', boxShadow: procesandoPago ? 'none' : '0 6px 24px rgba(0,201,167,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                            style={{ marginTop: 8, width: '100%', padding: '16px', borderRadius: 14, background: procesandoPago ? 'rgba(0,214,178,0.4)' : 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 15, fontWeight: 700, border: 'none', cursor: procesandoPago ? 'not-allowed' : 'pointer', boxShadow: procesandoPago ? 'none' : '0 6px 24px rgba(0,214,178,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                             {procesandoPago ? (
                               <>
                                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
                                   style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%' }} />
-                                Procesando…
+                                Activando…
                               </>
                             ) : (
-                              <>Suscribirse por ${pd.precio}/mes →</>
+                              <>Activar plan ${pd.precio}/mes →</>
                             )}
                           </motion.button>
 
@@ -2216,6 +2822,54 @@ export default function ConfiguracionPage() {
                 )
               })()}
             </AnimatePresence>
+
+            {/* ══ ENTERPRISE REQUEST MODAL ══════════════════════════ */}
+            <AnimatePresence>
+              {enterpriseModal && (
+                <motion.div key="ent-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  onClick={(e) => { if (e.target === e.currentTarget) setEnterpriseModal(false) }}
+                  style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(6,4,18,0.82)', backdropFilter: 'blur(12px)', padding: 20 }}>
+                  <motion.div initial={{ opacity: 0, scale: 0.93, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 16 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                    style={{ width: '100%', maxWidth: 560, borderRadius: 24, background: 'var(--bg)', border: '1px solid var(--border)', boxShadow: '0 40px 80px rgba(0,0,0,0.6)', overflow: 'hidden' }}>
+                    <div style={{ padding: '24px 28px 18px', borderBottom: '1px solid var(--border)' }}>
+                      <p className="eyebrow" style={{ color: '#E8C490', marginBottom: 8 }}>Plan por acuerdo</p>
+                      <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Solicitar Enterprise</h2>
+                      <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>
+                        Describe los acuerdos que necesitas (número de usuarios, sedes, beneficios de IA, personalización). El equipo Vigía lo revisará.
+                      </p>
+                    </div>
+                    <div style={{ padding: '22px 28px' }}>
+                      <textarea value={enterpriseMsg} onChange={e => setEnterpriseMsg(e.target.value)}
+                        placeholder="Ej: Necesitamos 250 usuarios, 8 sedes, IA en todas las alertas y logo personalizado…"
+                        rows={5}
+                        style={{ ...inputStyle, resize: 'vertical', minHeight: 120, fontFamily: 'inherit' }} />
+                    </div>
+                    <div style={{ padding: '0 28px 24px', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                      <button onClick={() => setEnterpriseModal(false)}
+                        style={{ padding: '11px 20px', borderRadius: 12, background: 'var(--glass)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+                        Cancelar
+                      </button>
+                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                        disabled={!enterpriseMsg.trim() || enviandoEnterprise}
+                        onClick={async () => {
+                          setEnviandoEnterprise(true)
+                          try {
+                            await api.post('/facturacion/solicitar-enterprise/', { mensaje: enterpriseMsg.trim() })
+                            setEnterpriseModal(false)
+                            toast.success('Solicitud enviada', 'El equipo Vigía revisará tu acuerdo Enterprise.')
+                          } catch (err: any) {
+                            toast.error(err.response?.data?.error || 'No se pudo enviar la solicitud')
+                          } finally { setEnviandoEnterprise(false) }
+                        }}
+                        style={{ padding: '11px 22px', borderRadius: 12, border: 'none', color: 'white', fontSize: 14, fontWeight: 700, cursor: (!enterpriseMsg.trim() || enviandoEnterprise) ? 'not-allowed' : 'pointer', opacity: (!enterpriseMsg.trim() || enviandoEnterprise) ? 0.45 : 1, background: 'linear-gradient(135deg, var(--primary), var(--accent))' }}>
+                        {enviandoEnterprise ? 'Enviando…' : 'Enviar solicitud'}
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )
       }
@@ -2226,8 +2880,104 @@ export default function ConfiguracionPage() {
       case 'superadmin':
         return (
           <motion.div key="superadmin" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-            <h2 className="font-display" style={sectionTitle}>Gestión global de clínicas</h2>
-            <p style={sectionDesc}>Crea, administra y elimina clínicas del sistema.</p>
+            <p style={sectionDesc}>Crea clínicas, aprueba administradores y gestiona el sistema.</p>
+
+            {/* Solicitudes de administrador pendientes */}
+            {adminsPend.length > 0 && (
+              <GlowingCard className="p-6 sm:p-8 lg:p-10" style={{ marginBottom: 24, border: '1px solid rgba(245,197,24,0.3)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                  <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Solicitudes de administrador</h3>
+                  <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: 'rgba(245,197,24,0.14)', color: '#E8C490', border: '1px solid rgba(245,197,24,0.3)', fontWeight: 600 }}>
+                    {adminsPend.length} pendiente{adminsPend.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {adminsPend.map(a => (
+                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, padding: '14px 18px', borderRadius: 14, background: 'var(--sunken)', border: '1px solid var(--border)' }}>
+                      <div>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{a.nombre}</p>
+                        <p style={{ fontSize: 12.5, color: 'var(--muted)', margin: '3px 0 0' }}>
+                          {a.email}{a.clinica_nombre ? ` · ${a.clinica_nombre}` : ''}
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                          onClick={async () => {
+                            try {
+                              await api.post(`/usuarios/${a.id}/aprobar/`, { rol: 'admin' })
+                              setAdminsPend(prev => prev.filter(x => x.id !== a.id))
+                              toast.success('Administrador aprobado', `${a.nombre} ya puede administrar su clínica.`)
+                            } catch (err: any) { toast.error(err.response?.data?.error || 'No se pudo aprobar') }
+                          }}
+                          style={{ padding: '9px 18px', borderRadius: 11, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                          Aprobar
+                        </motion.button>
+                        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                          onClick={async () => {
+                            try {
+                              await api.post(`/usuarios/${a.id}/desactivar/`)
+                              setAdminsPend(prev => prev.filter(x => x.id !== a.id))
+                              toast.success('Solicitud rechazada')
+                            } catch { toast.error('No se pudo rechazar') }
+                          }}
+                          style={{ padding: '9px 18px', borderRadius: 11, background: 'var(--glass)', color: 'var(--muted)', border: '1px solid var(--border)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                          Rechazar
+                        </motion.button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </GlowingCard>
+            )}
+
+            {/* Solicitudes de plan Enterprise */}
+            {solicitudesPlan.length > 0 && (
+              <GlowingCard className="p-6 sm:p-8 lg:p-10" style={{ marginBottom: 24, border: '1px solid rgba(232,196,144,0.3)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                  <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Solicitudes Enterprise</h3>
+                  <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: 'rgba(232,196,144,0.14)', color: '#E8C490', border: '1px solid rgba(232,196,144,0.3)', fontWeight: 600 }}>
+                    {solicitudesPlan.length} pendiente{solicitudesPlan.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {solicitudesPlan.map(s => (
+                    <div key={s.id} style={{ padding: '16px 18px', borderRadius: 14, background: 'var(--sunken)', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                        <div style={{ flex: 1, minWidth: 220 }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{s.clinica_nombre}</p>
+                          <p style={{ fontSize: 12.5, color: 'var(--muted)', margin: '3px 0 8px' }}>{s.solicitante_nombre} · {s.solicitante_email}</p>
+                          <p style={{ fontSize: 13, color: 'var(--text)', margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.55, background: 'var(--glass)', borderRadius: 10, padding: '10px 12px', border: '1px solid var(--border)' }}>{s.mensaje}</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                            onClick={async () => {
+                              try {
+                                await api.post(`/facturacion/solicitudes-plan/${s.id}/resolver/`, { accion: 'aprobar' })
+                                setSolicitudesPlan(prev => prev.filter(x => x.id !== s.id))
+                                toast.success('Enterprise activado', `${s.clinica_nombre} pasó a Enterprise.`)
+                              } catch { toast.error('No se pudo aprobar') }
+                            }}
+                            style={{ padding: '9px 18px', borderRadius: 11, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                            Aprobar
+                          </motion.button>
+                          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                            onClick={async () => {
+                              try {
+                                await api.post(`/facturacion/solicitudes-plan/${s.id}/resolver/`, { accion: 'rechazar' })
+                                setSolicitudesPlan(prev => prev.filter(x => x.id !== s.id))
+                                toast.success('Solicitud rechazada')
+                              } catch { toast.error('No se pudo rechazar') }
+                            }}
+                            style={{ padding: '9px 18px', borderRadius: 11, background: 'var(--glass)', color: 'var(--muted)', border: '1px solid var(--border)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                            Rechazar
+                          </motion.button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </GlowingCard>
+            )}
 
             {/* Crear nueva clínica */}
             <GlowingCard className="p-6 sm:p-8 lg:p-10" style={{ marginBottom: 24 }}>
@@ -2252,7 +3002,7 @@ export default function ConfiguracionPage() {
                     try {
                       const res = await api.post('/clinicas/', { ...nuevaClinicaForm, activa: true })
                       setTodasClinicas(prev => [...prev, res.data])
-                      setNuevaClinicaForm({ nombre: '', email: '', plan: 'basico' })
+                      setNuevaClinicaForm({ nombre: '', email: '', plan: 'gratis' })
                       toast.success('Clínica creada', `${res.data.nombre} fue registrada exitosamente.`)
                     } catch { toast.error('Error', 'No se pudo crear la clínica.') }
                     finally { setSavingNuevaClinica(false) }
@@ -2269,13 +3019,13 @@ export default function ConfiguracionPage() {
             <GlowingCard className="p-6 sm:p-8 lg:p-10">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Todas las clínicas</h3>
-                <span style={{ fontSize: 13, padding: '4px 12px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
+                <span style={{ fontSize: 13, padding: '4px 12px', borderRadius: 20, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)' }}>
                   {todasClinicas.length} registradas
                 </span>
               </div>
               {loadingTodasClinicas ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {[1,2,3].map(i => <motion.div key={i} animate={{ opacity: [0.3,0.6,0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i*0.2 }} style={{ height: 72, borderRadius: 16, background: 'rgba(255,255,255,0.04)' }} />)}
+                  {[1,2,3].map(i => <motion.div key={i} animate={{ opacity: [0.3,0.6,0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i*0.2 }} style={{ height: 72, borderRadius: 16, background: 'var(--sunken)' }} />)}
                 </div>
               ) : todasClinicas.length === 0 ? (
                 <p style={{ color: 'var(--muted)', textAlign: 'center', padding: '32px 0' }}>No hay clínicas registradas</p>
@@ -2301,7 +3051,7 @@ export default function ConfiguracionPage() {
 
                     return (
                       <motion.div key={c.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
-                        style={{ borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: `1px solid ${isOpen ? 'rgba(0,201,167,0.3)' : 'var(--border)'}`, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+                        style={{ borderRadius: 16, background: 'var(--sunken)', border: `1px solid ${isOpen ? 'rgba(0,214,178,0.3)' : 'var(--border)'}`, overflow: 'hidden', transition: 'border-color 0.2s' }}>
 
                         {/* Header row */}
                         <div
@@ -2314,7 +3064,7 @@ export default function ConfiguracionPage() {
                             <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{c.nombre}</p>
                             <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{c.email} · Plan {c.plan}</p>
                           </div>
-                          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c.activa ? 'rgba(0,201,167,0.15)' : 'rgba(255,107,107,0.1)', color: c.activa ? '#00C9A7' : 'var(--danger)', border: `1px solid ${c.activa ? 'rgba(0,201,167,0.3)' : 'rgba(255,107,107,0.2)'}`, flexShrink: 0 }}>
+                          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: c.activa ? 'rgba(0,214,178,0.15)' : 'rgba(255,107,107,0.1)', color: c.activa ? '#00D6B2' : 'var(--danger)', border: `1px solid ${c.activa ? 'rgba(0,214,178,0.3)' : 'rgba(255,107,107,0.2)'}`, flexShrink: 0 }}>
                             {c.activa ? 'Activa' : 'Inactiva'}
                           </span>
                           {/* Chevron */}
@@ -2346,14 +3096,14 @@ export default function ConfiguracionPage() {
                                 </p>
                                 {loadingS ? (
                                   <div style={{ display: 'flex', gap: 8 }}>
-                                    {[1,2].map(k => <motion.div key={k} animate={{ opacity: [0.3,0.6,0.3] }} transition={{ duration: 1.2, repeat: Infinity }} style={{ height: 32, width: 120, borderRadius: 10, background: 'rgba(255,255,255,0.05)' }} />)}
+                                    {[1,2].map(k => <motion.div key={k} animate={{ opacity: [0.3,0.6,0.3] }} transition={{ duration: 1.2, repeat: Infinity }} style={{ height: 32, width: 120, borderRadius: 10, background: 'var(--lift)' }} />)}
                                   </div>
                                 ) : sedesC.length === 0 ? (
                                   <p style={{ fontSize: 13, color: 'var(--muted)', fontStyle: 'italic' }}>Sin sedes registradas</p>
                                 ) : (
                                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                     {sedesC.map(s => (
-                                      <span key={s.id} style={{ fontSize: 13, fontWeight: 500, padding: '6px 14px', borderRadius: 10, background: s.activa ? 'rgba(0,201,167,0.1)' : 'rgba(255,255,255,0.04)', color: s.activa ? 'var(--primary)' : 'var(--muted)', border: `1px solid ${s.activa ? 'rgba(0,201,167,0.25)' : 'var(--border)'}` }}>
+                                      <span key={s.id} style={{ fontSize: 13, fontWeight: 500, padding: '6px 14px', borderRadius: 10, background: s.activa ? 'rgba(0,214,178,0.1)' : 'var(--sunken)', color: s.activa ? 'var(--primary)' : 'var(--muted)', border: `1px solid ${s.activa ? 'rgba(0,214,178,0.25)' : 'var(--border)'}` }}>
                                         {s.nombre}
                                         {!s.activa && <span style={{ fontSize: 11, marginLeft: 6, opacity: 0.6 }}>inactiva</span>}
                                       </span>
@@ -2399,7 +3149,6 @@ export default function ConfiguracionPage() {
           <motion.div key="equipo" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 12 }}>
               <div>
-                <h2 className="font-display" style={sectionTitle}>Equipo</h2>
                 <p style={sectionDesc}>Gestiona los usuarios con acceso a la plataforma.</p>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
@@ -2411,7 +3160,7 @@ export default function ConfiguracionPage() {
                 )}
                 {esAdmin && (
                   <motion.button onClick={() => setShowInvitar(v => !v)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,201,167,0.3)' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 14, background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: 'white', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', boxShadow: '0 4px 20px rgba(0,214,178,0.3)' }}>
                     <PlusIcon /> Invitar miembro
                   </motion.button>
                 )}
@@ -2422,7 +3171,7 @@ export default function ConfiguracionPage() {
             <AnimatePresence>
               {tempPassword && (
                 <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-                  style={{ marginBottom: 20, padding: '20px 24px', borderRadius: 20, background: 'rgba(0,201,167,0.1)', border: '1px solid rgba(0,201,167,0.3)' }}>
+                  style={{ marginBottom: 20, padding: '20px 24px', borderRadius: 20, background: 'rgba(0,214,178,0.1)', border: '1px solid rgba(0,214,178,0.3)' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
                     <div>
                       <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--success)', marginBottom: 6 }}>Usuario creado. Contraseña temporal:</p>
@@ -2465,7 +3214,7 @@ export default function ConfiguracionPage() {
                             {s.motivo && <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', flex: '1 1 200px' }}>"{s.motivo}"</p>}
                             <div style={{ display: 'flex', gap: 8 }}>
                               <motion.button onClick={() => handleAprobarSolicitud(s.id)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(0,201,167,0.15)', border: '1px solid rgba(0,201,167,0.3)', color: '#00C9A7', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(0,214,178,0.15)', border: '1px solid rgba(0,214,178,0.3)', color: '#00D6B2', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                                 <CheckIcon /> Aprobar
                               </motion.button>
                               <motion.button onClick={() => handleRechazarSolicitud(s.id)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -2496,7 +3245,7 @@ export default function ConfiguracionPage() {
                           return (
                             <motion.button key={r.key} onClick={() => setSolicitudForm({ ...solicitudForm, rol_solicitado: r.key })}
                               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                              style={{ padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '2px solid', background: solicitudForm.rol_solicitado === r.key ? rs.bg : 'rgba(255,255,255,0.04)', borderColor: solicitudForm.rol_solicitado === r.key ? rs.color : 'var(--border)', color: solicitudForm.rol_solicitado === r.key ? rs.color : 'var(--muted)', transition: 'all 0.2s' }}>
+                              style={{ padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '2px solid', background: solicitudForm.rol_solicitado === r.key ? rs.bg : 'var(--sunken)', borderColor: solicitudForm.rol_solicitado === r.key ? rs.color : 'var(--border)', color: solicitudForm.rol_solicitado === r.key ? rs.color : 'var(--muted)', transition: 'all 0.2s' }}>
                               {r.label}
                             </motion.button>
                           )
@@ -2511,7 +3260,7 @@ export default function ConfiguracionPage() {
                     </div>
                     <div style={{ display: 'flex', gap: 12 }}>
                       <motion.button onClick={() => setShowSolicitud(false)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                        style={{ padding: '11px 22px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, cursor: 'pointer' }}>
+                        style={{ padding: '11px 22px', borderRadius: 12, background: 'var(--sunken)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, cursor: 'pointer' }}>
                         Cancelar
                       </motion.button>
                       <motion.button onClick={handleSolicitarRol} disabled={savingSolicitud} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -2550,7 +3299,7 @@ export default function ConfiguracionPage() {
                           return (
                             <motion.button key={r.key} onClick={() => setInviteForm({ ...inviteForm, rol: r.key })}
                               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                              style={{ padding: '9px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '2px solid', background: inviteForm.rol === r.key ? rs.bg : 'rgba(255,255,255,0.04)', borderColor: inviteForm.rol === r.key ? rs.color : 'var(--border)', color: inviteForm.rol === r.key ? rs.color : 'var(--muted)', transition: 'all 0.2s' }}>
+                              style={{ padding: '9px 20px', borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '2px solid', background: inviteForm.rol === r.key ? rs.bg : 'var(--sunken)', borderColor: inviteForm.rol === r.key ? rs.color : 'var(--border)', color: inviteForm.rol === r.key ? rs.color : 'var(--muted)', transition: 'all 0.2s' }}>
                               {r.label}
                             </motion.button>
                           )
@@ -2560,7 +3309,7 @@ export default function ConfiguracionPage() {
                     </div>
                     <div style={{ display: 'flex', gap: 12 }}>
                       <motion.button onClick={() => setShowInvitar(false)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                        style={{ padding: '11px 22px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, cursor: 'pointer' }}>
+                        style={{ padding: '11px 22px', borderRadius: 12, background: 'var(--sunken)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 14, cursor: 'pointer' }}>
                         Cancelar
                       </motion.button>
                       <motion.button onClick={handleInvitar} disabled={savingInvite} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
@@ -2580,7 +3329,7 @@ export default function ConfiguracionPage() {
             <GlowingCard className="p-6 sm:p-8">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                 <h3 className="font-display" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>Miembros del equipo</h3>
-                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,201,167,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,201,167,0.2)' }}>
+                <span style={{ fontSize: 13, fontWeight: 500, padding: '5px 14px', borderRadius: 20, background: 'rgba(0,214,178,0.12)', color: 'var(--primary)', border: '1px solid rgba(0,214,178,0.2)' }}>
                   {equipoUsuarios.length} usuarios
                 </span>
               </div>
@@ -2595,7 +3344,7 @@ export default function ConfiguracionPage() {
                       const rs = EQUIPO_ROL_STYLE[u.rol as EquipoRol] || EQUIPO_ROL_STYLE.viewer
                       return (
                         <motion.div key={u.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12, height: 0 }} transition={{ delay: i * 0.04 }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                          style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 18px', borderRadius: 16, background: 'var(--sunken)', border: '1px solid var(--border)', flexWrap: 'wrap' }}>
                           <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${rs.color}40, ${rs.color}20)`, border: `1px solid ${rs.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: rs.color, flexShrink: 0 }}>
                             {(u.nombre || u.email || 'U')[0].toUpperCase()}
                           </div>
@@ -2642,73 +3391,65 @@ export default function ConfiguracionPage() {
   }
 
   // ─── Main layout
+  const activeMeta = SECTIONS.find(s => s.key === activeSection)
+  const visibleGroups = SECTION_GROUPS.map(g => ({
+    label: g.label,
+    items: g.keys.map(k => SECTIONS.find(s => s.key === k)).filter((s): s is typeof SECTIONS[number] =>
+      !!s && !(s.superadminOnly && user?.rol !== 'superadmin') && !(s.roles && !s.roles.includes(user?.rol || ''))),
+  })).filter(g => g.items.length > 0)
+
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1240, margin: '0 auto' }}>
         {/* HEADER */}
-        <FadeContent direction="down" duration={0.5}>
-          <div style={{ marginBottom: 32 }}>
-            <h1 className="font-display" style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
-              <BlurText text="Configuración" delay={50} />
-            </h1>
-            <p style={{ fontSize: 14, color: 'var(--muted)', marginTop: 4 }}>
-              Administra tu cuenta, clínica y preferencias
-            </p>
-          </div>
-        </FadeContent>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} style={{ marginBottom: 32 }}>
+          <span className="eyebrow" style={{ marginBottom: 10, display: 'inline-flex' }}>Ajustes de la cuenta</span>
+          <h1 className="display-lg" style={{ color: 'var(--text)', margin: 0 }}>Configuración</h1>
+          <p style={{ fontSize: 15, color: 'var(--muted)', marginTop: 10 }}>Administra tu cuenta, clínica y preferencias del sistema.</p>
+        </motion.div>
 
-        {/* LAYOUT: Sidebar + Content */}
-        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 32 }}>
+        {/* LAYOUT: grouped rail + content */}
+        <div style={{ display: 'grid', gridTemplateColumns: '272px 1fr', gap: 28, alignItems: 'start' }}>
 
-          {/* SIDEBAR */}
-          <FadeContent direction="right" duration={0.4} delay={0.1}>
-            <div style={{
-              position: 'sticky', top: 32,
-              padding: '8px', borderRadius: 22,
-              background: 'var(--glass)', backdropFilter: 'blur(20px)',
-              border: '1px solid var(--border)',
-            }}>
-              {SECTIONS.filter(s => {
-                if (s.superadminOnly && user?.rol !== 'superadmin') return false
-                if (s.roles && !s.roles.includes(user?.rol || '')) return false
-                return true
-              }).map((s, i) => (
-                <motion.button
-                  key={s.key}
-                  onClick={() => setActiveSection(s.key)}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 + i * 0.04 }}
-                  whileHover={{ x: 2 }}
-                  style={{
-                    width: '100%',
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    padding: '14px 18px', borderRadius: 16,
-                    background: activeSection === s.key ? 'rgba(0,201,167,0.15)' : 'transparent',
-                    border: activeSection === s.key ? '1px solid rgba(0,201,167,0.25)' : '1px solid transparent',
-                    color: activeSection === s.key ? 'var(--text)' : 'var(--muted)',
-                    cursor: 'pointer', textAlign: 'left',
-                    transition: 'background 0.2s, border 0.2s, color 0.2s',
-                    marginBottom: 2,
-                  }}
-                >
-                  <span style={{ color: activeSection === s.key ? 'var(--primary)' : 'var(--muted)', transition: 'color 0.2s', flexShrink: 0 }}>
-                    {s.icon}
-                  </span>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: activeSection === s.key ? 600 : 500, lineHeight: 1.3 }}>{s.label}</p>
-                    <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1, opacity: activeSection === s.key ? 1 : 0.7 }}>{s.desc}</p>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </FadeContent>
+          {/* SIDEBAR — grouped */}
+          <motion.aside initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            style={{ position: 'sticky', top: 16, display: 'flex', flexDirection: 'column', gap: 18, padding: 14, borderRadius: 'var(--r-xl)', background: 'var(--glass)', backdropFilter: 'blur(20px)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
+            {visibleGroups.map(g => (
+              <div key={g.label}>
+                <p className="eyebrow" style={{ padding: '0 8px', marginBottom: 8, display: 'block' }}>{g.label}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {g.items.map(s => {
+                    const active = activeSection === s.key
+                    return (
+                      <motion.button key={s.key} onClick={() => setActiveSection(s.key)} whileHover={{ x: 2 }} whileTap={{ scale: 0.98 }}
+                        style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 12px', borderRadius: 'var(--r-md)', background: active ? 'rgba(0,214,178,0.12)' : 'transparent', border: `1px solid ${active ? 'rgba(0,214,178,0.28)' : 'transparent'}`, color: active ? 'var(--text)' : 'var(--muted)', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s, border-color 0.2s, color 0.2s' }}>
+                        {active && <span style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 2, background: 'var(--jade)' }} />}
+                        <span style={{ color: active ? 'var(--jade)' : 'var(--muted)', flexShrink: 0, display: 'flex' }}>{s.icon}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: active ? 600 : 500 }}>{s.label}</span>
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </motion.aside>
 
           {/* CONTENT */}
-          <FadeContent direction="up" duration={0.4} delay={0.2}>
+          <div style={{ minWidth: 0 }}>
+            <AnimatePresence mode="wait">
+              <motion.div key={activeSection + '-hd'} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+                <div style={{ width: 48, height: 48, borderRadius: 'var(--r-md)', flexShrink: 0, background: 'rgba(0,214,178,0.12)', border: '1px solid rgba(0,214,178,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--jade)' }}>{activeMeta?.icon}</div>
+                <div>
+                  <h2 className="display-md" style={{ color: 'var(--text)', margin: 0 }}>{activeMeta?.label}</h2>
+                  <p style={{ fontSize: 13.5, color: 'var(--muted)', marginTop: 4 }}>{activeMeta?.desc}</p>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
             <AnimatePresence mode="wait">
               {renderSection()}
             </AnimatePresence>
-          </FadeContent>
+          </div>
         </div>
 
       <ConfirmModal
