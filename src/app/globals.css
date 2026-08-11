@@ -512,6 +512,13 @@ input[type="range"].range-jade:disabled::-webkit-slider-thumb { cursor: not-allo
   }
   /* Filas flex que deben poder envolver en pantallas chicas */
   [style*="display: flex"][style*="gap"] { flex-wrap: wrap; }
+  /* Encabezados de página (título + acciones): apilan las acciones bajo el título */
+  [style*="justify-content: space-between"] { flex-wrap: wrap; row-gap: 14px; }
+  [style*="justify-content: space-between"] > * { min-width: 0; }
+  /* Títulos display no deben desbordar en móvil */
+  .display-xl { font-size: clamp(2.2rem, 9vw, 3.2rem) !important; }
+  .display-lg { font-size: clamp(1.8rem, 7vw, 2.4rem) !important; }
+  .display-md { font-size: clamp(1.5rem, 6vw, 1.9rem) !important; }
   /* Login: apilar las dos mitades */
   .login-shell { flex-direction: column !important; }
   .login-half  { width: 100% !important; min-height: auto !important; }
